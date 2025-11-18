@@ -1,14 +1,30 @@
 package com.johncorby.gravityGuild2
 
+import com.destroystokyo.paper.event.server.ServerTickStartEvent
+import org.battleplugins.arena.BattleArenaApi
+import org.bukkit.Bukkit
+import org.bukkit.event.EventHandler
+import org.bukkit.event.Listener
 import org.bukkit.plugin.java.JavaPlugin
 
-class GravityGuild2 : JavaPlugin() {
+lateinit var plugin: GravityGuild2
 
+class GravityGuild2 : JavaPlugin(), Listener {
     override fun onEnable() {
         // Plugin startup logic
+        plugin = this
+
+        BattleArenaApi.get().registerArena(this, "GGArena", GGArena::class.java)
+
+//        Bukkit.getPluginManager().registerEvents(this, this)
     }
 
     override fun onDisable() {
         // Plugin shutdown logic
+    }
+
+    @EventHandler
+    fun onTick(event: ServerTickStartEvent) {
+        logger.info("tick")
     }
 }

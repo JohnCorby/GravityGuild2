@@ -12,20 +12,24 @@ repositories {
     maven("https://repo.papermc.io/repository/maven-public/") {
         name = "papermc-repo"
     }
+
+    maven("https://repo.battleplugins.org/releases")
 }
 
 dependencies {
     compileOnly("io.papermc.paper:paper-api:1.21.10-R0.1-SNAPSHOT")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
+
+    compileOnly("org.battleplugins:arena:4.0.2")
 }
 
 tasks {
-  runServer {
-    // Configure the Minecraft version for our task.
-    // This is the only required configuration besides applying the plugin.
-    // Your plugin's jar (or shadowJar if present) will be used automatically.
-    minecraftVersion("1.21")
-  }
+    runServer {
+        // Configure the Minecraft version for our task.
+        // This is the only required configuration besides applying the plugin.
+        // Your plugin's jar (or shadowJar if present) will be used automatically.
+        minecraftVersion("1.21")
+    }
 }
 
 val targetJavaVersion = 21
@@ -44,4 +48,17 @@ tasks.processResources {
     filesMatching("plugin.yml") {
         expand(props)
     }
+
+    // battle arena needs yml here
+    copy {
+        from("ggarena.yml")
+        into("E:\\Minecraft Servers\\Joe Server\\plugins\\BattleArena\\arenas")
+    }
+}
+
+tasks.shadowJar {
+    minimize()
+
+    // just hardcode output dir
+    destinationDirectory.set(file("E:\\Minecraft Servers\\Joe Server\\plugins"))
 }

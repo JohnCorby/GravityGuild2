@@ -1,0 +1,106 @@
+﻿name: GravityGuild
+aliases: [gg]
+mode: GGArena
+type: Match
+team-options:
+  named-teams: false
+  team-size: 1
+  team-amount: 1
+  team-selection: none
+modules:
+  - arena-restoration
+  - classes
+  - duels
+  - scoreboards
+lives:
+  enabled: false
+victory-conditions:
+  teams-alive:
+    amount: 1
+  time-limit:
+    time-limit: 5m
+events:
+  on-join:
+    - store{types=all}
+    - change-gamemode{gamemode=adventure}
+    - flight{enabled=false}
+    - teleport{location=waitroom}
+  on-spectate:
+    - store{types=all}
+    - change-gamemode{gamemode=spectator}
+    - flight{enabled=true}
+    - teleport{location=spectator}
+  on-leave:
+    - clear-effects
+    - restore{types=all}
+    - remove-scoreboard
+  on-death:
+    - clear-inventory
+    - respawn
+    - delay{ticks=1}
+    - teleport{location=waitroom}
+options:
+  - block-break{enabled=false}
+  - block-place{enabled=false}
+  - block-interact{enabled=false}
+  - damage-entities{option=never}
+  - keep-inventory{enabled=true}
+  - keep-experience{enabled=true}
+  - class-equip-only-selects{enabled=true}
+initial-phase: waiting
+phases:
+  waiting:
+    allow-join: true
+    next-phase: countdown
+    options:
+      - damage-players{option=never}
+      - class-equipping{enabled=true}
+    events:
+      on-start:
+        - apply-scoreboard{scoreboard=waiting}
+      on-join:
+        - apply-scoreboard{scoreboard=waiting}
+  countdown:
+    allow-join: false
+    allow-spectate: true
+    revert-phase: true
+    next-phase: ingame
+    countdown-time: 5s
+    options:
+      - damage-players{option=never}
+      - class-equipping{enabled=true}
+    events:
+      on-start:
+        - apply-scoreboard{scoreboard=countdown}
+  ingame:
+    allow-join: false
+    allow-spectate: true
+    next-phase: victory
+    options:
+      - damage-players{option=other_team}
+    events:
+      on-start:
+        - equip-class{class=warrior}
+        - teleport{location=team_spawn}
+        - give-effects{effects=[speed{duration=300;amplifier=1}]}
+        - play-sound{sound=block.note_block.pling;pitch=2;volume=1}
+        - apply-scoreboard{scoreboard=ingame-list}
+  victory:
+    allow-join: false
+    allow-spectate: false
+    next-phase: waiting
+    duration: 5s
+    events:
+      on-complete:
+        - leave
+        - restore-arena
+        - remove-scoreboard
+      on-victory:
+        - send-message{message=<green>Congrats, you won!</green>}
+        - play-sound{sound=entity.player.levelup;pitch=1;volume=1}
+      on-lose:
+        - send-message{message=<red>Sorry, you lost!</red>}
+        - play-sound{sound=block.anvil.place;pitch=0;volume=1}
+      on-draw:
+        - send-message{message=<yellow>It's a draw!</yellow>}
+        - play-sound{sound=block.beacon.deactivate;pitch=0;volume=1}
