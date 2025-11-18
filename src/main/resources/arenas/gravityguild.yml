@@ -1,6 +1,6 @@
 ﻿name: GravityGuild
 aliases: [gg]
-mode: GGArena
+mode: GravityGuild
 type: Match
 team-options:
   named-teams: false

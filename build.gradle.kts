@@ -48,12 +48,6 @@ tasks.processResources {
     filesMatching("plugin.yml") {
         expand(props)
     }
-
-    // battle arena needs yml here
-    copy {
-        from("ggarena.yml")
-        into("E:\\Minecraft Servers\\Joe Server\\plugins\\BattleArena\\arenas")
-    }
 }
 
 tasks.shadowJar {
