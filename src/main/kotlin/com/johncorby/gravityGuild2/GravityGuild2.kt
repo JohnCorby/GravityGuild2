@@ -13,6 +13,7 @@ class GravityGuild2 : JavaPlugin(), Listener {
         // Plugin startup logic
         plugin = this
 
+        // write our arena config here so battle arena recognizes our game
         saveResource("arenas/gravityguild.yml", true)
         BattleArena.getInstance().registerArena(this, "GravityGuild", GGArena::class.java)
 
