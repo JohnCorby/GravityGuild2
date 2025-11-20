@@ -5,12 +5,10 @@ type: Match
 team-options:
   named-teams: false
   team-size: 1
-  team-amount: 1
+  team-amount: 2
   team-selection: none
 modules:
   - arena-restoration
-#  - classes
-#  - duels
   - scoreboards
   - boundary-enforcer
 lives:
@@ -41,14 +39,10 @@ events:
     - respawn
     - delay{ticks=1}
     - teleport{location=waitroom}
-#options:
-#  - block-break{enabled=false}
-#  - block-place{enabled=false}
-#  - block-interact{enabled=false}
-#  - damage-entities{option=never}
-#  - keep-inventory{enabled=true}
-#  - keep-experience{enabled=true}
-#  - class-equip-only-selects{enabled=true}
+options:
+  - hunger-deplete{enabled=false}
+  - keep-inventory{enabled=false}
+  - keep-experience{enabled=false}
 initial-phase: waiting
 phases:
   waiting:
@@ -56,7 +50,6 @@ phases:
     next-phase: countdown
     options:
       - damage-players{option=never}
-#      - class-equipping{enabled=true}
     events:
       on-start:
         - apply-scoreboard{scoreboard=waiting}
@@ -70,7 +63,6 @@ phases:
     countdown-time: 5s
     options:
       - damage-players{option=never}
-#      - class-equipping{enabled=true}
     events:
       on-start:
         - apply-scoreboard{scoreboard=countdown}
@@ -82,9 +74,7 @@ phases:
       - damage-players{option=other_team}
     events:
       on-start:
-#        - equip-class{class=warrior}
         - teleport{location=team_spawn}
-#        - give-effects{effects=[speed{duration=300;amplifier=1}]}
         - play-sound{sound=block.note_block.pling;pitch=2;volume=1}
         - apply-scoreboard{scoreboard=ingame-list}
   victory:

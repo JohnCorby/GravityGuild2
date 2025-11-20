@@ -1,0 +1,15 @@
+﻿package com.johncorby.gravityGuild2
+
+import org.battleplugins.arena.Arena
+import org.battleplugins.arena.command.ArenaCommand
+import org.battleplugins.arena.command.ArenaCommandExecutor
+import org.bukkit.entity.Player
+
+class GGCommandExecutor(arena: Arena) : ArenaCommandExecutor(arena) {
+    // ez reload for debugging
+    @ArenaCommand(commands = ["reload"])
+    fun reload(player: Player) {
+        player.performCommand("plm reload GravityGuild2")
+        player.performCommand("ba reload")
+    }
+}

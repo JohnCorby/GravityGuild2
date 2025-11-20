@@ -16,10 +16,11 @@ import org.bukkit.event.entity.FoodLevelChangeEvent
 import org.bukkit.event.entity.ProjectileHitEvent
 import org.bukkit.event.entity.ProjectileLaunchEvent
 import org.bukkit.event.player.PlayerInteractEvent
-import kotlin.compareTo
 
 
 class GGArena : Arena() {
+    override fun createCommandExecutor() = GGCommandExecutor(this)
+
     init {
         eventManager.registerArenaResolver(ProjectileLaunchEvent::class.java) { event ->
             ArenaPlayer.getArenaPlayer(event.entity.shooter as? Player)?.competition
@@ -48,11 +49,6 @@ class GGArena : Arena() {
             }
 
             is Snowball -> {
-                if (entity.shooter == hitEntity) {
-                    isCancelled = true
-                    return
-                }
-
                 // death snowball
                 (hitEntity as? Player)?.damage(9999.0)
                 entity.world.strikeLightningEffect(entity.location)
@@ -84,7 +80,6 @@ class GGArena : Arena() {
         if ((entity as Player).health - damage > 0) damage = 0.0
     }
 
-    @ArenaEventHandler
     fun FoodLevelChangeEvent.handler() {
         isCancelled = true
     }
