@@ -1,21 +1,25 @@
 ﻿package com.johncorby.gravityGuild2
 
+import com.johncorby.gravityGuild2.ArrowTracker.startTracking
+import com.johncorby.gravityGuild2.ArrowTracker.stopTracking
 import net.kyori.adventure.util.TriState
 import org.battleplugins.arena.Arena
 import org.battleplugins.arena.ArenaPlayer
+import org.battleplugins.arena.competition.LiveCompetition
+import org.battleplugins.arena.competition.phase.CompetitionPhaseType
 import org.battleplugins.arena.event.ArenaEventHandler
-import org.bukkit.entity.Arrow
-import org.bukkit.entity.Damageable
-import org.bukkit.entity.Player
-import org.bukkit.entity.Snowball
-import org.bukkit.entity.WitherSkull
+import org.battleplugins.arena.event.arena.ArenaPhaseStartEvent
+import org.battleplugins.arena.event.player.ArenaRespawnEvent
+import org.bukkit.Material
+import org.bukkit.enchantments.Enchantment
+import org.bukkit.entity.*
 import org.bukkit.event.block.Action
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause
-import org.bukkit.event.entity.FoodLevelChangeEvent
 import org.bukkit.event.entity.ProjectileHitEvent
 import org.bukkit.event.entity.ProjectileLaunchEvent
 import org.bukkit.event.player.PlayerInteractEvent
+import org.bukkit.inventory.ItemStack
 
 
 class GGArena : Arena() {
@@ -35,21 +39,22 @@ class GGArena : Arena() {
         if (entity !is Arrow) return
 
         entity.setGravity(false)
-        entity.visualFire = TriState.TRUE
-//        (entity as Arrow).startTracking()BlockProjectileSource
+        entity.visualFire = TriState.TRUE;
+        (entity as Arrow).startTracking()
     }
 
     @ArenaEventHandler
     fun ProjectileHitEvent.handler() {
         when (entity) {
+            // arrow kills
             is Arrow -> {
                 (hitEntity as? Damageable)?.damage(9999.0)
-//                (entity as Arrow).stopTracking()
-                entity.remove()
+                (entity as Arrow).stopTracking()
+                entity.remove() // dont stick
             }
 
+            // death snowball
             is Snowball -> {
-                // death snowball
                 (hitEntity as? Player)?.damage(9999.0)
                 entity.world.strikeLightningEffect(entity.location)
             }
@@ -59,7 +64,8 @@ class GGArena : Arena() {
 
     @ArenaEventHandler
     fun PlayerInteractEvent.handler() {
-        if (action == Action.PHYSICAL) return
+        // only left click works
+        if (action != Action.LEFT_CLICK_AIR && action != Action.LEFT_CLICK_BLOCK) return
 
         // shoot skull
         player.launchProjectile(WitherSkull::class.java, player.eyeLocation.direction)
@@ -69,7 +75,7 @@ class GGArena : Arena() {
 
     @ArenaEventHandler
     fun EntityDamageEvent.handler() {
-        // only immune to fall damage and wither skull explosion
+        // let other most damage types thru
         if (
             cause != DamageCause.FALL &&
             cause != DamageCause.FLY_INTO_WALL &&
@@ -80,8 +86,46 @@ class GGArena : Arena() {
         if ((entity as Player).health - damage > 0) damage = 0.0
     }
 
-    fun FoodLevelChangeEvent.handler() {
-        isCancelled = true
+    // food level change prevented in config
+
+    @ArenaEventHandler
+    fun ArenaPhaseStartEvent.handler() {
+        if (phase == CompetitionPhaseType.INGAME) {
+            (competition as LiveCompetition).players.forEach { player -> player.player.initAndSpawn() }
+        }
+    }
+
+    @ArenaEventHandler
+    fun ArenaRespawnEvent.handler() {
+        player.player!!.initAndSpawn()
+    }
+
+    fun Player.initAndSpawn() {
+//        addPotionEffect(PotionEffect(PotionEffectType.NIGHT_VISION, Int.MAX_VALUE, 1, false, false))
+
+        // init inventory
+        inventory.apply {
+            // inventory should be empty be this point
+            addItem(
+                ItemStack(Material.BOW).apply {
+                    this.enchantments
+                    addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
+                    addUnsafeEnchantment(Enchantment.INFINITY, 1)
+                    addUnsafeEnchantment(Enchantment.FLAME, 1)
+                },
+                ItemStack(Material.ARROW)
+            )
+            helmet = ItemStack(Material.END_ROD).apply {
+                addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
+            }
+            chestplate = ItemStack(Material.ELYTRA).apply {
+                addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
+                addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
+            }
+        }
+
+        // todo teleport to random part on the map
+
     }
 
     // TODO read v1 v2 v3 code and try to make it nice

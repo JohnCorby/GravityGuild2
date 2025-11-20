@@ -36,14 +36,14 @@ events:
     - restore{types=all}
     - remove-scoreboard
   on-death:
-    - clear-inventory
+#    - clear-inventory
     - respawn
     - delay{ticks=1}
     - teleport{location=waitroom}
 options:
   - hunger-deplete{enabled=false}
-  - keep-inventory{enabled=true}
-  - keep-experience{enabled=true}
+#  - keep-inventory{enabled=true}
+#  - keep-experience{enabled=true}
 initial-phase: waiting
 phases:
   waiting:
