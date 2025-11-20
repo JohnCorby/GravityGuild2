@@ -5,8 +5,9 @@ type: Match
 team-options:
   named-teams: false
   team-size: 1
-  team-amount: 2
+  team-amount: 2-10
   team-selection: none
+  shared-spawn-points: true
 modules:
   - arena-restoration
   - scoreboards
