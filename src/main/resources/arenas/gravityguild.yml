@@ -42,8 +42,8 @@ events:
     - teleport{location=waitroom}
 options:
   - hunger-deplete{enabled=false}
-  - keep-inventory{enabled=false}
-  - keep-experience{enabled=false}
+  - keep-inventory{enabled=true}
+  - keep-experience{enabled=true}
 initial-phase: waiting
 phases:
   waiting:
