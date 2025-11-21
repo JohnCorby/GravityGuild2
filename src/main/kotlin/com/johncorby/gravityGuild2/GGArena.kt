@@ -9,6 +9,7 @@ import org.battleplugins.arena.competition.LiveCompetition
 import org.battleplugins.arena.competition.phase.CompetitionPhaseType
 import org.battleplugins.arena.event.ArenaEventHandler
 import org.battleplugins.arena.event.arena.ArenaPhaseStartEvent
+import org.battleplugins.arena.event.player.ArenaJoinEvent
 import org.battleplugins.arena.event.player.ArenaRespawnEvent
 import org.bukkit.Material
 import org.bukkit.enchantments.Enchantment
@@ -36,11 +37,18 @@ class GGArena : Arena() {
 
     @ArenaEventHandler
     fun ProjectileLaunchEvent.handler() {
-        if (entity !is Arrow) return
+        when (entity) {
+            is Arrow -> {
+                entity.setGravity(false)
+                entity.visualFire = TriState.TRUE
+                (entity as Arrow).startTracking()
+            }
 
-        entity.setGravity(false)
-        entity.visualFire = TriState.TRUE;
-        (entity as Arrow).startTracking()
+            is Snowball -> {
+                entity.isGlowing = true;
+                entity.visualFire = TriState.TRUE
+            }
+        }
     }
 
     @ArenaEventHandler
@@ -55,7 +63,7 @@ class GGArena : Arena() {
 
             // death snowball
             is Snowball -> {
-                (hitEntity as? Player)?.damage(9999.0)
+                (hitEntity as? Damageable)?.damage(9999.0)
                 entity.world.strikeLightningEffect(entity.location)
             }
         }
@@ -68,6 +76,7 @@ class GGArena : Arena() {
         if (action != Action.LEFT_CLICK_AIR && action != Action.LEFT_CLICK_BLOCK) return
 
         // shoot skull
+        // TODO: use fireball instead of wither skull? be manual rocket jump?
         player.launchProjectile(WitherSkull::class.java, player.eyeLocation.direction)
         // cancel so player doesnt break anything
         isCancelled = true
@@ -83,21 +92,22 @@ class GGArena : Arena() {
         ) return
 
         // revert non-lethal damage
+        // TODO: should we actually do this? or only revert some damage types like older versions?
         if ((entity as Player).health - damage > 0) damage = 0.0
     }
 
-    // food level change prevented in config
+    // food level change prevented in config. could change this?
 
     @ArenaEventHandler
     fun ArenaPhaseStartEvent.handler() {
-        if (phase == CompetitionPhaseType.INGAME) {
+        if (phase.type == CompetitionPhaseType.INGAME) {
             (competition as LiveCompetition).players.forEach { player -> player.player.initAndSpawn() }
         }
     }
 
     @ArenaEventHandler
     fun ArenaRespawnEvent.handler() {
-        player.player!!.initAndSpawn()
+        player.initAndSpawn()
     }
 
     fun Player.initAndSpawn() {
@@ -108,10 +118,9 @@ class GGArena : Arena() {
             // inventory should be empty be this point
             addItem(
                 ItemStack(Material.BOW).apply {
-                    this.enchantments
                     addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
                     addUnsafeEnchantment(Enchantment.INFINITY, 1)
-                    addUnsafeEnchantment(Enchantment.FLAME, 1)
+//                    addUnsafeEnchantment(Enchantment.FLAME, 1)
                 },
                 ItemStack(Material.ARROW)
             )
@@ -124,10 +133,11 @@ class GGArena : Arena() {
             }
         }
 
-        // todo teleport to random part on the map
+        // TODO: teleport to random part on the map
 
     }
 
-    // TODO read v1 v2 v3 code and try to make it nice
-    // TODO give items. could use config, but thats more work
+    // TODO: cooldown on death
+
+    // TODO: teleport killer to player on kill like v1?
 }

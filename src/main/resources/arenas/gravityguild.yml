@@ -5,7 +5,7 @@ type: Match
 team-options:
   named-teams: false
   team-size: 1
-  team-amount: 2-10
+  team-amount: 1-10
   team-selection: none
   shared-spawn-points: true
 modules:
@@ -57,7 +57,7 @@ phases:
       on-join:
         - apply-scoreboard{scoreboard=waiting}
   countdown:
-    allow-join: false
+    allow-join: true
     allow-spectate: true
     revert-phase: true
     next-phase: ingame
