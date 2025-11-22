@@ -132,6 +132,7 @@ class GGArena : Arena() {
 
     @ArenaEventHandler
     fun PlayerDeathEvent.handler() {
+        // dont drop the custom items
         drops.remove(Items.item0)
         drops.remove(Items.item1)
         drops.remove(Items.helmet)
@@ -155,4 +156,6 @@ class GGArena : Arena() {
     // TODO: cooldown on death
 
     // TODO: teleport killer to player on kill like v1?
+
+    // TODO: kill entities before restore?
 }
