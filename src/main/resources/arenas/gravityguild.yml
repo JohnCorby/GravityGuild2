@@ -5,13 +5,13 @@ type: Match
 team-options:
   named-teams: false
   team-size: 1
-  team-amount: 1-10
+  team-amount: 2-10
   team-selection: none
   shared-spawn-points: true
 modules:
   - arena-restoration
   - scoreboards
-  - boundary-enforcer
+#  - boundary-enforcer
 lives:
   enabled: true
   amount: 3
@@ -19,7 +19,7 @@ victory-conditions:
   teams-alive:
     amount: 1
   time-limit:
-    time-limit: 5m
+    time-limit: 10m
 events:
   on-join:
     - store{types=all}
@@ -41,7 +41,7 @@ events:
     - delay{ticks=1}
     - teleport{location=waitroom}
 options:
-  - hunger-deplete{enabled=false}
+#  - hunger-deplete{enabled=false}
 #  - keep-inventory{enabled=true}
 #  - keep-experience{enabled=true}
 initial-phase: waiting
@@ -75,6 +75,8 @@ phases:
       - damage-players{option=other_team}
     events:
       on-start:
+        # TODO: restore arena when starting? teleport?
+#        - restore-arena
         - teleport{location=team_spawn}
         - play-sound{sound=block.note_block.pling;pitch=2;volume=1}
         - apply-scoreboard{scoreboard=ingame-list}

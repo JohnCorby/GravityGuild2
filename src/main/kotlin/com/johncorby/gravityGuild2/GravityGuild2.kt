@@ -1,8 +1,6 @@
 package com.johncorby.gravityGuild2
 
-import com.destroystokyo.paper.event.server.ServerTickStartEvent
 import org.battleplugins.arena.BattleArena
-import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.plugin.java.JavaPlugin
 
@@ -16,16 +14,9 @@ class GravityGuild2 : JavaPlugin(), Listener {
         // write our arena config here so battle arena recognizes our game
         saveResource("arenas/gravityguild.yml", true)
         BattleArena.getInstance().registerArena(this, "GravityGuild", GGArena::class.java)
-
-//        Bukkit.getPluginManager().registerEvents(this, this)
     }
 
     override fun onDisable() {
         // Plugin shutdown logic
-    }
-
-    @EventHandler
-    fun onTick(event: ServerTickStartEvent) {
-        logger.info("tick")
     }
 }
