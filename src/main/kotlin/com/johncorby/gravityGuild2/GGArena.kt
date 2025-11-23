@@ -5,10 +5,11 @@ import com.johncorby.gravityGuild2.ArrowTracker.stopTracking
 import net.kyori.adventure.util.TriState
 import org.battleplugins.arena.Arena
 import org.battleplugins.arena.ArenaPlayer
-import org.battleplugins.arena.competition.Competition
 import org.battleplugins.arena.competition.LiveCompetition
+import org.battleplugins.arena.competition.map.LiveCompetitionMap
 import org.battleplugins.arena.competition.phase.CompetitionPhaseType
 import org.battleplugins.arena.event.ArenaEventHandler
+import org.battleplugins.arena.event.arena.ArenaPhaseCompleteEvent
 import org.battleplugins.arena.event.arena.ArenaPhaseStartEvent
 import org.battleplugins.arena.event.player.ArenaRespawnEvent
 import org.bukkit.Material
@@ -23,6 +24,21 @@ import org.bukkit.event.entity.ProjectileLaunchEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.ItemStack
 
+
+/*
+ * IDEAS:
+ * teleport killer to player on kill like v1?
+ * let players have more air control, while still requiring them to be grounded
+ *      higher gravity? limited rockets per air? higher knockback from skull/fireball?
+ *      tunnel via breaking blocks while gliding?
+ * bigger radius for wither skulls? and higher knockback from above
+ * tnt left click to throw
+ * armor that does something (e.g. small durability but resistant to arrows)
+ * snow in ground, tnt too maybe occasionally. this means ability to break blocks instead of shoot skull
+ *
+ * cooldown on bow shots? overpowered
+ *
+ */
 
 class GGArena : Arena() {
     override fun createCommandExecutor() = GGCommandExecutor(this)
@@ -73,11 +89,13 @@ class GGArena : Arena() {
 
     @ArenaEventHandler
     fun PlayerInteractEvent.handler() {
-        // only left click works. left click air erroneously happens with other stuff like throwing items
+        // only left click works.
+        // BUG: left click air erroneously happens with other stuff like throwing items
         if (action != Action.LEFT_CLICK_BLOCK) return
 
         // shoot skull
         // TODO: use fireball instead of wither skull? be manual rocket jump?
+        // TODO: use wind charge instead????
         player.launchProjectile(WitherSkull::class.java, player.eyeLocation.direction)
         // cancel so player doesnt break anything
         isCancelled = true
@@ -85,7 +103,14 @@ class GGArena : Arena() {
 
     @ArenaEventHandler
     fun EntityDamageEvent.handler() {
-        plugin.logger.info("$entity damaged by $cause")
+        plugin.logger.info("${entity.name} damaged $damage health by $cause")
+
+        // prevent wither skull from causing wither :P
+        // TODO: this cause stuff is too general and sucks
+        if (cause == DamageCause.PROJECTILE) {
+            isCancelled = true
+            return
+        }
 
         // let other most damage types thru
         if (
@@ -104,27 +129,53 @@ class GGArena : Arena() {
     @ArenaEventHandler
     fun ArenaPhaseStartEvent.handler() {
         if (phase.type == CompetitionPhaseType.INGAME) {
-            (competition as LiveCompetition).players.forEach { player -> player.player.initAndSpawn() }
+//            val team = Bukkit.getScoreboardManager().mainScoreboard.getTeam("GravityGuild")!!
+
+            (competition as LiveCompetition).players.forEach { player ->
+                player.player.initAndSpawn()
+
+//                team.addPlayer(player.player)
+            }
+        }
+    }
+
+    @ArenaEventHandler
+    fun ArenaPhaseCompleteEvent.handler() {
+        // arena restore puts back entities, so lets remove current ones
+        if (phase.type == CompetitionPhaseType.VICTORY) {
+            val map = competition.map as LiveCompetitionMap
+            val bounds = map.bounds!!
+            for (entity in map.world.entities) {
+                if (bounds.isInside(entity.boundingBox) && entity !is Player) {
+                    entity.remove()
+                }
+            }
         }
     }
 
     @ArenaEventHandler
     fun ArenaRespawnEvent.handler() {
         if (competition.phase == CompetitionPhaseType.INGAME) {
-            player.initAndSpawn()
+//            player.initAndSpawn()
         }
+
+        // cooldown
+
     }
 
     object Items {
-        val item0 = ItemStack(Material.BOW).apply {
+        val bow = ItemStack.of(Material.BOW).apply {
             addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
             addUnsafeEnchantment(Enchantment.INFINITY, 1)
         }
-        val item1 = ItemStack(Material.ARROW)
-        val helmet = ItemStack(Material.END_ROD).apply {
+        val arrow = ItemStack.of(Material.ARROW)
+        val mace = ItemStack.of(Material.MACE).apply {
+            addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
+        }
+        val helmet = ItemStack.of(Material.END_ROD).apply {
             addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
         }
-        val chestplate = ItemStack(Material.ELYTRA).apply {
+        val chestplate = ItemStack.of(Material.ELYTRA).apply {
             addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
             addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
         }
@@ -133,10 +184,10 @@ class GGArena : Arena() {
     @ArenaEventHandler
     fun PlayerDeathEvent.handler() {
         // dont drop the custom items
-        drops.remove(Items.item0)
-        drops.remove(Items.item1)
-        drops.remove(Items.helmet)
-        drops.remove(Items.chestplate)
+//        drops.remove(Items.bow)
+//        drops.remove(Items.arrow)
+//        drops.remove(Items.helmet)
+//        drops.remove(Items.chestplate)
     }
 
     fun Player.initAndSpawn() {
@@ -144,18 +195,18 @@ class GGArena : Arena() {
 
         // init inventory
         // should be empty at this point
-        inventory.setItem(0, Items.item0)
-        inventory.setItem(1, Items.item1)
+//        inventory.setItem(0, Items.item0)
+//        inventory.setItem(1, Items.item1)
+        inventory.addItem(Items.bow)
+        inventory.addItem(Items.mace)
+        inventory.addItem(Items.arrow)
         inventory.helmet = Items.helmet
         inventory.chestplate = Items.chestplate
 
-        // TODO: teleport to random part on the map
+        // TODO: teleport to random part on the map? or just use manual spawns like currently
 
     }
 
     // TODO: cooldown on death
-
-    // TODO: teleport killer to player on kill like v1?
-
-    // TODO: kill entities before restore?
+    // TODO: hide player nametags
 }

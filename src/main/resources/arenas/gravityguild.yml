@@ -12,12 +12,14 @@ modules:
   - arena-restoration
   - scoreboards
 #  - boundary-enforcer
-lives:
-  enabled: true
-  amount: 3
+#lives:
+#  enabled: true
+#  amount: 5
 victory-conditions:
-  teams-alive:
-    amount: 1
+#  teams-alive:
+#    amount: 1
+  highest-stat:
+    stat-name: kills
   time-limit:
     time-limit: 10m
 events:
@@ -41,9 +43,9 @@ events:
     - delay{ticks=1}
     - teleport{location=waitroom}
 options:
-#  - hunger-deplete{enabled=false}
-#  - keep-inventory{enabled=true}
-#  - keep-experience{enabled=true}
+  - hunger-deplete{enabled=false}
+  - keep-inventory{enabled=true}
+  - keep-experience{enabled=true}
 initial-phase: waiting
 phases:
   waiting:
@@ -61,7 +63,7 @@ phases:
     allow-spectate: true
     revert-phase: true
     next-phase: ingame
-    countdown-time: 5s
+    countdown-time: 30s
     options:
       - damage-players{option=never}
     events:
@@ -77,7 +79,7 @@ phases:
       on-start:
         # TODO: restore arena when starting? teleport?
 #        - restore-arena
-        - teleport{location=team_spawn}
+        - teleport{location=team_spawn;random=true}
         - play-sound{sound=block.note_block.pling;pitch=2;volume=1}
         - apply-scoreboard{scoreboard=ingame-list}
   victory:
