@@ -1,7 +1,5 @@
 ﻿package com.johncorby.gravityGuild2
 
-import com.johncorby.gravityGuild2.ArrowTracker.startTracking
-import com.johncorby.gravityGuild2.ArrowTracker.stopTracking
 import net.kyori.adventure.util.TriState
 import org.battleplugins.arena.Arena
 import org.battleplugins.arena.ArenaPlayer
@@ -12,15 +10,13 @@ import org.battleplugins.arena.event.ArenaEventHandler
 import org.battleplugins.arena.event.arena.ArenaPhaseCompleteEvent
 import org.battleplugins.arena.event.arena.ArenaPhaseStartEvent
 import org.battleplugins.arena.event.player.ArenaRespawnEvent
+import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.*
 import org.bukkit.event.block.Action
-import org.bukkit.event.entity.EntityDamageEvent
+import org.bukkit.event.entity.*
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause
-import org.bukkit.event.entity.PlayerDeathEvent
-import org.bukkit.event.entity.ProjectileHitEvent
-import org.bukkit.event.entity.ProjectileLaunchEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.ItemStack
 
@@ -58,11 +54,13 @@ class GGArena : Arena() {
             is Arrow -> {
                 entity.setGravity(false)
                 entity.visualFire = TriState.TRUE
-                (entity as Arrow).startTracking()
+//                val tnt = entity.world.spawn(entity.location, TNTPrimed::class.java)
+//                entity.addPassenger(tnt)
+//                (entity as Arrow).startTracking()
             }
 
             is Snowball -> {
-                entity.isGlowing = true;
+                entity.isGlowing = true
                 entity.visualFire = TriState.TRUE
             }
         }
@@ -73,8 +71,10 @@ class GGArena : Arena() {
         when (entity) {
             // arrow kills
             is Arrow -> {
-                (hitEntity as? Damageable)?.damage(9999.0)
-                (entity as Arrow).stopTracking()
+//                (hitEntity as? Damageable)?.damage(9999.0)
+//                (entity as Arrow).stopTracking()
+//                (entity as Arrow).damage = 0.0
+                entity.world.createExplosion(entity, 2f, false)
                 entity.remove() // dont stick
             }
 
@@ -90,33 +90,26 @@ class GGArena : Arena() {
     @ArenaEventHandler
     fun PlayerInteractEvent.handler() {
         // only left click works.
-        // BUG: left click air erroneously happens with other stuff like throwing items
-        if (action != Action.LEFT_CLICK_BLOCK) return
+        // BUG: left click air erroneously happens with other stuff like throwing items. it's fine
+        if (action != Action.LEFT_CLICK_BLOCK && action != Action.LEFT_CLICK_AIR) return
 
-        // shoot skull
-        // TODO: use fireball instead of wither skull? be manual rocket jump?
-        // TODO: use wind charge instead????
-        player.launchProjectile(WitherSkull::class.java, player.eyeLocation.direction)
+        // only work when holding bow
+        if (player.inventory.itemInMainHand != Items.bow) return
+
+        // shoot wind charge. it has the most fun movement. if its too OP, use fireball
+        player.launchProjectile(WindCharge::class.java, player.eyeLocation.direction)
         // cancel so player doesnt break anything
         isCancelled = true
     }
 
     @ArenaEventHandler
     fun EntityDamageEvent.handler() {
-        plugin.logger.info("${entity.name} damaged $damage health by $cause")
+        plugin.logger.info("${entity.name} lost $damage health from $cause")
 
-        // prevent wither skull from causing wither :P
-        // TODO: this cause stuff is too general and sucks
-        if (cause == DamageCause.PROJECTILE) {
-            isCancelled = true
-            return
-        }
-
-        // let other most damage types thru
+        // do this only for hit ground and wall. everything else should be normal damage
         if (
             cause != DamageCause.FALL &&
-            cause != DamageCause.FLY_INTO_WALL &&
-            cause != DamageCause.ENTITY_EXPLOSION
+            cause != DamageCause.FLY_INTO_WALL
         ) return
 
         // revert non-lethal damage
@@ -124,31 +117,37 @@ class GGArena : Arena() {
         if ((entity as Player).health - damage > 0) damage = 0.0
     }
 
-    // food level change prevented in config. could change this?
+    // food level change prevented in config. could change this? its nice to not deal with hunger
 
     @ArenaEventHandler
     fun ArenaPhaseStartEvent.handler() {
         if (phase.type == CompetitionPhaseType.INGAME) {
-//            val team = Bukkit.getScoreboardManager().mainScoreboard.getTeam("GravityGuild")!!
+            val team = Bukkit.getScoreboardManager().mainScoreboard.getTeam("GravityGuild")!!
 
             (competition as LiveCompetition).players.forEach { player ->
                 player.player.initAndSpawn()
 
-//                team.addPlayer(player.player)
+                team.addPlayer(player.player)
             }
         }
     }
 
     @ArenaEventHandler
     fun ArenaPhaseCompleteEvent.handler() {
-        // arena restore puts back entities, so lets remove current ones
         if (phase.type == CompetitionPhaseType.VICTORY) {
+            // arena restore puts back entities, so lets remove current ones
             val map = competition.map as LiveCompetitionMap
             val bounds = map.bounds!!
             for (entity in map.world.entities) {
                 if (bounds.isInside(entity.boundingBox) && entity !is Player) {
                     entity.remove()
                 }
+            }
+        } else if (phase.type == CompetitionPhaseType.INGAME) {
+            val team = Bukkit.getScoreboardManager().mainScoreboard.getTeam("GravityGuild")!!
+
+            (competition as LiveCompetition).players.forEach { player ->
+                team.removePlayer(player.player)
             }
         }
     }
@@ -169,6 +168,7 @@ class GGArena : Arena() {
             addUnsafeEnchantment(Enchantment.INFINITY, 1)
         }
         val arrow = ItemStack.of(Material.ARROW)
+        val tnt = ItemStack.of(Material.TNT)
         val mace = ItemStack.of(Material.MACE).apply {
             addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
         }
@@ -198,6 +198,7 @@ class GGArena : Arena() {
 //        inventory.setItem(0, Items.item0)
 //        inventory.setItem(1, Items.item1)
         inventory.addItem(Items.bow)
+//        inventory.addItem(Items.tnt)
         inventory.addItem(Items.mace)
         inventory.addItem(Items.arrow)
         inventory.helmet = Items.helmet
@@ -209,4 +210,20 @@ class GGArena : Arena() {
 
     // TODO: cooldown on death
     // TODO: hide player nametags
+
+    /*
+        @ArenaEventHandler
+        fun EntityToggleGlideEvent.handler() {
+            if (isGliding) {
+                entity.world.spawn(entity.location, Slime::class.java).apply {
+                    setAI(false)
+    //                isInvisible = true
+                    size = 10
+                    entity.addPassenger(this)
+                }
+            } else {
+                entity.passengers[0].remove()
+            }
+        }
+    */
 }

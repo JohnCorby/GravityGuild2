@@ -41,7 +41,8 @@ events:
 #    - clear-inventory
     - respawn
     - delay{ticks=1}
-    - teleport{location=waitroom}
+#    - teleport{location=waitroom}
+    - teleport{location=team_spawn}
 options:
   - hunger-deplete{enabled=false}
   - keep-inventory{enabled=true}
@@ -79,7 +80,7 @@ phases:
       on-start:
         # TODO: restore arena when starting? teleport?
 #        - restore-arena
-        - teleport{location=team_spawn;random=true}
+        - teleport{location=team_spawn}
         - play-sound{sound=block.note_block.pling;pitch=2;volume=1}
         - apply-scoreboard{scoreboard=ingame-list}
   victory:
