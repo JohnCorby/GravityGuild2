@@ -15,8 +15,11 @@ import org.bukkit.Material
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.*
 import org.bukkit.event.block.Action
-import org.bukkit.event.entity.*
+import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause
+import org.bukkit.event.entity.PlayerDeathEvent
+import org.bukkit.event.entity.ProjectileHitEvent
+import org.bukkit.event.entity.ProjectileLaunchEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.ItemStack
 
@@ -24,6 +27,7 @@ import org.bukkit.inventory.ItemStack
 /*
  * IDEAS:
  * teleport killer to player on kill like v1?
+ *
  * let players have more air control, while still requiring them to be grounded
  *      higher gravity? limited rockets per air? higher knockback from skull/fireball?
  *      tunnel via breaking blocks while gliding?
@@ -33,6 +37,16 @@ import org.bukkit.inventory.ItemStack
  * snow in ground, tnt too maybe occasionally. this means ability to break blocks instead of shoot skull
  *
  * cooldown on bow shots? overpowered
+ *
+ * wind charges work really well. explosion on arrow is more forgiving then insta kill perfect aim. IDEAS after that:
+ *
+ * arrows have no gravity, weaker explosion. tnt have gravity like grenade, stronger explosion
+ *
+ * bigger hitbox for flying players so you can hit them. but they stick to walls to go up, so explosion damage makes them more vulnerable there too
+ *
+ * custom wind charge hit response (manually set velocity). rn its kinda finnicky
+ *
+ * notify on reach lethal velocity for wall/floor hit? or remove that entirely
  *
  */
 
@@ -52,7 +66,7 @@ class GGArena : Arena() {
     fun ProjectileLaunchEvent.handler() {
         when (entity) {
             is Arrow -> {
-                entity.setGravity(false)
+//                entity.setGravity(false)
                 entity.visualFire = TriState.TRUE
 //                val tnt = entity.world.spawn(entity.location, TNTPrimed::class.java)
 //                entity.addPassenger(tnt)

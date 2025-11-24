@@ -70,6 +70,8 @@ phases:
     events:
       on-start:
         - apply-scoreboard{scoreboard=countdown}
+      on-join:
+        - apply-scoreboard{scoreboard=countdown}
   ingame:
     allow-join: false
     allow-spectate: true
