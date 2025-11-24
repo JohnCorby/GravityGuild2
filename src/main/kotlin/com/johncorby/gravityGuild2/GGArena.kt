@@ -9,6 +9,7 @@ import org.battleplugins.arena.competition.phase.CompetitionPhaseType
 import org.battleplugins.arena.event.ArenaEventHandler
 import org.battleplugins.arena.event.arena.ArenaPhaseCompleteEvent
 import org.battleplugins.arena.event.arena.ArenaPhaseStartEvent
+import org.battleplugins.arena.event.player.ArenaKillEvent
 import org.battleplugins.arena.event.player.ArenaRespawnEvent
 import org.bukkit.Bukkit
 import org.bukkit.Material
@@ -22,6 +23,7 @@ import org.bukkit.event.entity.ProjectileHitEvent
 import org.bukkit.event.entity.ProjectileLaunchEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.inventory.ItemStack
+import org.bukkit.util.Vector
 
 
 /*
@@ -41,13 +43,12 @@ import org.bukkit.inventory.ItemStack
  * wind charges work really well. explosion on arrow is more forgiving then insta kill perfect aim. IDEAS after that:
  *
  * arrows have no gravity, weaker explosion. tnt have gravity like grenade, stronger explosion
- *
  * bigger hitbox for flying players so you can hit them. but they stick to walls to go up, so explosion damage makes them more vulnerable there too
- *
- * custom wind charge hit response (manually set velocity). rn its kinda finnicky
- *
+ * custom wind charge hit response (manually set velocity). rn its kinda finicky. I HAVE NO IDEA HOW TO DO THIS CURRENTLY
  * notify on reach lethal velocity for wall/floor hit? or remove that entirely
- *
+ * arrow explode strength stronger for faster arrow
+ * custom killer tracker: any hit you get on them and then they die will count within n seconds of their hit. maybe track who did the most damage if theres multiple
+ * move wind charge to separate item to enforce switch?
  */
 
 class GGArena : Arena() {
@@ -62,11 +63,19 @@ class GGArena : Arena() {
         }
     }
 
+    @Suppress("DEPRECATION")
+    val Player.fixedVelocity get() = if (isOnGround) Vector(0, 0, 0) else velocity
+
     @ArenaEventHandler
     fun ProjectileLaunchEvent.handler() {
+//        plugin.logger.info("${entity.shooter} shoot ${entity}\nshooter vel = ${(entity.shooter as Player).fixedVelocity}")
+
+        // dont include player velocity in projectile velocity
+        entity.velocity = entity.velocity.subtract((entity.shooter as Player).fixedVelocity)
+
         when (entity) {
             is Arrow -> {
-//                entity.setGravity(false)
+                entity.setGravity(false)
                 entity.visualFire = TriState.TRUE
 //                val tnt = entity.world.spawn(entity.location, TNTPrimed::class.java)
 //                entity.addPassenger(tnt)
@@ -107,11 +116,11 @@ class GGArena : Arena() {
         // BUG: left click air erroneously happens with other stuff like throwing items. it's fine
         if (action != Action.LEFT_CLICK_BLOCK && action != Action.LEFT_CLICK_AIR) return
 
-        // only work when holding bow
-        if (player.inventory.itemInMainHand != Items.bow) return
+        // only work when holding mace because funny melee
+        if (player.inventory.itemInMainHand != Items.mace) return
 
         // shoot wind charge. it has the most fun movement. if its too OP, use fireball
-        player.launchProjectile(WindCharge::class.java, player.eyeLocation.direction)
+        player.launchProjectile(WindCharge::class.java, player.fixedVelocity.add(player.eyeLocation.direction))
         // cancel so player doesnt break anything
         isCancelled = true
     }
@@ -120,11 +129,23 @@ class GGArena : Arena() {
     fun EntityDamageEvent.handler() {
         plugin.logger.info("${entity.name} lost $damage health from $cause")
 
+        // do not allow you to blow yourself up :)
+        if (cause == DamageCause.ENTITY_EXPLOSION && entity == damageSource.causingEntity) {
+            isCancelled = true
+            return
+        }
+
         // do this only for hit ground and wall. everything else should be normal damage
         if (
             cause != DamageCause.FALL &&
             cause != DamageCause.FLY_INTO_WALL
         ) return
+
+        // delete fall damage
+        //if (
+        //    cause == DamageCause.FALL ||
+        //    cause == DamageCause.FLY_INTO_WALL
+        //) isCancelled = true
 
         // revert non-lethal damage
         // TODO: should we actually do this? or only revert some damage types like older versions?
@@ -195,14 +216,20 @@ class GGArena : Arena() {
         }
     }
 
-    @ArenaEventHandler
-    fun PlayerDeathEvent.handler() {
+//    @ArenaEventHandler
+//    fun PlayerDeathEvent.handler() {
         // dont drop the custom items
 //        drops.remove(Items.bow)
 //        drops.remove(Items.arrow)
 //        drops.remove(Items.helmet)
 //        drops.remove(Items.chestplate)
-    }
+//    }
+
+    // v1 behavior: teleport killer to killed
+//    @ArenaEventHandler
+//    fun ArenaKillEvent.handler() {
+//        killer.player.teleport(killed.player)
+//    }
 
     fun Player.initAndSpawn() {
 //        addPotionEffect(PotionEffect(PotionEffectType.NIGHT_VISION, Int.MAX_VALUE, 1, false, false))
