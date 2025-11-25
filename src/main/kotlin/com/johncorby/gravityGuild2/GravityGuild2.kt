@@ -17,13 +17,13 @@ class GravityGuild2 : JavaPlugin(), Listener {
         saveResource("arenas/gravityguild.yml", true)
         BattleArena.getInstance().registerArena(this, "GravityGuild", GGArena::class.java)
 
-        val team = Bukkit.getScoreboardManager().mainScoreboard.registerNewTeam("GravityGuild")
-        team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER)
+        if (Bukkit.getScoreboardManager().mainScoreboard.getTeam("GravityGuild") == null) {
+            val team = Bukkit.getScoreboardManager().mainScoreboard.registerNewTeam("GravityGuild")
+            team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER)
+        }
     }
 
     override fun onDisable() {
         // Plugin shutdown logic
-
-        Bukkit.getScoreboardManager().mainScoreboard.getTeam("GravityGuild")?.unregister()
     }
 }
