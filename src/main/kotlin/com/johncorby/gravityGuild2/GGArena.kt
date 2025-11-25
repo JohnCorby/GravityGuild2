@@ -1,5 +1,7 @@
 ﻿package com.johncorby.gravityGuild2
 
+import com.johncorby.gravityGuild2.ArrowTracker.startTracking
+import com.johncorby.gravityGuild2.ArrowTracker.stopTracking
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.format.NamedTextColor
@@ -61,7 +63,7 @@ class GGArena : Arena() {
                 entity.visualFire = TriState.TRUE
 //                val tnt = entity.world.spawn(entity.location, TNTPrimed::class.java)
 //                entity.addPassenger(tnt)
-//                (entity as Arrow).startTracking()
+                (entity as Arrow).startTracking()
             }
 
             is Snowball -> {
@@ -76,8 +78,11 @@ class GGArena : Arena() {
         when (entity) {
             // arrow kills
             is Arrow -> {
+                plugin.logger.info("arrow vel = ${entity.velocity.length()}")
+
+
 //                (hitEntity as? Damageable)?.damage(9999.0)
-//                (entity as Arrow).stopTracking()
+                (entity as Arrow).stopTracking()
 //                (entity as Arrow).damage = 0.0
                 entity.world.createExplosion(entity, 2f, false)
                 entity.remove() // dont stick
@@ -90,7 +95,7 @@ class GGArena : Arena() {
             }
 
             is WindCharge -> {
-                plugin.logger.info("cancelling wind charge")
+//                plugin.logger.info("cancelling wind charge")
 //                isCancelled = true
             }
         }
@@ -105,37 +110,35 @@ class GGArena : Arena() {
             player.holdingItem(Items.MACE.item) -> {
                 // only left click works.
                 // BUG: left click air erroneously happens with other stuff like throwing items. it's fine
-                if (action != Action.LEFT_CLICK_BLOCK && action != Action.LEFT_CLICK_AIR) return
-
-                var didMace = false;
-                plugin.logger.info("vel = ${player.velocity}")
-                if (
-                    player.velocity.y < -1 &&
-                    !player.isGliding
-                ) {
-                    val nearbyEntities = player.world.getNearbyEntities(player.location, 3.0, 3.0, 3.0)
-                        .filter { it is Damageable && it !is Player }
-                    if (nearbyEntities.isNotEmpty()) {
-
-                        // mimic mace effect but bigger radius
-                        player.velocity = player.velocity.multiply(-1)
-                        nearbyEntities.forEach { (it as Damageable).damage(99.0, player) }
-                        player.world.strikeLightningEffect(player.location)
-                        player.fallDistance = 0f
-                        player.playSound(player, Sound.ITEM_MACE_SMASH_GROUND_HEAVY, 1f, 1f)
-
-                    } else {
-                        player.playSound(player, Sound.ITEM_MACE_SMASH_AIR, 1f, 1f)
-
-                    }
-                    didMace = true
-                }
-
-                if (!didMace) {
+                if (action == Action.LEFT_CLICK_BLOCK || action == Action.LEFT_CLICK_AIR) {
                     // shoot wind charge. it has the most fun movement. if its too OP, use fireball
                     player.launchProjectile(WindCharge::class.java, player.fixedVelocity.add(player.eyeLocation.direction))
                     // cancel so player doesnt break anything
                     //        isCancelled = true
+
+                } else if (action == Action.RIGHT_CLICK_BLOCK || action == Action.RIGHT_CLICK_AIR) {
+
+                    plugin.logger.info("vel = ${player.fixedVelocity} mag ${player.fixedVelocity.length()}")
+                    if (
+                        player.fixedVelocity.length() > .5
+//                    !player.isGliding
+                    ) {
+                        val nearbyEntities = player.world.getNearbyEntities(player.location, 3.0, 3.0, 3.0)
+                            .filter { it is Damageable && it != player }
+                        if (nearbyEntities.isNotEmpty()) {
+
+                            // mimic mace effect but bigger radius
+                            player.velocity = player.velocity.multiply(-1)
+                            nearbyEntities.forEach { (it as Damageable).damage(99.0, player) }
+                            player.world.strikeLightningEffect(player.location)
+                            player.fallDistance = 0f
+                            player.playSound(player, Sound.ITEM_MACE_SMASH_GROUND_HEAVY, 1f, 1f)
+
+                        } else {
+                            player.playSound(player, Sound.ITEM_MACE_SMASH_AIR, 1f, 1f)
+
+                        }
+                    }
                 }
             }
 
