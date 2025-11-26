@@ -1,5 +1,6 @@
 ﻿package com.johncorby.gravityGuild2
 
+import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent
 import com.johncorby.gravityGuild2.ArrowTracker.startTracking
 import com.johncorby.gravityGuild2.ArrowTracker.stopTracking
 import net.kyori.adventure.text.Component
@@ -11,12 +12,15 @@ import org.battleplugins.arena.ArenaPlayer
 import org.battleplugins.arena.competition.LiveCompetition
 import org.battleplugins.arena.competition.map.LiveCompetitionMap
 import org.battleplugins.arena.competition.phase.CompetitionPhaseType
+import org.battleplugins.arena.competition.phase.phases.IngamePhase
 import org.battleplugins.arena.event.ArenaEventHandler
 import org.battleplugins.arena.event.arena.ArenaPhaseCompleteEvent
 import org.battleplugins.arena.event.arena.ArenaPhaseStartEvent
 import org.battleplugins.arena.event.player.ArenaJoinEvent
+import org.battleplugins.arena.event.player.ArenaKillEvent
 import org.battleplugins.arena.event.player.ArenaLeaveEvent
 import org.battleplugins.arena.event.player.ArenaRespawnEvent
+import org.battleplugins.arena.stat.ArenaStats
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.Sound
@@ -24,9 +28,11 @@ import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.*
 import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockPlaceEvent
+import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause
 import org.bukkit.event.entity.EntityToggleGlideEvent
+import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.entity.ProjectileHitEvent
 import org.bukkit.event.entity.ProjectileLaunchEvent
 import org.bukkit.event.player.PlayerDropItemEvent
@@ -107,11 +113,15 @@ class GGArena : Arena() {
 //                isCancelled = true
             }
 
-            // BUG: if throw egg, its over lol
             is EnderPearl -> {
+                val display = entity.passengers.firstOrNull() as? BlockDisplay ?: return
                 isCancelled = true
-                entity.world.createExplosion(entity, 5f, true)
-                entity.passengers.firstOrNull()?.remove()
+                entity.world.createExplosion(
+                    entity,
+                    if (display.transformation.scale == Vector3f(.5f)) 2f else 5f,
+                    true
+                )
+                display.remove()
                 entity.remove()
             }
         }
@@ -139,9 +149,8 @@ class GGArena : Arena() {
                                 "fall ${player.fallDistance}"
                     )
                     if (
-//                        player.fixedVelocity.length() > .5
-                        player.fallDistance > 5
-//                    !player.isGliding
+//                        player.fallDistance > 5
+                        player.fixedVelocity.length() > .7
                     ) {
                         val nearbyEntities = player.world.getNearbyEntities(
                             // like airblast, check in front of where we're looking
@@ -168,21 +177,27 @@ class GGArena : Arena() {
             }
 
             Items.TNT.item -> {
-                if (action != Action.RIGHT_CLICK_AIR && action != Action.RIGHT_CLICK_BLOCK) return
+                if (action == Action.PHYSICAL) return
                 if (player in dontTnt) {
                     player.world.playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, .5f)
                     return
                 }
+                val small = action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK
 
                 val projectile = player.launchProjectile(EnderPearl::class.java, player.fixedVelocity.add(player.eyeLocation.direction.multiply(.7)))
                 val tnt = projectile.world.spawn(projectile.location, BlockDisplay::class.java)
                 tnt.block = Material.TNT.createBlockData()
-                tnt.transformation = Transformation(Vector3f(-.5f), Quaternionf(), Vector3f(1f), Quaternionf())
+                tnt.transformation = Transformation(
+                    Vector3f(-.5f).mul(if (small) .5f else 1f),
+                    Quaternionf(),
+                    Vector3f(1f).mul(if (small) .5f else 1f),
+                    Quaternionf()
+                )
                 projectile.addPassenger(tnt)
 
                 dontTnt.add(player)
                 Bukkit.getScheduler().runTaskLater(plugin, Runnable { dontTnt.remove(player) }, 20 * 2)
-                player.world.playSound(player, Sound.ENTITY_TNT_PRIMED, 1f, .5f)
+                player.world.playSound(player, Sound.ENTITY_TNT_PRIMED, 1f, if (small) 1f else .5f)
 
             }
 
@@ -201,6 +216,8 @@ class GGArena : Arena() {
 
     @ArenaEventHandler
     fun EntityDamageEvent.handler() {
+        if (this.entity !is Player) return; // entity damage by entity can have not player be damaged by player
+
         plugin.logger.info("${entity.name} lost $damage health from $cause")
 
         // TEMP: do not allow you to blow yourself up
@@ -213,6 +230,16 @@ class GGArena : Arena() {
         if (cause == DamageCause.FALL || cause == DamageCause.FLY_INTO_WALL) {
             // revert non-lethal damage
             if ((entity as Player).health - damage > 0) damage = 0.0
+        }
+
+        val damagingPlayer = this.damageSource.causingEntity as? Player
+        if (damagingPlayer != null && damagingPlayer != entity) {
+            // damaged by other player. track this
+            playerLastDamager[entity as Player] = damagingPlayer to Bukkit.getCurrentTick()
+            plugin.logger.info("tracking ${entity.name} got damaged by ${damagingPlayer.name} at ${Bukkit.getCurrentTick()}")
+
+            // tf2 moment teehee
+            damagingPlayer.playSound(damagingPlayer, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f)
         }
     }
 
@@ -256,7 +283,7 @@ class GGArena : Arena() {
     @ArenaEventHandler
     fun ArenaJoinEvent.handler() {
         if (this.competition.players.count() == 1) {
-            plugin.server.broadcast(
+            Bukkit.broadcast(
                 Component.text("Arena ${this.competition.map.name} has someone in it! Click to join")
                     .color(NamedTextColor.GOLD)
                     .clickEvent(ClickEvent.runCommand("/gg join ${this.competition.map.name}"))
@@ -265,12 +292,28 @@ class GGArena : Arena() {
 
         val team = Bukkit.getScoreboardManager().mainScoreboard.getTeam("GravityGuild")!!
         team.addPlayer(player)
+
+        player.saturation = 9999f
+        player.saturatedRegenRate = 20
+        player.unsaturatedRegenRate = 20
+
+        // if everyone is in, just start the game
+        if (this.competition.players.count() == Bukkit.getOnlinePlayers().count())
+            Bukkit.getScheduler().runTask(plugin, Runnable {
+                // one tick later so countdown ends lol
+                this.competition.phaseManager.setPhase(CompetitionPhaseType.INGAME, true)
+            });
     }
 
     @ArenaEventHandler
     fun ArenaLeaveEvent.handler() {
         val team = Bukkit.getScoreboardManager().mainScoreboard.getTeam("GravityGuild")!!
         team.removePlayer(player)
+
+        dontTnt.remove(player)
+        dontGlide.remove(player)
+
+        playerLastDamager.remove(player)
     }
 
     @ArenaEventHandler
@@ -284,8 +327,48 @@ class GGArena : Arena() {
         dontTnt.remove(player)
         dontGlide.remove(player)
 
-        // TODO cooldown
+        // okay, now use our custom killer thing to track kills
+        // TODO: maybe move this to PlayerDeathEvent if we wait before respawning
+        playerLastDamager[player]?.let { lastDamager ->
+            plugin.logger.info("${player.name} last damaged by ${lastDamager.first.name} at ${lastDamager.second} (now is ${Bukkit.getCurrentTick()})")
 
+            if (Bukkit.getCurrentTick() - lastDamager.second < 20 * 5) { // did it recently enough, give em the kill
+                ArenaPlayer.getArenaPlayer(lastDamager.first)?.computeStat(ArenaStats.KILLS) { old -> (old ?: 0) + 1 }
+                Bukkit.broadcast(Component.text("Kill credit goes to ${lastDamager.first.name}").color(NamedTextColor.GRAY))
+
+                playerLastDamager.remove(player) // stop tracking who last hurt them becasue they are dead
+
+                // tf2 moment teehee
+                lastDamager.first.playSound(lastDamager.first, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f)
+
+                return // dont say message below
+            }
+        }
+        Bukkit.broadcast(Component.text("Kill credit goes to no one").color(NamedTextColor.GRAY))
+
+        // v1 behavior: teleport killer to killed
+//        killer.player.teleport(killed.player)
+//        playerLastDamager.getOrPut(player) { mutableMapOf() }.clear()
+    }
+
+    @ArenaEventHandler
+    fun PlayerPostRespawnEvent.handler() {
+
+        player.saturation = 9999f
+        player.saturatedRegenRate = 20
+        player.unsaturatedRegenRate = 20
+
+        // TODO: cooldown?
+    }
+
+    //    data class PlayerDamageData(var lastDamagedTick: Int, var totalDamage: Double)
+
+    val playerLastDamager = mutableMapOf<Player, Pair<Player, Int>>()
+
+    @ArenaEventHandler
+    fun ArenaKillEvent.handler() {
+        // cancel out kill increment that StatListener did. we do our own thing on respawn
+        this.killer.computeStat(ArenaStats.KILLS) { old: Int? -> (old ?: 0) - 1 }
     }
 
     enum class Items(val item: ItemStack) {
@@ -323,21 +406,6 @@ class GGArena : Arena() {
             addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
         });
     }
-
-//    @ArenaEventHandler
-//    fun PlayerDeathEvent.handler() {
-    // dont drop the custom items
-//        drops.remove(Items.bow)
-//        drops.remove(Items.arrow)
-//        drops.remove(Items.helmet)
-//        drops.remove(Items.chestplate)
-//    }
-
-    // v1 behavior: teleport killer to killed
-//    @ArenaEventHandler
-//    fun ArenaKillEvent.handler() {
-//        killer.player.teleport(killed.player)
-//    }
 
     fun Player.initInventory() {
 //        addPotionEffect(PotionEffect(PotionEffectType.NIGHT_VISION, Int.MAX_VALUE, 1, false, false))
@@ -394,4 +462,6 @@ class GGArena : Arena() {
     }
 }
 
+// dont feel like having custom competition logic so ill just track stuff globally and make sure to clear it out
+// if you leave and join an arena really quickly youll get cleared out of this, but thats really unlikely
 val dontGlide = mutableSetOf<Player>()

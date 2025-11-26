@@ -23,6 +23,7 @@
     - make them bigger in air?
     - make arrows hit in air if near? teleport or just do explosion radius
     - !!!knock out of sky if not direct hit
+    - okay rn this is way too powerful
 
 # tnt
 

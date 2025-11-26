@@ -34,7 +34,7 @@ object ArrowTracker {
                     arrow.hitEntity(closestPlayer)
 
                     dontGlide.add(closestPlayer)
-                    Bukkit.getScheduler().runTaskLater(plugin, Runnable { dontGlide.remove(closestPlayer) }, 20 * 1)
+                    Bukkit.getScheduler().runTaskLater(plugin, Runnable { dontGlide.remove(closestPlayer) }, 7)
                 }
             }
         }, 0, 0)
