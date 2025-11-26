@@ -2,7 +2,7 @@ package com.johncorby.gravityGuild2
 
 import org.bukkit.Bukkit
 import org.bukkit.entity.Arrow
-import org.bukkit.entity.Damageable
+import org.bukkit.entity.Player
 import org.bukkit.util.Vector
 
 
@@ -19,14 +19,22 @@ object ArrowTracker {
             for ((arrow, velocity) in tracked) {
                 arrow.velocity = velocity
 
-                val closestEntity = arrow.world.getNearbyEntities(arrow.location, 3.0, 3.0, 3.0)
-                    .filter { it is Damageable && it != arrow && it != arrow.shooter }
-                    .minBy { it.location.distance(arrow.location) }
-                if (closestEntity != null) {
+                val closestPlayer = arrow.world.getNearbyEntities(
+                    arrow.location,
+                    4.0, 4.0, 4.0,
+                    { it is Player && it != arrow && it != arrow.shooter && it.isGliding },
+                ).minByOrNull { it.location.distance(arrow.location) }
+                if (closestPlayer != null) {
                     // was way too op for mace, now its way too op for arrows LOL
-                    arrow.teleport(closestEntity)
-                    arrow.hitEntity(closestEntity)
+//                    arrow.teleport(closestEntity)
 
+                    (closestPlayer as Player).isGliding = false
+                    // TODO: make it prevent u from re-elytra-ing for n seconds. could water bucket land to prevent damage?
+
+                    arrow.hitEntity(closestPlayer)
+
+                    dontGlide.add(closestPlayer)
+                    Bukkit.getScheduler().runTaskLater(plugin, Runnable { dontGlide.remove(closestPlayer) }, 20 * 1)
                 }
             }
         }, 0, 0)

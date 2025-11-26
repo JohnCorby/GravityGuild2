@@ -26,14 +26,17 @@ import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockPlaceEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause
+import org.bukkit.event.entity.EntityToggleGlideEvent
 import org.bukkit.event.entity.ProjectileHitEvent
 import org.bukkit.event.entity.ProjectileLaunchEvent
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerItemDamageEvent
 import org.bukkit.inventory.ItemStack
-import org.bukkit.util.BoundingBox
+import org.bukkit.util.Transformation
 import org.bukkit.util.Vector
+import org.joml.Quaternionf
+import org.joml.Vector3f
 
 class GGArena : Arena() {
     override fun createCommandExecutor() = GGCommandExecutor(this)
@@ -70,6 +73,10 @@ class GGArena : Arena() {
                 entity.isGlowing = true
                 entity.visualFire = TriState.TRUE
             }
+
+            is Trident -> {
+                isCancelled = true
+            }
         }
     }
 
@@ -84,7 +91,8 @@ class GGArena : Arena() {
 //                (hitEntity as? Damageable)?.damage(9999.0)
                 (entity as Arrow).stopTracking()
 //                (entity as Arrow).damage = 0.0
-                entity.world.createExplosion(entity, 2f, false)
+                val power = this.entity.velocity.length().remap(0.3, 3.0, 0.0, 3.0).toFloat()
+                entity.world.createExplosion(entity, power, false)
                 entity.remove() // dont stick
             }
 
@@ -98,16 +106,23 @@ class GGArena : Arena() {
 //                plugin.logger.info("cancelling wind charge")
 //                isCancelled = true
             }
+
+            // BUG: if throw egg, its over lol
+            is EnderPearl -> {
+                isCancelled = true
+                entity.world.createExplosion(entity, 5f, true)
+                entity.passengers.firstOrNull()?.remove()
+                entity.remove()
+            }
         }
 
     }
 
     @ArenaEventHandler
     fun PlayerInteractEvent.handler() {
-
-        // only work when holding mace because funny melee
-        when {
-            player.holdingItem(Items.MACE.item) -> {
+        // BUG: off hand exists :P
+        when (player.inventory.itemInMainHand) {
+            Items.MACE.item -> {
                 // only left click works.
                 // BUG: left click air erroneously happens with other stuff like throwing items. it's fine
                 if (action == Action.LEFT_CLICK_BLOCK || action == Action.LEFT_CLICK_AIR) {
@@ -118,36 +133,68 @@ class GGArena : Arena() {
 
                 } else if (action == Action.RIGHT_CLICK_BLOCK || action == Action.RIGHT_CLICK_AIR) {
 
-                    plugin.logger.info("vel = ${player.fixedVelocity} mag ${player.fixedVelocity.length()}")
+                    plugin.logger.info(
+                        "vel = ${player.fixedVelocity}\n" +
+                                "mag ${player.fixedVelocity.length()}\n" +
+                                "fall ${player.fallDistance}"
+                    )
                     if (
-                        player.fixedVelocity.length() > .5
+//                        player.fixedVelocity.length() > .5
+                        player.fallDistance > 5
 //                    !player.isGliding
                     ) {
-                        val nearbyEntities = player.world.getNearbyEntities(player.location, 3.0, 3.0, 3.0)
-                            .filter { it is Damageable && it != player }
+                        val nearbyEntities = player.world.getNearbyEntities(
+                            // like airblast, check in front of where we're looking
+                            player.eyeLocation.add(player.eyeLocation.direction.multiply(2)),
+                            2.0, 2.0, 2.0,
+                            { it is Damageable && it != player }
+                        )
                         if (nearbyEntities.isNotEmpty()) {
 
                             // mimic mace effect but bigger radius
-                            player.velocity = player.velocity.multiply(-1)
+                            player.isGliding = false
+                            player.velocity = player.velocity.multiply(-1.5)
                             nearbyEntities.forEach { (it as Damageable).damage(99.0, player) }
                             player.world.strikeLightningEffect(player.location)
                             player.fallDistance = 0f
-                            player.playSound(player, Sound.ITEM_MACE_SMASH_GROUND_HEAVY, 1f, 1f)
+                            player.world.playSound(player, Sound.ITEM_MACE_SMASH_GROUND_HEAVY, 1f, 1f)
 
                         } else {
-                            player.playSound(player, Sound.ITEM_MACE_SMASH_AIR, 1f, 1f)
+                            player.world.playSound(player, Sound.ITEM_MACE_SMASH_AIR, 1f, 1f)
 
                         }
                     }
                 }
             }
 
-            player.holdingItem(Items.TNT.item) -> {
+            Items.TNT.item -> {
                 if (action != Action.RIGHT_CLICK_AIR && action != Action.RIGHT_CLICK_BLOCK) return
+                if (player in dontTnt) {
+                    player.world.playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, .5f)
+                    return
+                }
 
-                com.johncorby.gravityGuild2.plugin.logger.info("shoot tnt")
+                val projectile = player.launchProjectile(EnderPearl::class.java, player.fixedVelocity.add(player.eyeLocation.direction.multiply(.7)))
+                val tnt = projectile.world.spawn(projectile.location, BlockDisplay::class.java)
+                tnt.block = Material.TNT.createBlockData()
+                tnt.transformation = Transformation(Vector3f(-.5f), Quaternionf(), Vector3f(1f), Quaternionf())
+                projectile.addPassenger(tnt)
 
-//                player.launchProjectile(TNTPrimed::class.java, player.fixedVelocity.add(player.eyeLocation.direction.multiply(0.3)))
+                dontTnt.add(player)
+                Bukkit.getScheduler().runTaskLater(plugin, Runnable { dontTnt.remove(player) }, 20 * 2)
+                player.world.playSound(player, Sound.ENTITY_TNT_PRIMED, 1f, .5f)
+
+            }
+
+            Items.TRIDENT.item -> {
+                if (action != Action.LEFT_CLICK_AIR && action != Action.LEFT_CLICK_BLOCK) return
+
+                val nearbyEntities = player.world.getNearbyEntities(
+                    player.eyeLocation.add(player.eyeLocation.direction.multiply(2)),
+                    2.0, 2.0, 2.0,
+                    { it is Damageable && it != player }
+                )
+                nearbyEntities.forEach { player.attack(it) }
             }
         }
     }
@@ -157,10 +204,10 @@ class GGArena : Arena() {
         plugin.logger.info("${entity.name} lost $damage health from $cause")
 
         // TEMP: do not allow you to blow yourself up
-        if (cause == DamageCause.ENTITY_EXPLOSION && entity == damageSource.causingEntity) {
-            isCancelled = true
-            return
-        }
+//        if (cause == DamageCause.ENTITY_EXPLOSION && entity == damageSource.causingEntity) {
+//            isCancelled = true
+//            return
+//        }
 
         // revert non lethal damage only for hit ground and wall. everything else should be normal damage
         if (cause == DamageCause.FALL || cause == DamageCause.FLY_INTO_WALL) {
@@ -234,6 +281,9 @@ class GGArena : Arena() {
             }
         }
 
+        dontTnt.remove(player)
+        dontGlide.remove(player)
+
         // TODO cooldown
 
     }
@@ -256,7 +306,11 @@ class GGArena : Arena() {
             addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
             addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
         }),
-        TRIDENT(ItemStack.of(Material.MACE).apply {
+        TRIDENT(ItemStack.of(Material.TRIDENT).apply {
+            // BUG: knockback doesnt work sometimes?
+            addUnsafeEnchantment(Enchantment.KNOCKBACK, 9999)
+            addUnsafeEnchantment(Enchantment.FIRE_ASPECT, 9999)
+            addUnsafeEnchantment(Enchantment.FLAME, 9999)
             addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
             addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
         }),
@@ -294,6 +348,7 @@ class GGArena : Arena() {
 //        inventory.setItem(1, Items.item1)
         inventory.addItem(Items.BOW.item)
         inventory.addItem(Items.TNT.item)
+        inventory.addItem(Items.TRIDENT.item)
         inventory.addItem(Items.MACE.item)
         inventory.addItem(Items.ARROW.item)
         inventory.helmet = Items.HELMET.item
@@ -324,19 +379,19 @@ class GGArena : Arena() {
         }
     }
 
-    /*
-        @ArenaEventHandler
-        fun EntityToggleGlideEvent.handler() {
-            if (isGliding) {
-                entity.world.spawn(entity.location, Slime::class.java).apply {
-                    setAI(false)
-    //                isInvisible = true
-                    size = 10
-                    entity.addPassenger(this)
-                }
-            } else {
-                entity.passengers[0].remove()
-            }
+    val dontTnt = mutableSetOf<Player>();
+
+    @ArenaEventHandler
+    fun EntityToggleGlideEvent.handler() {
+        if (isGliding && entity in dontGlide) {
+            val player = entity as Player
+            player.world.playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, .5f)
+            isCancelled = true
         }
-    */
+//        (entity as Attributable).getAttribute(Attribute.SCALE)!!.apply {
+//            baseValue = if (isGliding) 3.0 else defaultValue
+//        }
+    }
 }
+
+val dontGlide = mutableSetOf<Player>()
