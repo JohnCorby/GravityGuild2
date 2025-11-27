@@ -39,6 +39,7 @@ import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerItemDamageEvent
 import org.bukkit.inventory.ItemStack
+import org.bukkit.scoreboard.Team
 import org.bukkit.util.Transformation
 import org.bukkit.util.Vector
 import org.joml.Quaternionf
@@ -135,13 +136,13 @@ class GGArena : Arena() {
             Items.MACE.item -> {
                 // only left click works.
                 // BUG: left click air erroneously happens with other stuff like throwing items. it's fine
-                if (action == Action.LEFT_CLICK_BLOCK || action == Action.LEFT_CLICK_AIR) {
+                if (action.isLeftClick) {
                     // shoot wind charge. it has the most fun movement. if its too OP, use fireball
                     player.launchProjectile(WindCharge::class.java, player.fixedVelocity.add(player.eyeLocation.direction))
                     // cancel so player doesnt break anything
                     //        isCancelled = true
 
-                } else if (action == Action.RIGHT_CLICK_BLOCK || action == Action.RIGHT_CLICK_AIR) {
+                } else if (action.isRightClick) {
 
                     plugin.logger.info(
                         "vel = ${player.fixedVelocity}\n" +
@@ -154,8 +155,8 @@ class GGArena : Arena() {
                     ) {
                         val nearbyEntities = player.world.getNearbyEntities(
                             // like airblast, check in front of where we're looking
-                            player.eyeLocation.add(player.eyeLocation.direction.multiply(2)),
-                            2.0, 2.0, 2.0,
+                            player.eyeLocation.add(player.eyeLocation.direction.multiply(3)),
+                            3.0, 3.0, 3.0,
                             { it is Damageable && it != player }
                         )
                         if (nearbyEntities.isNotEmpty()) {
@@ -163,7 +164,7 @@ class GGArena : Arena() {
                             // mimic mace effect but bigger radius
                             player.isGliding = false
                             player.velocity = player.velocity.multiply(-1.5)
-                            nearbyEntities.forEach { (it as Damageable).damage(99.0, player) }
+                            nearbyEntities.forEach { (it as Damageable).damage(20.0, player) }
                             player.world.strikeLightningEffect(player.location)
                             player.fallDistance = 0f
                             player.world.playSound(player, Sound.ITEM_MACE_SMASH_GROUND_HEAVY, 1f, 1f)
@@ -182,7 +183,7 @@ class GGArena : Arena() {
                     player.world.playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, .5f)
                     return
                 }
-                val small = action == Action.RIGHT_CLICK_AIR || action == Action.RIGHT_CLICK_BLOCK
+                val small = action.isRightClick
 
                 val projectile = player.launchProjectile(EnderPearl::class.java, player.fixedVelocity.add(player.eyeLocation.direction.multiply(.7)))
                 val tnt = projectile.world.spawn(projectile.location, BlockDisplay::class.java)
@@ -196,17 +197,17 @@ class GGArena : Arena() {
                 projectile.addPassenger(tnt)
 
                 dontTnt.add(player)
-                Bukkit.getScheduler().runTaskLater(plugin, Runnable { dontTnt.remove(player) }, 20 * 2)
+                Bukkit.getScheduler().runTaskLater(plugin, Runnable { dontTnt.remove(player) }, 20 * 5)
                 player.world.playSound(player, Sound.ENTITY_TNT_PRIMED, 1f, if (small) 1f else .5f)
 
             }
 
-            Items.TRIDENT.item -> {
-                if (action != Action.LEFT_CLICK_AIR && action != Action.LEFT_CLICK_BLOCK) return
+            Items.SALMON.item -> {
+                if (!action.isLeftClick) return
 
                 val nearbyEntities = player.world.getNearbyEntities(
-                    player.eyeLocation.add(player.eyeLocation.direction.multiply(2)),
-                    2.0, 2.0, 2.0,
+                    player.eyeLocation.add(player.eyeLocation.direction.multiply(3)),
+                    3.0, 3.0, 3.0,
                     { it is Damageable && it != player }
                 )
                 nearbyEntities.forEach { player.attack(it) }
@@ -216,6 +217,14 @@ class GGArena : Arena() {
 
     @ArenaEventHandler
     fun EntityDamageEvent.handler() {
+        // fish moment
+        if (this is EntityDamageByEntityEvent &&
+            this.damager is Player &&
+            (this.damager as Player).inventory.itemInMainHand == Items.SALMON.item) {
+            // FISH
+            this.entity.velocity = this.damager.location.subtract(this.entity.location).direction.multiply(20)
+        }
+
         if (this.entity !is Player) return; // entity damage by entity can have not player be damaged by player
 
         plugin.logger.info("${entity.name} lost $damage health from $cause")
@@ -251,6 +260,12 @@ class GGArena : Arena() {
             CompetitionPhaseType.INGAME -> {
                 (competition as LiveCompetition).players.forEach { player ->
                     player.player.initInventory()
+
+                    // scoreboard module adds us to its own non global scoreboard. we need to add the team to THAT one to get the nametag thing working
+                    // this gets removed on scoreboard remove so hopefully that remove em the team effects
+                    val team = player.player.scoreboard.getTeam("GravityGuild") ?: player.player.scoreboard.registerNewTeam("GravityGuild")
+                    team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER)
+                    team.addPlayer(player.player)
                 }
             }
         }
@@ -260,10 +275,10 @@ class GGArena : Arena() {
     fun ArenaPhaseCompleteEvent.handler() {
         when (phase.type) {
             CompetitionPhaseType.INGAME -> {
-                val team = Bukkit.getScoreboardManager().mainScoreboard.getTeam("GravityGuild")!!
 
                 (competition as LiveCompetition).players.forEach { player ->
-                    team.removePlayer(player.player)
+//                    val team = player.player.scoreboard.getTeam("GravityGuild")!!
+//                    team.removePlayer(player.player)
                 }
             }
 
@@ -290,19 +305,15 @@ class GGArena : Arena() {
             )
         }
 
-        val team = Bukkit.getScoreboardManager().mainScoreboard.getTeam("GravityGuild")!!
-        team.addPlayer(player)
-
         player.saturation = 9999f
         player.saturatedRegenRate = 20
         player.unsaturatedRegenRate = 20
 
         // if everyone is in, just start the game
         if (this.competition.players.count() == Bukkit.getOnlinePlayers().count())
-            Bukkit.getScheduler().runTask(plugin, Runnable {
-                // one tick later so countdown ends lol
+            Bukkit.getScheduler().runTaskLater(plugin, Runnable {
                 this.competition.phaseManager.setPhase(CompetitionPhaseType.INGAME, true)
-            });
+            }, 10);
     }
 
     @ArenaEventHandler
@@ -341,13 +352,11 @@ class GGArena : Arena() {
                 // tf2 moment teehee
                 lastDamager.first.playSound(lastDamager.first, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f)
 
-                return // dont say message below
+                // v1 behavior: teleport killer to killed
+//                player.teleport(lastDamager.first)
             }
         }
-        Bukkit.broadcast(Component.text("Kill credit goes to no one").color(NamedTextColor.GRAY))
 
-        // v1 behavior: teleport killer to killed
-//        killer.player.teleport(killed.player)
 //        playerLastDamager.getOrPut(player) { mutableMapOf() }.clear()
     }
 
@@ -389,11 +398,10 @@ class GGArena : Arena() {
             addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
             addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
         }),
-        TRIDENT(ItemStack.of(Material.TRIDENT).apply {
+        SALMON(ItemStack.of(Material.SALMON).apply {
             // BUG: knockback doesnt work sometimes?
-            addUnsafeEnchantment(Enchantment.KNOCKBACK, 9999)
-            addUnsafeEnchantment(Enchantment.FIRE_ASPECT, 9999)
-            addUnsafeEnchantment(Enchantment.FLAME, 9999)
+//            addUnsafeEnchantment(Enchantment.KNOCKBACK, 9999)
+            addUnsafeEnchantment(Enchantment.FIRE_ASPECT, 2)
             addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
             addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
         }),
@@ -416,7 +424,7 @@ class GGArena : Arena() {
 //        inventory.setItem(1, Items.item1)
         inventory.addItem(Items.BOW.item)
         inventory.addItem(Items.TNT.item)
-        inventory.addItem(Items.TRIDENT.item)
+        inventory.addItem(Items.SALMON.item)
         inventory.addItem(Items.MACE.item)
         inventory.addItem(Items.ARROW.item)
         inventory.helmet = Items.HELMET.item
