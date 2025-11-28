@@ -261,8 +261,8 @@ class GGArena : Arena() {
                 (competition as LiveCompetition).players.forEach { player ->
                     player.player.initInventory()
 
-                    // scoreboard module adds us to its own non global scoreboard. we need to add the team to THAT one to get the nametag thing working
-                    // this gets removed on scoreboard remove so hopefully that remove em the team effects
+                    // scoreboard module adds us to its own non global scoreboard. I THINK we need to add the team to THAT one to get the nametag thing working
+                    // this gets removed on remove-scoerboard so hopefully thatll remove the team effects
                     val team = player.player.scoreboard.getTeam("GravityGuild") ?: player.player.scoreboard.registerNewTeam("GravityGuild")
                     team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER)
                     team.addPlayer(player.player)
@@ -318,8 +318,8 @@ class GGArena : Arena() {
 
     @ArenaEventHandler
     fun ArenaLeaveEvent.handler() {
-        val team = Bukkit.getScoreboardManager().mainScoreboard.getTeam("GravityGuild")!!
-        team.removePlayer(player)
+//        val team = Bukkit.getScoreboardManager().mainScoreboard.getTeam("GravityGuild")!!
+//        team.removePlayer(player)
 
         dontTnt.remove(player)
         dontGlide.remove(player)
