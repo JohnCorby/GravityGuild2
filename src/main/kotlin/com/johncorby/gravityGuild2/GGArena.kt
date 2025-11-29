@@ -92,7 +92,7 @@ class GGArena : Arena() {
         when (entity) {
             // arrow kills
             is Arrow -> {
-                plugin.logger.info("arrow vel = ${entity.velocity.length()}")
+//                plugin.logger.info("arrow vel = ${entity.velocity.length()}")
 
 
 //                (hitEntity as? Damageable)?.damage(9999.0)
@@ -105,7 +105,7 @@ class GGArena : Arena() {
 
             // death snowball
             is Snowball -> {
-                (hitEntity as? Damageable)?.damage(9999.0)
+                (hitEntity as? Damageable)?.damage(9999.0, entity.shooter as Player)
                 entity.world.strikeLightningEffect(entity.location)
             }
 
@@ -144,14 +144,10 @@ class GGArena : Arena() {
 
                 } else if (action.isRightClick) {
 
-                    plugin.logger.info(
-                        "vel = ${player.fixedVelocity}\n" +
-                                "mag ${player.fixedVelocity.length()}\n" +
-                                "fall ${player.fallDistance}"
-                    )
+                    plugin.logger.info("mace vel speed = ${player.fixedVelocity.length()}")
                     if (
 //                        player.fallDistance > 5
-                        player.fixedVelocity.length() > .7
+                        player.fixedVelocity.length() > 1
                     ) {
                         val nearbyEntities = player.world.getNearbyEntities(
                             // like airblast, check in front of where we're looking
@@ -160,6 +156,7 @@ class GGArena : Arena() {
                             { it is Damageable && it != player }
                         )
                         if (nearbyEntities.isNotEmpty()) {
+                            plugin.logger.info("mace HIT")
 
                             // mimic mace effect but bigger radius
                             player.isGliding = false
@@ -171,7 +168,7 @@ class GGArena : Arena() {
 
                         } else {
                             player.world.playSound(player, Sound.ITEM_MACE_SMASH_AIR, 1f, 1f)
-
+                            plugin.logger.info("mace miss")
                         }
                     }
                 }
@@ -217,6 +214,13 @@ class GGArena : Arena() {
 
     @ArenaEventHandler
     fun EntityDamageEvent.handler() {
+        if (this is EnderPearl &&
+            entity.passengers.firstOrNull() is BlockDisplay) {
+            // rn nothing should be able to stop our grenade
+            isCancelled = true
+            return
+        }
+
         // fish moment
         if (this is EntityDamageByEntityEvent &&
             this.damager is Player &&
@@ -241,6 +245,8 @@ class GGArena : Arena() {
             if ((entity as Player).health - damage > 0) damage = 0.0
         }
 
+        if (cause == DamageCause.VOID) damage = 9999.0 // just fuckin kill em
+
         val damagingPlayer = this.damageSource.causingEntity as? Player
         if (damagingPlayer != null && damagingPlayer != entity) {
             // damaged by other player. track this
@@ -263,9 +269,9 @@ class GGArena : Arena() {
 
                     // scoreboard module adds us to its own non global scoreboard. I THINK we need to add the team to THAT one to get the nametag thing working
                     // this gets removed on remove-scoerboard so hopefully thatll remove the team effects
-                    val team = player.player.scoreboard.getTeam("GravityGuild") ?: player.player.scoreboard.registerNewTeam("GravityGuild")
-                    team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER)
-                    team.addPlayer(player.player)
+//                    val team = player.player.scoreboard.getTeam("GravityGuild") ?: player.player.scoreboard.registerNewTeam("GravityGuild")
+//                    team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER)
+//                    team.addPlayer(player.player)
                 }
             }
         }
@@ -325,6 +331,11 @@ class GGArena : Arena() {
         dontGlide.remove(player)
 
         playerLastDamager.remove(player)
+
+        // because our victory condition is only time limit, it doesnt close early. we gotta do this ourselves
+        if (this.competition.players.count() == 0) {
+            this.competition.phaseManager.setPhase(CompetitionPhaseType.VICTORY, true)
+        }
     }
 
     @ArenaEventHandler
@@ -347,7 +358,6 @@ class GGArena : Arena() {
                 ArenaPlayer.getArenaPlayer(lastDamager.first)?.computeStat(ArenaStats.KILLS) { old -> (old ?: 0) + 1 }
                 Bukkit.broadcast(Component.text("Kill credit goes to ${lastDamager.first.name}").color(NamedTextColor.GRAY))
 
-                playerLastDamager.remove(player) // stop tracking who last hurt them becasue they are dead
 
                 // tf2 moment teehee
                 lastDamager.first.playSound(lastDamager.first, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f)
@@ -357,6 +367,7 @@ class GGArena : Arena() {
             }
         }
 
+        playerLastDamager.remove(player) // stop tracking who last hurt them becasue they are dead
 //        playerLastDamager.getOrPut(player) { mutableMapOf() }.clear()
     }
 
