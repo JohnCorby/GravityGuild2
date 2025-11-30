@@ -85,6 +85,8 @@ phases:
         - teleport{location=team_spawn}
         - play-sound{sound=block.note_block.pling;pitch=2;volume=1}
         - apply-scoreboard{scoreboard=ingame-top-kills}
+      on-join:
+        - apply-scoreboard{scoreboard=ingame-top-kills}
   victory:
     allow-join: false
     allow-spectate: false

@@ -3,6 +3,7 @@
 import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent
 import com.johncorby.gravityGuild2.ArrowTracker.startTracking
 import com.johncorby.gravityGuild2.ArrowTracker.stopTracking
+import io.papermc.paper.event.player.PlayerFailMoveEvent
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.format.NamedTextColor
@@ -12,7 +13,6 @@ import org.battleplugins.arena.ArenaPlayer
 import org.battleplugins.arena.competition.LiveCompetition
 import org.battleplugins.arena.competition.map.LiveCompetitionMap
 import org.battleplugins.arena.competition.phase.CompetitionPhaseType
-import org.battleplugins.arena.competition.phase.phases.IngamePhase
 import org.battleplugins.arena.event.ArenaEventHandler
 import org.battleplugins.arena.event.arena.ArenaPhaseCompleteEvent
 import org.battleplugins.arena.event.arena.ArenaPhaseStartEvent
@@ -28,18 +28,15 @@ import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.*
 import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockPlaceEvent
-import org.bukkit.event.entity.EntityDamageByEntityEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause
 import org.bukkit.event.entity.EntityToggleGlideEvent
-import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.entity.ProjectileHitEvent
 import org.bukkit.event.entity.ProjectileLaunchEvent
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerItemDamageEvent
 import org.bukkit.inventory.ItemStack
-import org.bukkit.scoreboard.Team
 import org.bukkit.util.Transformation
 import org.bukkit.util.Vector
 import org.joml.Quaternionf
@@ -55,6 +52,13 @@ class GGArena : Arena() {
         eventManager.registerArenaResolver(ProjectileHitEvent::class.java) { event ->
             ArenaPlayer.getArenaPlayer(event.entity.shooter as? Player)?.competition
         }
+
+        Bukkit.getScheduler().runTaskTimer(com.johncorby.gravityGuild2.plugin, Runnable {
+            trackedMacePlayers.forEach {
+                it.exp = it.fixedVelocity.length().toFloat().remapClamped(0f, 1f, 0f, 1f)
+                it.level = ArenaPlayer.getArenaPlayer(it)!!.getStat<Int>(ArenaStats.KILLS)!!
+            }
+        }, 0, 0)
     }
 
     @Suppress("DEPRECATION")
@@ -81,9 +85,9 @@ class GGArena : Arena() {
                 entity.visualFire = TriState.TRUE
             }
 
-            is Trident -> {
-                isCancelled = true
-            }
+//            is Trident -> {
+//                isCancelled = true
+//            }
         }
     }
 
@@ -98,7 +102,8 @@ class GGArena : Arena() {
 //                (hitEntity as? Damageable)?.damage(9999.0)
                 (entity as Arrow).stopTracking()
 //                (entity as Arrow).damage = 0.0
-                val power = this.entity.velocity.length().remap(0.3, 3.0, 0.0, 3.0).toFloat()
+                // salmon reflect can make it faster, make sure to clamp
+                val power = this.entity.velocity.length().toFloat().remapClamped(.3f, 3f, 0f, 3f)
                 entity.world.createExplosion(entity, power, false)
                 entity.remove() // dont stick
             }
@@ -149,6 +154,11 @@ class GGArena : Arena() {
 //                        player.fallDistance > 5
                         player.fixedVelocity.length() > 1
                     ) {
+                        if (player in dontMace) {
+                            player.world.playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, .5f)
+                            return
+                        }
+
                         val nearbyEntities = player.world.getNearbyEntities(
                             // like airblast, check in front of where we're looking
                             player.eyeLocation.add(player.eyeLocation.direction.multiply(3)),
@@ -170,6 +180,9 @@ class GGArena : Arena() {
                             player.world.playSound(player, Sound.ITEM_MACE_SMASH_AIR, 1f, 1f)
                             plugin.logger.info("mace miss")
                         }
+
+                        dontMace.add(player)
+                        Bukkit.getScheduler().runTaskLater(plugin, Runnable { dontMace.remove(player) }, 10)
                     }
                 }
             }
@@ -201,35 +214,65 @@ class GGArena : Arena() {
 
             Items.SALMON.item -> {
                 if (!action.isLeftClick) return
+                if (player in dontSalmon) {
+                    player.world.playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, .5f)
+                    return
+                }
+
+
 
                 val nearbyEntities = player.world.getNearbyEntities(
                     player.eyeLocation.add(player.eyeLocation.direction.multiply(3)),
                     3.0, 3.0, 3.0,
-                    { it is Damageable && it != player }
+                    { it != player }
                 )
-                nearbyEntities.forEach { player.attack(it) }
+                for (it in nearbyEntities) {
+                    if (it is Projectile && it.shooter == player) continue // cant hit your own things
+                    it.velocity = this.player.location.subtract(it.location).direction.multiply(5)
+                    if (it is Arrow) it.startTracking() // set new velocity
+                    it.fireTicks = 20 * 5
+                    if (it is Projectile) it.shooter = player // to count the kill
+                    player.attack(it)
+                }
+                if (nearbyEntities.isEmpty()) { // make sure to indicate whiff with sound
+                    player.world.playSound(player, Sound.ENTITY_PLAYER_ATTACK_NODAMAGE, 1f, 1f)
+                }
+                // BUG: if you directly hit it does nothing lol
+
+                dontSalmon.add(player)
+                Bukkit.getScheduler().runTaskLater(plugin, Runnable { dontSalmon.remove(player) }, 10)
+            }
+
+            Items.ARROW.item -> {
+                if (!action.isLeftClick) return
+
+                player.launchProjectile(WitherSkull::class.java, player.fixedVelocity.add(player.eyeLocation.direction))
             }
         }
     }
 
     @ArenaEventHandler
+    fun PlayerFailMoveEvent.handler() {
+        // allow moved too quickly (and everything else why not)
+        isAllowed = true
+    }
+
+    @ArenaEventHandler
     fun EntityDamageEvent.handler() {
-        if (this is EnderPearl &&
-            entity.passengers.firstOrNull() is BlockDisplay) {
-            // rn nothing should be able to stop our grenade
+        if (cause == DamageCause.FIRE_TICK) {
+//            plugin.logger.info("fire tick on ${entity.name}")
+
+            val unitRandom = Vector.getRandom().multiply(2).subtract(Vector(1, 1, 1))
+            entity.velocity = entity.velocity.add(unitRandom.multiply(.5))
+        }
+
+        if (damageSource.directEntity is WitherSkull) {
+            // wither skulls do NOTHING
             isCancelled = true
             return
         }
 
-        // fish moment
-        if (this is EntityDamageByEntityEvent &&
-            this.damager is Player &&
-            (this.damager as Player).inventory.itemInMainHand == Items.SALMON.item) {
-            // FISH
-            this.entity.velocity = this.damager.location.subtract(this.entity.location).direction.multiply(20)
-        }
-
-        if (this.entity !is Player) return; // entity damage by entity can have not player be damaged by player
+        if (this.entity !is Player) return // the rest should only apply to players
 
         plugin.logger.info("${entity.name} lost $damage health from $cause")
 
@@ -315,6 +358,8 @@ class GGArena : Arena() {
         player.saturatedRegenRate = 20
         player.unsaturatedRegenRate = 20
 
+        trackedMacePlayers.add(player)
+
         // if everyone is in, just start the game
         if (this.competition.players.count() == Bukkit.getOnlinePlayers().count())
             Bukkit.getScheduler().runTaskLater(plugin, Runnable {
@@ -329,11 +374,15 @@ class GGArena : Arena() {
 
         dontTnt.remove(player)
         dontGlide.remove(player)
+        dontMace.remove(player)
+        dontSalmon.remove(player)
+
+        trackedMacePlayers.remove(player)
 
         playerLastDamager.remove(player)
 
         // because our victory condition is only time limit, it doesnt close early. we gotta do this ourselves
-        if (this.competition.players.count() == 0) {
+        if (this.competition.players.count() == 1) {
             this.competition.phaseManager.setPhase(CompetitionPhaseType.VICTORY, true)
         }
     }
@@ -396,25 +445,35 @@ class GGArena : Arena() {
             addUnsafeEnchantment(Enchantment.INFINITY, 1)
             addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
             addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
+
+            lore(listOf(Component.text("Shoots explosive antigravity arrows. Power is based on speed. Also knocks players out of elytra").color(NamedTextColor.BLUE)))
         }),
         ARROW(ItemStack.of(Material.ARROW).apply {
             addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
             addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
+
+            lore(listOf(Component.text("Shoots wither skulls").color(NamedTextColor.BLUE)))
         }),
         TNT(ItemStack.of(Material.TNT).apply {
             addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
             addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
+
+            lore(listOf(Component.text("Shoots grenades. Left click for big, right click for small").color(NamedTextColor.BLUE)))
         }),
         MACE(ItemStack.of(Material.MACE).apply {
             addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
             addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
+
+            lore(listOf(Component.text("Left click to rocket jump, right click while at speed to smash entities in an area").color(NamedTextColor.BLUE)))
         }),
         SALMON(ItemStack.of(Material.SALMON).apply {
             // BUG: knockback doesnt work sometimes?
 //            addUnsafeEnchantment(Enchantment.KNOCKBACK, 9999)
-            addUnsafeEnchantment(Enchantment.FIRE_ASPECT, 2)
+//            addUnsafeEnchantment(Enchantment.FIRE_ASPECT, 2)
             addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
             addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
+
+            lore(listOf(Component.text("Smack entities in an area away from you and light them on fire").color(NamedTextColor.BLUE)))
         }),
         HELMET(ItemStack.of(Material.END_ROD).apply {
             addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
@@ -430,7 +489,7 @@ class GGArena : Arena() {
 //        addPotionEffect(PotionEffect(PotionEffectType.NIGHT_VISION, Int.MAX_VALUE, 1, false, false))
 
         // init inventory
-        // should be empty at this point
+        inventory.clear() // sometimes its not cleared when it should be. lets just ensure it is
 //        inventory.setItem(0, Items.item0)
 //        inventory.setItem(1, Items.item1)
         inventory.addItem(Items.BOW.item)
@@ -466,7 +525,11 @@ class GGArena : Arena() {
         }
     }
 
-    val dontTnt = mutableSetOf<Player>();
+    val dontTnt = mutableSetOf<Player>()
+    val dontMace = mutableSetOf<Player>()
+    val dontSalmon = mutableSetOf<Player>()
+
+    val trackedMacePlayers = mutableListOf<Player>()
 
     @ArenaEventHandler
     fun EntityToggleGlideEvent.handler() {

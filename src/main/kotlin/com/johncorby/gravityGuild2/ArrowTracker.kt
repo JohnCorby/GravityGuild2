@@ -18,27 +18,29 @@ object ArrowTracker {
     init {
         Bukkit.getScheduler().runTaskTimer(plugin, Runnable {
             for ((arrow, velocity) in tracked) {
-                arrow.velocity = velocity
+                arrow.velocity = velocity // arrow slows down, retain velocity
 
-                val closestPlayer = arrow.world.getNearbyEntities(
+                val nearbyEntities = arrow.world.getNearbyEntities(
                     arrow.location,
                     3.0, 3.0, 3.0,
                     { it is Player && it != arrow && it != arrow.shooter && it.isGliding },
-                ).minByOrNull { it.location.distance(arrow.location) } as Player?
-                if (closestPlayer != null) {
+                )
+                nearbyEntities.forEach {
+                    val nearbyPlayer = it as Player
+
                     // was way too op for mace, now its way too op for arrows LOL
 //                    arrow.teleport(closestEntity)
 
-                    closestPlayer.isGliding = false
-                    closestPlayer.world.playSound(closestPlayer, Sound.ENTITY_PLAYER_BURP, 1f, 1f)
-                    (arrow.shooter as Player).attack(closestPlayer)
+                    nearbyPlayer.isGliding = false
+                    nearbyPlayer.world.playSound(nearbyPlayer, Sound.ENTITY_PLAYER_BURP, 1f, 1f)
+                    (arrow.shooter as Player).attack(nearbyPlayer)
                     // TODO: make it prevent u from re-elytra-ing for n seconds. could water bucket land to prevent damage?
 
 //                    arrow.hitEntity(closestPlayer)
 
 
-                    dontGlide.add(closestPlayer)
-                    Bukkit.getScheduler().runTaskLater(plugin, Runnable { dontGlide.remove(closestPlayer) }, 10)
+                    dontGlide.add(nearbyPlayer)
+                    Bukkit.getScheduler().runTaskLater(plugin, Runnable { dontGlide.remove(nearbyPlayer) }, 20)
                 }
             }
         }, 0, 0)
@@ -46,15 +48,15 @@ object ArrowTracker {
 }
 
 
-fun Double.remap(
-    inputMin: Double,
-    inputMax: Double,
-    outputMin: Double,
-    outputMax: Double
-): Double {
+fun Float.remapClamped(
+    inputMin: Float,
+    inputMax: Float,
+    outputMin: Float,
+    outputMax: Float
+): Float {
     // Calculate the normalized position of the value within the input range (0 to 1)
     val normalizedValue = (this - inputMin) / (inputMax - inputMin)
 
     // Map the normalized value to the output range
-    return outputMin + normalizedValue * (outputMax - outputMin)
+    return Math.clamp(outputMin + normalizedValue * (outputMax - outputMin), outputMin, outputMax)
 }

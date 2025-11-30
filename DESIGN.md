@@ -58,6 +58,7 @@
   - also counters someone flying into you?
 - this is a salmon now. bigger range to make it slap better. fire ticks might not impair movement enough rn
 - could slap arrows/tnt for counter there
+- okay we do that now, now its just this and avoiding that counters tnt
 
 # mace
 
@@ -67,3 +68,10 @@
   - GOOD: wind charges work really well. explosion on arrow is more forgiving then insta kill perfect aim move wind charge to separate item to enforce switch? UPDATE: kinda meh custom wind charge hit response (manually set velocity). rn its kinda finicky. I HAVE NO IDEA HOW TO DO THIS CURRENTLY
 - wider range for mace hit. bounce. will try. might want a way to block?
   - also counters someone just standing under you to try and get you? maybe?
+
+# wither skull?
+- tunneling?
+- also u can pepper someone until they die
+- also wither effect 30 seconds :(
+- kinda makes bow obselete?
+- okay now its just tunneling thats it
