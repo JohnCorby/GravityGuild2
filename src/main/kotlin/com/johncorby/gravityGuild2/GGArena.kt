@@ -3,8 +3,6 @@
 import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent
 import com.johncorby.gravityGuild2.ArrowTracker.startTracking
 import com.johncorby.gravityGuild2.ArrowTracker.stopTracking
-import io.papermc.paper.datacomponent.DataComponentBuilder
-import io.papermc.paper.datacomponent.DataComponentType
 import io.papermc.paper.datacomponent.DataComponentTypes
 import io.papermc.paper.event.player.PlayerFailMoveEvent
 import net.kyori.adventure.text.Component
@@ -63,21 +61,22 @@ class GGArena : Arena() {
 
         Bukkit.getScheduler().runTaskTimer(com.johncorby.gravityGuild2.plugin, Runnable {
             trackedMacePlayers.forEach {
-                it.exp = it.fixedVelocity.length().toFloat().remapClamped(0f, 1f, 0f, 1f)
+                it.exp = it.velocity.length().toFloat().remapClamped(0f, 1f, 0f, 1f)
                 it.level = ArenaPlayer.getArenaPlayer(it)!!.getStat<Int>(ArenaStats.KILLS)!!
             }
         }, 0, 0)
     }
 
+    // use for movement cancel else it thinks ur falling slightly when ur not
     @Suppress("DEPRECATION")
-    val Player.fixedVelocity get() = if (isOnGround) Vector(0, 0, 0) else velocity
+    val Player.velocityZeroGround get() = if (isOnGround) Vector(0, 0, 0) else velocity
 
     @ArenaEventHandler
     fun ProjectileLaunchEvent.handler() {
-//        plugin.logger.info("${entity.shooter} shoot ${entity}\nshooter vel = ${(entity.shooter as Player).fixedVelocity}")
+//        plugin.logger.info("${entity.shooter} shoot ${entity}\nshooter vel = ${(entity.shooter as Player).velocityZeroGround}")
 
         // dont include player velocity in projectile velocity
-        entity.velocity = entity.velocity.subtract((entity.shooter as Player).fixedVelocity)
+        entity.velocity = entity.velocity.subtract((entity.shooter as Player).velocityZeroGround)
 
         when (entity) {
             is Arrow -> {
@@ -152,16 +151,16 @@ class GGArena : Arena() {
                 // BUG: left click air erroneously happens with other stuff like throwing items. it's fine
                 if (action.isLeftClick) {
                     // shoot wind charge. it has the most fun movement. if its too OP, use fireball
-                    player.launchProjectile(WindCharge::class.java, player.fixedVelocity.add(player.eyeLocation.direction))
+                    player.launchProjectile(WindCharge::class.java, player.velocityZeroGround.add(player.eyeLocation.direction))
                     // cancel so player doesnt break anything
                     //        isCancelled = true
 
                 } else if (action.isRightClick) {
 
-                    plugin.logger.info("mace vel speed = ${player.fixedVelocity.length()}")
+                    plugin.logger.info("mace vel speed = ${player.velocity.length()}")
                     if (
 //                        player.fallDistance > 5
-                        player.fixedVelocity.length() > 1
+                        player.velocity.length() > 1
                     ) {
                         if (player.hasCooldown(player.inventory.itemInMainHand)) {
                             player.world.playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, .5f)
@@ -205,7 +204,7 @@ class GGArena : Arena() {
                 }
                 val small = action.isRightClick
 
-                val projectile = player.launchProjectile(EnderPearl::class.java, player.fixedVelocity.add(player.eyeLocation.direction.multiply(.7)))
+                val projectile = player.launchProjectile(EnderPearl::class.java, player.velocityZeroGround.add(player.eyeLocation.direction.multiply(.7)))
                 val tnt = projectile.world.spawn(projectile.location, BlockDisplay::class.java)
                 tnt.block = Material.TNT.createBlockData()
                 tnt.transformation = Transformation(
@@ -253,7 +252,7 @@ class GGArena : Arena() {
             Items.ARROW.item -> {
                 if (!action.isLeftClick) return
 
-                player.launchProjectile(WitherSkull::class.java, player.fixedVelocity.add(player.eyeLocation.direction))
+                player.launchProjectile(WitherSkull::class.java, player.velocityZeroGround.add(player.eyeLocation.direction))
             }
 
             Items.HORN.item -> {
@@ -283,8 +282,11 @@ class GGArena : Arena() {
 
     @ArenaEventHandler
     fun PlayerFailMoveEvent.handler() {
-        // allow moved too quickly (and everything else why not)
-        isAllowed = true
+        if (failReason == PlayerFailMoveEvent.FailReason.MOVED_TOO_QUICKLY) {
+            // allow moved too quickly so slap works
+            isAllowed = true
+            plugin.logger.warning("ALLOW fail move ${this.failReason}")
+        }
     }
 
     @ArenaEventHandler
