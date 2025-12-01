@@ -3,16 +3,22 @@
 import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent
 import com.johncorby.gravityGuild2.ArrowTracker.startTracking
 import com.johncorby.gravityGuild2.ArrowTracker.stopTracking
+import io.papermc.paper.datacomponent.DataComponentBuilder
+import io.papermc.paper.datacomponent.DataComponentType
+import io.papermc.paper.datacomponent.DataComponentTypes
 import io.papermc.paper.event.player.PlayerFailMoveEvent
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.title.Title
 import net.kyori.adventure.util.TriState
 import org.battleplugins.arena.Arena
 import org.battleplugins.arena.ArenaPlayer
+import org.battleplugins.arena.competition.Competition
 import org.battleplugins.arena.competition.LiveCompetition
 import org.battleplugins.arena.competition.map.LiveCompetitionMap
 import org.battleplugins.arena.competition.phase.CompetitionPhaseType
+import org.battleplugins.arena.competition.phase.phases.VictoryPhase
 import org.battleplugins.arena.event.ArenaEventHandler
 import org.battleplugins.arena.event.arena.ArenaPhaseCompleteEvent
 import org.battleplugins.arena.event.arena.ArenaPhaseStartEvent
@@ -23,6 +29,7 @@ import org.battleplugins.arena.event.player.ArenaRespawnEvent
 import org.battleplugins.arena.stat.ArenaStats
 import org.bukkit.Bukkit
 import org.bukkit.Material
+import org.bukkit.MusicInstrument
 import org.bukkit.Sound
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.*
@@ -42,6 +49,7 @@ import org.bukkit.util.Vector
 import org.joml.Quaternionf
 import org.joml.Vector3f
 
+// this file is probably way too big... too bad!
 class GGArena : Arena() {
     override fun createCommandExecutor() = GGCommandExecutor(this)
 
@@ -111,7 +119,7 @@ class GGArena : Arena() {
             // death snowball
             is Snowball -> {
                 (hitEntity as? Damageable)?.damage(9999.0, entity.shooter as Player)
-                entity.world.strikeLightningEffect(entity.location)
+                entity.world.strikeLightning(entity.location)
             }
 
             is WindCharge -> {
@@ -135,8 +143,9 @@ class GGArena : Arena() {
     }
 
     @ArenaEventHandler
-    fun PlayerInteractEvent.handler() {
+    fun PlayerInteractEvent.handler(competition: Competition<*>) {
         // BUG: off hand exists :P
+        // too bad i dont care
         when (player.inventory.itemInMainHand) {
             Items.MACE.item -> {
                 // only left click works.
@@ -154,7 +163,7 @@ class GGArena : Arena() {
 //                        player.fallDistance > 5
                         player.fixedVelocity.length() > 1
                     ) {
-                        if (player in dontMace) {
+                        if (player.hasCooldown(player.inventory.itemInMainHand)) {
                             player.world.playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, .5f)
                             return
                         }
@@ -172,7 +181,7 @@ class GGArena : Arena() {
                             player.isGliding = false
                             player.velocity = player.velocity.multiply(-1.5)
                             nearbyEntities.forEach { (it as Damageable).damage(20.0, player) }
-                            player.world.strikeLightningEffect(player.location)
+                            player.world.strikeLightning(player.location)
                             player.fallDistance = 0f
                             player.world.playSound(player, Sound.ITEM_MACE_SMASH_GROUND_HEAVY, 1f, 1f)
 
@@ -181,15 +190,16 @@ class GGArena : Arena() {
                             plugin.logger.info("mace miss")
                         }
 
-                        dontMace.add(player)
-                        Bukkit.getScheduler().runTaskLater(plugin, Runnable { dontMace.remove(player) }, 10)
+                        player.setCooldown(Items.MACE.item, 10)
+//                        dontMace.add(player)
+//                        Bukkit.getScheduler().runTaskLater(plugin, Runnable { dontMace.remove(player) }, 10)
                     }
                 }
             }
 
             Items.TNT.item -> {
                 if (action == Action.PHYSICAL) return
-                if (player in dontTnt) {
+                if (player.hasCooldown(player.inventory.itemInMainHand)) {
                     player.world.playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, .5f)
                     return
                 }
@@ -206,15 +216,13 @@ class GGArena : Arena() {
                 )
                 projectile.addPassenger(tnt)
 
-                dontTnt.add(player)
-                Bukkit.getScheduler().runTaskLater(plugin, Runnable { dontTnt.remove(player) }, 20 * 5)
                 player.world.playSound(player, Sound.ENTITY_TNT_PRIMED, 1f, if (small) 1f else .5f)
-
+                player.setCooldown(player.inventory.itemInMainHand, 20 * 5)
             }
 
             Items.SALMON.item -> {
                 if (!action.isLeftClick) return
-                if (player in dontSalmon) {
+                if (player.hasCooldown(player.inventory.itemInMainHand)) {
                     player.world.playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, .5f)
                     return
                 }
@@ -239,14 +247,36 @@ class GGArena : Arena() {
                 }
                 // BUG: if you directly hit it does nothing lol
 
-                dontSalmon.add(player)
-                Bukkit.getScheduler().runTaskLater(plugin, Runnable { dontSalmon.remove(player) }, 10)
+                player.setCooldown(player.inventory.itemInMainHand, 10)
             }
 
             Items.ARROW.item -> {
                 if (!action.isLeftClick) return
 
                 player.launchProjectile(WitherSkull::class.java, player.fixedVelocity.add(player.eyeLocation.direction))
+            }
+
+            Items.HORN.item -> {
+                if (!action.isRightClick) return
+                // BUG: doesnt make horn sound???? why???
+
+                if (player.hasCooldown(player.inventory.itemInMainHand)) {
+                    player.world.playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, .5f)
+                    return
+                }
+
+                (competition as LiveCompetition).players.forEach {
+                    it.player.setCooldown(player.inventory.itemInMainHand, 20 * 30)
+                }
+
+                // wait and then get players again in case they leave
+                Bukkit.getScheduler().runTaskLater(plugin, Runnable {
+                    competition.players.forEach {
+                        it.player.damage(9999.0)
+                        it.player.showTitle(Title.title(Component.text("Shuffle!"), Component.empty()))
+                        it.player.world.strikeLightning(it.player.location)
+                    }
+                }, 20 * 3)
             }
         }
     }
@@ -263,7 +293,7 @@ class GGArena : Arena() {
 //            plugin.logger.info("fire tick on ${entity.name}")
 
             val unitRandom = Vector.getRandom().multiply(2).subtract(Vector(1, 1, 1))
-            entity.velocity = entity.velocity.add(unitRandom.multiply(.5))
+            entity.velocity = unitRandom.multiply(.5)
         }
 
         if (damageSource.directEntity is WitherSkull) {
@@ -372,11 +402,6 @@ class GGArena : Arena() {
 //        val team = Bukkit.getScoreboardManager().mainScoreboard.getTeam("GravityGuild")!!
 //        team.removePlayer(player)
 
-        dontTnt.remove(player)
-        dontGlide.remove(player)
-        dontMace.remove(player)
-        dontSalmon.remove(player)
-
         trackedMacePlayers.remove(player)
 
         playerLastDamager.remove(player)
@@ -384,6 +409,8 @@ class GGArena : Arena() {
         // because our victory condition is only time limit, it doesnt close early. we gotta do this ourselves
         if (this.competition.players.count() == 1) {
             this.competition.phaseManager.setPhase(CompetitionPhaseType.VICTORY, true)
+            // actually trigger the victory for that player :P
+            (this.competition.phaseManager.currentPhase as VictoryPhase).onVictory(setOf(this.competition.players.first()))
         }
     }
 
@@ -395,7 +422,6 @@ class GGArena : Arena() {
             }
         }
 
-        dontTnt.remove(player)
         dontGlide.remove(player)
 
         // okay, now use our custom killer thing to track kills
@@ -420,12 +446,16 @@ class GGArena : Arena() {
 //        playerLastDamager.getOrPut(player) { mutableMapOf() }.clear()
     }
 
+    // editing player stuff has to happen here, so says the docs
     @ArenaEventHandler
     fun PlayerPostRespawnEvent.handler() {
 
         player.saturation = 9999f
         player.saturatedRegenRate = 20
         player.unsaturatedRegenRate = 20
+
+        // these persist but after death but not visually, so this makes the visual appear
+        Items.entries.forEach { player.setCooldown(it.item, player.getCooldown(it.item)) }
 
         // TODO: cooldown?
     }
@@ -475,6 +505,15 @@ class GGArena : Arena() {
 
             lore(listOf(Component.text("Smack entities in an area away from you and light them on fire").color(NamedTextColor.BLUE)))
         }),
+        HORN(ItemStack.of(Material.GOAT_HORN).apply {
+            addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
+            addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
+
+            lore(listOf(Component.text("Shuffle!").color(NamedTextColor.BLUE)))
+
+            @Suppress("UnstableApiUsage")
+            this.setData(DataComponentTypes.INSTRUMENT, MusicInstrument.CALL_GOAT_HORN)
+        }),
         HELMET(ItemStack.of(Material.END_ROD).apply {
             addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
             addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
@@ -493,10 +532,11 @@ class GGArena : Arena() {
 //        inventory.setItem(0, Items.item0)
 //        inventory.setItem(1, Items.item1)
         inventory.addItem(Items.BOW.item)
-        inventory.addItem(Items.TNT.item)
-        inventory.addItem(Items.SALMON.item)
         inventory.addItem(Items.MACE.item)
+        inventory.addItem(Items.SALMON.item)
+        inventory.addItem(Items.TNT.item)
         inventory.addItem(Items.ARROW.item)
+        inventory.addItem(Items.HORN.item)
         inventory.helmet = Items.HELMET.item
         inventory.chestplate = Items.CHESTPLATE.item
 
@@ -524,10 +564,6 @@ class GGArena : Arena() {
             isCancelled = true
         }
     }
-
-    val dontTnt = mutableSetOf<Player>()
-    val dontMace = mutableSetOf<Player>()
-    val dontSalmon = mutableSetOf<Player>()
 
     val trackedMacePlayers = mutableListOf<Player>()
 

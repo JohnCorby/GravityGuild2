@@ -7,8 +7,9 @@ import org.bukkit.entity.Player
 import org.bukkit.util.Vector
 
 
+// this has no reason to be in a separate file but it is
 object ArrowTracker {
-    // TODO: broken with multiple competitions :P
+    // broken with multiple competitions? except its not, it works itself out i think...
     private val tracked = mutableMapOf<Arrow, Vector>()
 
     fun Arrow.startTracking() = tracked.put(this, velocity)
@@ -34,7 +35,6 @@ object ArrowTracker {
                     nearbyPlayer.isGliding = false
                     nearbyPlayer.world.playSound(nearbyPlayer, Sound.ENTITY_PLAYER_BURP, 1f, 1f)
                     (arrow.shooter as Player).attack(nearbyPlayer)
-                    // TODO: make it prevent u from re-elytra-ing for n seconds. could water bucket land to prevent damage?
 
 //                    arrow.hitEntity(closestPlayer)
 
@@ -48,6 +48,7 @@ object ArrowTracker {
 }
 
 
+// why is this here? who cares!
 fun Float.remapClamped(
     inputMin: Float,
     inputMax: Float,
