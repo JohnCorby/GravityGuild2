@@ -4,7 +4,6 @@ import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent
 import com.johncorby.gravityGuild2.ArrowTracker.startTracking
 import com.johncorby.gravityGuild2.ArrowTracker.stopTracking
 import io.papermc.paper.datacomponent.DataComponentTypes
-import io.papermc.paper.event.entity.EntityKnockbackEvent
 import io.papermc.paper.event.player.PlayerFailMoveEvent
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
@@ -128,10 +127,12 @@ class GGArena : Arena() {
 //                PLUGIN.logger.info("cancelling wind charge")
 //                isCancelled = true
 
+                // sideways movement on top of existing windcharge behavior
                 competition.players.forEach {
-                    if (it.player.eyeLocation.distance(entity.location) < 4) {
-                        val dir = it.player.eyeLocation.subtract(entity.location).toVector().normalize()
-                        val len = it.player.eyeLocation.subtract(entity.location).toVector().length()
+                    if (it.player.location.distance(entity.location) < 4) {
+                        val dir = it.player.location.subtract(entity.location).toVector().normalize()
+                        val len = it.player.location.subtract(entity.location).toVector().length()
+                        dir.y = 0.0
                         it.player.velocity = dir.multiply(len.toFloat().remapClamped(0f, 4f, 3f, 0f))
                     }
                 }
@@ -153,14 +154,6 @@ class GGArena : Arena() {
     }
 
     @ArenaEventHandler
-    fun EntityKnockbackEvent.handler() {
-        if (cause == EntityKnockbackEvent.Cause.EXPLOSION) {
-            // we handle custom explosion knockback below
-            isCancelled = true
-        }
-    }
-
-    @ArenaEventHandler
     fun PlayerInteractEvent.handler(competition: LiveCompetition<*>) {
         // BUG: off hand exists :P
         // too bad i dont care
@@ -168,13 +161,13 @@ class GGArena : Arena() {
             Items.MACE.item -> {
                 // only left click works.
                 // BUG: left click air erroneously happens with other stuff like throwing items. it's fine
-                if (action.isLeftClick) {
+                if (action.isRightClick) {
                     // shoot wind charge. it has the most fun movement. if its too OP, use fireball
                     player.launchProjectile(WindCharge::class.java, player.velocityZeroGround.add(player.eyeLocation.direction))
                     // cancel so player doesnt break anything
                     //        isCancelled = true
 
-                } else if (action.isRightClick) {
+                } else if (action.isLeftClick) {
 
                     PLUGIN.logger.info("mace vel speed = ${player.velocity.length()}")
                     if (
