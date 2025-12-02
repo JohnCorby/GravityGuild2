@@ -4,6 +4,7 @@ import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent
 import com.johncorby.gravityGuild2.ArrowTracker.startTracking
 import com.johncorby.gravityGuild2.ArrowTracker.stopTracking
 import io.papermc.paper.datacomponent.DataComponentTypes
+import io.papermc.paper.event.entity.EntityKnockbackEvent
 import io.papermc.paper.event.player.PlayerFailMoveEvent
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
@@ -102,7 +103,7 @@ class GGArena : Arena() {
     }
 
     @ArenaEventHandler
-    fun ProjectileHitEvent.handler() {
+    fun ProjectileHitEvent.handler(competition: LiveCompetition<*>) {
         when (entity) {
             // arrow kills
             is Arrow -> {
@@ -127,6 +128,14 @@ class GGArena : Arena() {
             is WindCharge -> {
 //                PLUGIN.logger.info("cancelling wind charge")
 //                isCancelled = true
+
+                competition.players.forEach {
+                    if (it.player.eyeLocation.distance(entity.location) < 4) {
+                        val dir = it.player.eyeLocation.subtract(entity.location).toVector().normalize()
+                        val len = it.player.eyeLocation.subtract(entity.location).toVector().length()
+                        it.player.velocity = dir.multiply(len.toFloat().remapClamped(0f, 4f, 3f, 0f))
+                    }
+                }
             }
 
             is EnderPearl -> {
@@ -142,6 +151,14 @@ class GGArena : Arena() {
             }
         }
 
+    }
+
+    @ArenaEventHandler
+    fun EntityKnockbackEvent.handler() {
+        if (cause == EntityKnockbackEvent.Cause.EXPLOSION) {
+            // we handle custom explosion knockback below
+            isCancelled = true
+        }
     }
 
     @ArenaEventHandler
