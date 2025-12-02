@@ -29,6 +29,9 @@ import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.MusicInstrument
 import org.bukkit.Sound
+import org.bukkit.attribute.Attribute
+import org.bukkit.damage.DamageSource
+import org.bukkit.damage.DamageType
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.*
 import org.bukkit.event.block.Action
@@ -59,7 +62,7 @@ class GGArena : Arena() {
             ArenaPlayer.getArenaPlayer(event.entity.shooter as? Player)?.competition
         }
 
-        Bukkit.getScheduler().runTaskTimer(com.johncorby.gravityGuild2.plugin, Runnable {
+        Bukkit.getScheduler().runTaskTimer(PLUGIN, Runnable {
             trackedMacePlayers.forEach {
                 it.exp = it.velocity.length().toFloat().remapClamped(0f, 1f, 0f, 1f)
                 it.level = ArenaPlayer.getArenaPlayer(it)!!.getStat<Int>(ArenaStats.KILLS)!!
@@ -73,7 +76,7 @@ class GGArena : Arena() {
 
     @ArenaEventHandler
     fun ProjectileLaunchEvent.handler() {
-//        plugin.logger.info("${entity.shooter} shoot ${entity}\nshooter vel = ${(entity.shooter as Player).velocityZeroGround}")
+//        PLUGIN.logger.info("${entity.shooter} shoot ${entity}\nshooter vel = ${(entity.shooter as Player).velocityZeroGround}")
 
         // dont include player velocity in projectile velocity
         entity.velocity = entity.velocity.subtract((entity.shooter as Player).velocityZeroGround)
@@ -103,7 +106,7 @@ class GGArena : Arena() {
         when (entity) {
             // arrow kills
             is Arrow -> {
-//                plugin.logger.info("arrow vel = ${entity.velocity.length()}")
+//                PLUGIN.logger.info("arrow vel = ${entity.velocity.length()}")
 
 
 //                (hitEntity as? Damageable)?.damage(9999.0)
@@ -117,12 +120,12 @@ class GGArena : Arena() {
 
             // death snowball
             is Snowball -> {
-                (hitEntity as? Damageable)?.damage(9999.0, entity.shooter as Player)
+                (hitEntity as? Damageable)?.damage(9999.0, entity.shooter as Player, DamageType.LIGHTNING_BOLT)
                 entity.world.strikeLightning(entity.location)
             }
 
             is WindCharge -> {
-//                plugin.logger.info("cancelling wind charge")
+//                PLUGIN.logger.info("cancelling wind charge")
 //                isCancelled = true
             }
 
@@ -157,7 +160,7 @@ class GGArena : Arena() {
 
                 } else if (action.isRightClick) {
 
-                    plugin.logger.info("mace vel speed = ${player.velocity.length()}")
+                    PLUGIN.logger.info("mace vel speed = ${player.velocity.length()}")
                     if (
 //                        player.fallDistance > 5
                         player.velocity.length() > 1
@@ -169,29 +172,29 @@ class GGArena : Arena() {
 
                         val nearbyEntities = player.world.getNearbyEntities(
                             // like airblast, check in front of where we're looking
-                            player.eyeLocation.add(player.eyeLocation.direction.multiply(3)),
-                            3.0, 3.0, 3.0,
+                            player.eyeLocation.add(player.eyeLocation.direction.multiply(2)),
+                            2.0, 2.0, 2.0,
                             { it is Damageable && it != player }
                         )
                         if (nearbyEntities.isNotEmpty()) {
-                            plugin.logger.info("mace HIT")
+                            PLUGIN.logger.info("mace HIT")
 
                             // mimic mace effect but bigger radius
                             player.isGliding = false
                             player.velocity = player.velocity.multiply(-1.5)
-                            nearbyEntities.forEach { (it as Damageable).damage(20.0, player) }
+                            nearbyEntities.forEach { (it as Damageable).damage(20.0, player, DamageType.MACE_SMASH) }
                             player.world.strikeLightning(player.location)
                             player.fallDistance = 0f
                             player.world.playSound(player, Sound.ITEM_MACE_SMASH_GROUND_HEAVY, 1f, 1f)
 
                         } else {
                             player.world.playSound(player, Sound.ITEM_MACE_SMASH_AIR, 1f, 1f)
-                            plugin.logger.info("mace miss")
+                            PLUGIN.logger.info("mace miss")
                         }
 
                         player.setCooldown(Items.MACE.item, 10)
 //                        dontMace.add(player)
-//                        Bukkit.getScheduler().runTaskLater(plugin, Runnable { dontMace.remove(player) }, 10)
+//                        Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable { dontMace.remove(player) }, 10)
                     }
                 }
             }
@@ -235,7 +238,8 @@ class GGArena : Arena() {
                 )
                 for (it in nearbyEntities) {
                     if (it is Projectile && it.shooter == player) continue // cant hit your own things
-                    it.velocity = this.player.location.subtract(it.location).direction.multiply(5)
+//                    it.velocity = this.player.location.subtract(it.location).direction.multiply(5)
+                    it.velocity = this.player.eyeLocation.direction.multiply(5)
                     if (it is Arrow) it.startTracking() // set new velocity
                     it.fireTicks = 20 * 5
                     if (it is Projectile) it.shooter = player // to count the kill
@@ -269,13 +273,31 @@ class GGArena : Arena() {
                 }
 
                 // wait and then get players again in case they leave
-                Bukkit.getScheduler().runTaskLater(plugin, Runnable {
+                Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable {
                     competition.players.forEach {
-                        it.player.damage(9999.0)
+                        it.player.damage(9999.0, null, DamageType.MAGIC)
                         it.player.showTitle(Title.title(Component.text("Shuffle!"), Component.empty()))
                         it.player.world.strikeLightning(it.player.location)
                     }
                 }, 20 * 3)
+            }
+
+
+            Items.SPYGLASS.item -> {
+                if (!action.isLeftClick) return
+                if (player.hasCooldown(player.inventory.itemInMainHand)) {
+                    player.world.playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, .5f)
+                    return
+                }
+
+//                val projectile = player.launchProjectile(Arrow::class.java, player.velocityZeroGround.add(player.eyeLocation.direction.multiply(1000)))
+
+                player.rayTraceEntities(120)?.hitEntity?.let {
+                    (it as? Damageable)?.damage(20.0, player)
+                }
+
+                player.world.playSound(player, Sound.ITEM_WOLF_ARMOR_DAMAGE, 1f, 1f)
+                player.setCooldown(player.inventory.itemInMainHand, 20)
             }
         }
     }
@@ -285,14 +307,14 @@ class GGArena : Arena() {
         if (failReason == PlayerFailMoveEvent.FailReason.MOVED_TOO_QUICKLY) {
             // allow moved too quickly so slap works
             isAllowed = true
-            plugin.logger.warning("ALLOW fail move ${this.failReason}")
+            PLUGIN.logger.warning("ALLOW fail move ${this.failReason}")
         }
     }
 
     @ArenaEventHandler
     fun EntityDamageEvent.handler() {
         if (cause == DamageCause.FIRE_TICK) {
-//            plugin.logger.info("fire tick on ${entity.name}")
+//            PLUGIN.logger.info("fire tick on ${entity.name}")
 
             val unitRandom = Vector.getRandom().multiply(2).subtract(Vector(1, 1, 1))
             entity.velocity = unitRandom.multiply(.5)
@@ -301,18 +323,14 @@ class GGArena : Arena() {
         if (damageSource.directEntity is WitherSkull) {
             // wither skulls do NOTHING
             isCancelled = true
+            // just kidding they do a little bit
+            (entity as Damageable).damage(3.0, damageSource.causingEntity, DamageType.WITHER_SKULL)
             return
         }
 
         if (this.entity !is Player) return // the rest should only apply to players
 
-        plugin.logger.info("${entity.name} lost $damage health from $cause")
-
-        // TEMP: do not allow you to blow yourself up
-//        if (cause == DamageCause.ENTITY_EXPLOSION && entity == damageSource.causingEntity) {
-//            isCancelled = true
-//            return
-//        }
+        PLUGIN.logger.info("${entity.name} lost $damage health from $cause")
 
         // revert non lethal damage only for hit ground and wall. everything else should be normal damage
         if (cause == DamageCause.FALL || cause == DamageCause.FLY_INTO_WALL) {
@@ -326,7 +344,7 @@ class GGArena : Arena() {
         if (damagingPlayer != null && damagingPlayer != entity) {
             // damaged by other player. track this
             playerLastDamager[entity as Player] = damagingPlayer to Bukkit.getCurrentTick()
-            plugin.logger.info("tracking ${entity.name} got damaged by ${damagingPlayer.name} at ${Bukkit.getCurrentTick()}")
+            PLUGIN.logger.info("tracking ${entity.name} got damaged by ${damagingPlayer.name} at ${Bukkit.getCurrentTick()}")
 
             // tf2 moment teehee
             damagingPlayer.playSound(damagingPlayer, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f)
@@ -390,11 +408,13 @@ class GGArena : Arena() {
         player.saturatedRegenRate = 20
         player.unsaturatedRegenRate = 20
 
+        player.getAttribute(Attribute.ENTITY_INTERACTION_RANGE)!!.baseValue = 9999.0
+
         trackedMacePlayers.add(player)
 
         // if everyone is in, just start the game
         if (this.competition.players.count() == Bukkit.getOnlinePlayers().count())
-            Bukkit.getScheduler().runTaskLater(plugin, Runnable {
+            Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable {
                 this.competition.phaseManager.setPhase(CompetitionPhaseType.INGAME, true)
             }, 10);
     }
@@ -429,7 +449,7 @@ class GGArena : Arena() {
         // okay, now use our custom killer thing to track kills
         // TODO: maybe move this to PlayerDeathEvent if we wait before respawning
         playerLastDamager[player]?.let { lastDamager ->
-            plugin.logger.info("${player.name} last damaged by ${lastDamager.first.name} at ${lastDamager.second} (now is ${Bukkit.getCurrentTick()})")
+            PLUGIN.logger.info("${player.name} last damaged by ${lastDamager.first.name} at ${lastDamager.second} (now is ${Bukkit.getCurrentTick()})")
 
             if (Bukkit.getCurrentTick() - lastDamager.second < 20 * 5) { // did it recently enough, give em the kill
                 ArenaPlayer.getArenaPlayer(lastDamager.first)?.computeStat(ArenaStats.KILLS) { old -> (old ?: 0) + 1 }
@@ -505,7 +525,7 @@ class GGArena : Arena() {
             addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
             addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
 
-            lore(listOf(Component.text("Smack entities in an area away from you and light them on fire").color(NamedTextColor.BLUE)))
+            lore(listOf(Component.text("Slap anything in an area away from you and light them on fire").color(NamedTextColor.BLUE)))
         }),
         HORN(ItemStack.of(Material.GOAT_HORN).apply {
             addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
@@ -523,7 +543,14 @@ class GGArena : Arena() {
         CHESTPLATE(ItemStack.of(Material.ELYTRA).apply {
             addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
             addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
-        });
+        }),
+
+        SPYGLASS(ItemStack.of(Material.SPYGLASS).apply {
+            addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
+            addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
+
+            lore(listOf(Component.text("Hitscan shot on left click").color(NamedTextColor.BLUE)))
+        })
     }
 
     fun Player.initInventory() {
@@ -538,7 +565,8 @@ class GGArena : Arena() {
         inventory.addItem(Items.SALMON.item)
         inventory.addItem(Items.TNT.item)
         inventory.addItem(Items.ARROW.item)
-        inventory.addItem(Items.HORN.item)
+//        inventory.addItem(Items.HORN.item)
+//        inventory.addItem(Items.SPYGLASS.item)
         inventory.helmet = Items.HELMET.item
         inventory.chestplate = Items.CHESTPLATE.item
 
@@ -585,3 +613,9 @@ class GGArena : Arena() {
 // dont feel like having custom competition logic so ill just track stuff globally and make sure to clear it out
 // if you leave and join an arena really quickly youll get cleared out of this, but thats really unlikely
 val dontGlide = mutableSetOf<Player>()
+
+fun Damageable.damage(amount: Double, source: Entity?, damageType: DamageType) {
+    var builder = DamageSource.builder(damageType).withDamageLocation(this.location)
+    if (source != null) builder = builder.withDirectEntity(source)
+    this.damage(amount, builder.build())
+}

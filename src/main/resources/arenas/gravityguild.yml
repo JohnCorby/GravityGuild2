@@ -59,6 +59,8 @@ phases:
         - apply-scoreboard{scoreboard=waiting}
       on-join:
         - apply-scoreboard{scoreboard=waiting}
+      on-spectate:
+        - apply-scoreboard{scoreboard=waiting}
   countdown:
     allow-join: true
     allow-spectate: true
@@ -71,6 +73,8 @@ phases:
       on-start:
         - apply-scoreboard{scoreboard=countdown}
       on-join:
+        - apply-scoreboard{scoreboard=countdown}
+      on-spectate:
         - apply-scoreboard{scoreboard=countdown}
   ingame:
     allow-join: false
@@ -85,7 +89,7 @@ phases:
         - teleport{location=team_spawn;random=true}
         - play-sound{sound=block.note_block.pling;pitch=2;volume=1}
         - apply-scoreboard{scoreboard=ingame-top-kills}
-      on-join:
+      on-spectate:
         - apply-scoreboard{scoreboard=ingame-top-kills}
   victory:
     allow-join: false

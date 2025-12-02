@@ -4,12 +4,12 @@ import org.battleplugins.arena.BattleArena
 import org.bukkit.event.Listener
 import org.bukkit.plugin.java.JavaPlugin
 
-lateinit var plugin: GravityGuild2
+lateinit var PLUGIN: GravityGuild2
 
 class GravityGuild2 : JavaPlugin(), Listener {
     override fun onEnable() {
         // Plugin startup logic
-        plugin = this
+        PLUGIN = this
 
         // write our arena config here so battle arena recognizes our game
         saveResource("arenas/gravityguild.yml", true)

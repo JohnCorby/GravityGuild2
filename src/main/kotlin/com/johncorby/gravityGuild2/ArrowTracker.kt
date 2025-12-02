@@ -17,7 +17,7 @@ object ArrowTracker {
     fun stopTracking() = tracked.clear()
 
     init {
-        Bukkit.getScheduler().runTaskTimer(plugin, Runnable {
+        Bukkit.getScheduler().runTaskTimer(PLUGIN, Runnable {
             for ((arrow, velocity) in tracked) {
                 arrow.velocity = velocity // arrow slows down, retain velocity
 
@@ -40,7 +40,7 @@ object ArrowTracker {
 
 
                     dontGlide.add(nearbyPlayer)
-                    Bukkit.getScheduler().runTaskLater(plugin, Runnable { dontGlide.remove(nearbyPlayer) }, 20)
+                    Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable { dontGlide.remove(nearbyPlayer) }, 20)
                 }
             }
         }, 0, 0)
