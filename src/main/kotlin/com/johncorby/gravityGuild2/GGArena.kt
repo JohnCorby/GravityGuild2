@@ -25,6 +25,7 @@ import org.battleplugins.arena.event.player.ArenaLeaveEvent
 import org.battleplugins.arena.event.player.ArenaRespawnEvent
 import org.battleplugins.arena.stat.ArenaStats
 import org.bukkit.Bukkit
+import org.bukkit.FluidCollisionMode
 import org.bukkit.Material
 import org.bukkit.MusicInstrument
 import org.bukkit.Sound
@@ -264,9 +265,31 @@ class GGArena : Arena() {
             }
 
             Items.ARROW.item -> {
-                if (!action.isLeftClick) return
+                if (action.isLeftClick) {
+                    val nearbyEntities = player.world.getNearbyEntities(
+                        player.eyeLocation.add(player.eyeLocation.direction.multiply(2)),
+                        2.0, 2.0, 2.0,
+                        { it is Damageable && it != player }
+                    )
+                    for (nearbyEntity in nearbyEntities) {
+                        // literally stealing from https://www.youtube.com/watch?v=gh5Fg5d_uBU
+                        val victimView = (nearbyEntity as LivingEntity).eyeLocation.direction
+                        victimView.y = 0.0
+                        val spyView = player.eyeLocation.direction
+                        spyView.y = 0.0
+                        val deltaPosition = nearbyEntity.location.subtract(player.location).toVector()
+                        deltaPosition.y = 0.0
 
-                player.launchProjectile(WitherSkull::class.java, player.velocityZeroGround.add(player.eyeLocation.direction))
+                        val `behind the victim` = Math.toDegrees(victimView.angle(deltaPosition).toDouble()) < 90
+                        val `looking towards the victim` = Math.toDegrees(spyView.angle(deltaPosition).toDouble()) < 60
+                        val `facing same dierction` = Math.toDegrees(spyView.angle(victimView).toDouble()) < 107.5
+
+                        if (`behind the victim` && `looking towards the victim` && `facing same dierction`)
+                            nearbyEntity.damage(9999.0, player)
+                    }
+                } else if (action.isRightClick) {
+                    player.launchProjectile(WitherSkull::class.java, player.velocityZeroGround.add(player.eyeLocation.direction))
+                }
             }
 
             Items.HORN.item -> {
@@ -302,7 +325,8 @@ class GGArena : Arena() {
 
 //                val projectile = player.launchProjectile(Arrow::class.java, player.velocityZeroGround.add(player.eyeLocation.direction.multiply(1000)))
 
-                player.rayTraceEntities(120)?.hitEntity?.let {
+                val result = player.world.rayTrace(player.location, player.location.direction, 120.0, FluidCollisionMode.NEVER, true, 10.0, null)
+                result?.hitEntity?.let {
                     (it as? Damageable)?.damage(20.0, player)
                 }
 
@@ -423,8 +447,6 @@ class GGArena : Arena() {
         player.saturation = 9999f
         player.saturatedRegenRate = 20
         player.unsaturatedRegenRate = 20
-
-        player.getAttribute(Attribute.ENTITY_INTERACTION_RANGE)!!.baseValue = 9999.0
 
         trackedMacePlayers.add(player)
 
@@ -586,7 +608,7 @@ class GGArena : Arena() {
         inventory.addItem(Items.TNT.item)
         inventory.addItem(Items.ARROW.item)
 //        inventory.addItem(Items.HORN.item)
-//        inventory.addItem(Items.SPYGLASS.item)
+        inventory.addItem(Items.SPYGLASS.item)
         inventory.helmet = Items.HELMET.item
         inventory.chestplate = Items.CHESTPLATE.item
 

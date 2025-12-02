@@ -95,3 +95,5 @@
 - 
 - probably no big hitbox
 - mc has bad hitreg but could be fun
+- 
+- PROBLEM: mc hitreg is so bad its impossible to hit. making hitboxes bigger might defeat the point of the bow lol
