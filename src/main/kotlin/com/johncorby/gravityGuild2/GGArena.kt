@@ -486,6 +486,7 @@ class GGArena : Arena() {
 
         // okay, now use our custom killer thing to track kills
         // TODO: maybe move this to PlayerDeathEvent if we wait before respawning
+        // TODO: check this after a second to make sure the killer didnt die themselves
         playerLastDamager[player]?.let { lastDamager ->
             PLUGIN.logger.info("${player.name} last damaged by ${lastDamager.first.name} at ${lastDamager.second} (now is ${Bukkit.getCurrentTick()})")
 
