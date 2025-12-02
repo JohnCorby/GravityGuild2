@@ -13,7 +13,6 @@ import net.kyori.adventure.title.Title
 import net.kyori.adventure.util.TriState
 import org.battleplugins.arena.Arena
 import org.battleplugins.arena.ArenaPlayer
-import org.battleplugins.arena.competition.Competition
 import org.battleplugins.arena.competition.LiveCompetition
 import org.battleplugins.arena.competition.map.LiveCompetitionMap
 import org.battleplugins.arena.competition.phase.CompetitionPhaseType
@@ -162,7 +161,7 @@ class GGArena : Arena() {
     }
 
     @ArenaEventHandler
-    fun PlayerInteractEvent.handler(competition: Competition<*>) {
+    fun PlayerInteractEvent.handler(competition: LiveCompetition<*>) {
         // BUG: off hand exists :P
         // too bad i dont care
         when (player.inventory.itemInMainHand) {
@@ -247,7 +246,6 @@ class GGArena : Arena() {
                 }
 
 
-
                 val nearbyEntities = player.world.getNearbyEntities(
                     player.eyeLocation.add(player.eyeLocation.direction.multiply(3)),
                     3.0, 3.0, 3.0,
@@ -255,7 +253,6 @@ class GGArena : Arena() {
                 )
                 for (it in nearbyEntities) {
                     if (it is Projectile && it.shooter == player) continue // cant hit your own things
-//                    it.velocity = this.player.location.subtract(it.location).direction.multiply(5)
                     it.velocity = this.player.eyeLocation.direction.multiply(5)
                     if (it is Arrow) it.startTracking() // set new velocity
                     it.fireTicks = 20 * 5
@@ -285,7 +282,7 @@ class GGArena : Arena() {
                     return
                 }
 
-                (competition as LiveCompetition).players.forEach {
+                competition.players.forEach {
                     it.player.setCooldown(player.inventory.itemInMainHand, 20 * 30)
                 }
 
