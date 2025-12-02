@@ -44,6 +44,8 @@ import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerItemDamageEvent
 import org.bukkit.inventory.ItemStack
+import org.bukkit.potion.PotionEffect
+import org.bukkit.potion.PotionEffectType
 import org.bukkit.util.Transformation
 import org.bukkit.util.Vector
 import org.joml.Quaternionf
@@ -249,6 +251,7 @@ class GGArena : Arena() {
                     it.velocity = this.player.eyeLocation.direction.multiply(5)
                     if (it is Arrow) it.startTracking() // set new velocity
                     it.fireTicks = 20 * 5
+                    if (it is Player) it.isMarkedForDeath = true
                     if (it is Projectile) it.shooter = player // to count the kill
                     player.attack(it)
                 }
@@ -323,8 +326,8 @@ class GGArena : Arena() {
         if (cause == DamageCause.FIRE_TICK) {
 //            PLUGIN.logger.info("fire tick on ${entity.name}")
 
-            val unitRandom = Vector.getRandom().multiply(2).subtract(Vector(1, 1, 1))
-            entity.velocity = unitRandom.multiply(.5)
+//            val unitRandom = Vector.getRandom().multiply(2).subtract(Vector(1, 1, 1))
+//            entity.velocity = unitRandom.multiply(.5)
         }
 
         if (damageSource.directEntity is WitherSkull) {
@@ -343,6 +346,12 @@ class GGArena : Arena() {
         if (cause == DamageCause.FALL || cause == DamageCause.FLY_INTO_WALL) {
             // revert non-lethal damage
             if ((entity as Player).health - damage > 0) damage = 0.0
+        }
+
+        if ((entity as Player).hasPotionEffect(PotionEffectType.INVISIBILITY)) {
+            // invisible = on cooldown. no hurt
+            isCancelled = true
+            return
         }
 
         if (cause == DamageCause.VOID) damage = 9999.0 // just fuckin kill em
@@ -436,7 +445,7 @@ class GGArena : Arena() {
         playerLastDamager.remove(player)
 
         // because our victory condition is only time limit, it doesnt close early. we gotta do this ourselves
-        if (this.competition.players.count() == 1) {
+        if (this.competition.players.count() <= 1) {
             this.competition.phaseManager.setPhase(CompetitionPhaseType.VICTORY, true)
             // actually trigger the victory for that player :P
             (this.competition.phaseManager.currentPhase as VictoryPhase).onVictory(setOf(this.competition.players.first()))
@@ -486,7 +495,11 @@ class GGArena : Arena() {
         // these persist but after death but not visually, so this makes the visual appear
         Items.entries.forEach { player.setCooldown(it.item, player.getCooldown(it.item)) }
 
-        // TODO: cooldown?
+        // this does cooldown
+        // BUG: doesnt hide clothes
+        player.addPotionEffect(PotionEffect(PotionEffectType.INVISIBILITY, 20 * 3, 1, false, false))
+        // just to get ur surroundings
+        player.addPotionEffect(PotionEffect(PotionEffectType.NIGHT_VISION, 20 * 3, 1, false, false))
     }
 
     //    data class PlayerDamageData(var lastDamagedTick: Int, var totalDamage: Double)

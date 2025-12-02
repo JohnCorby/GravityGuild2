@@ -4,6 +4,8 @@ import org.bukkit.Bukkit
 import org.bukkit.Sound
 import org.bukkit.entity.Arrow
 import org.bukkit.entity.Player
+import org.bukkit.potion.PotionEffect
+import org.bukkit.potion.PotionEffectType
 import org.bukkit.util.Vector
 
 
@@ -24,7 +26,7 @@ object ArrowTracker {
                 val nearbyEntities = arrow.world.getNearbyEntities(
                     arrow.location,
                     3.0, 3.0, 3.0,
-                    { it is Player && it != arrow && it != arrow.shooter && it.isGliding },
+                    { it is Player && it != arrow && it != arrow.shooter && (it.isGliding || it.isMarkedForDeath) },
                 )
                 nearbyEntities.forEach {
                     val nearbyPlayer = it as Player
@@ -32,11 +34,16 @@ object ArrowTracker {
                     // was way too op for mace, now its way too op for arrows LOL
 //                    arrow.teleport(closestEntity)
 
+                    if (it.isMarkedForDeath) {
+                        arrow.hitEntity(nearbyPlayer) // bye bye
+                        return@forEach
+                    }
+
+
                     nearbyPlayer.isGliding = false
                     nearbyPlayer.world.playSound(nearbyPlayer, Sound.ENTITY_PLAYER_BURP, 1f, 1f)
                     (arrow.shooter as Player).attack(nearbyPlayer)
 
-//                    arrow.hitEntity(closestPlayer)
 
 
                     dontGlide.add(nearbyPlayer)
@@ -46,6 +53,14 @@ object ArrowTracker {
         }, 0, 0)
     }
 }
+
+
+var Player.isMarkedForDeath: Boolean
+    get() = this.hasPotionEffect(PotionEffectType.GLOWING)
+    set(value) {
+        if (value) this.addPotionEffect(PotionEffect(PotionEffectType.GLOWING, 5 * 20, 1, false, false))
+        else this.removePotionEffect(PotionEffectType.GLOWING)
+    }
 
 
 // why is this here? who cares!

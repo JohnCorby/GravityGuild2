@@ -66,7 +66,7 @@
 - could slap arrows/tnt for counter there
 - okay we do that now, now its just this and avoiding that counters tnt
 - PROBLEM: fire ticks inhibit movement (good), but they make it KILLS PACING (fast paced to none)
-  - it means ur vulnerable, but you dont really get to do anything while vulnerable
+  - it means ur vulnerable, but you dont really get to do anything while vulnerable since you cant move much
   - how do you remain vulnerable while still giving a goal to the player lit on fire?
   - IDEA: glowing effect? mark for death? slowness?
 
