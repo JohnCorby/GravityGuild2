@@ -74,7 +74,5 @@ fun Float.remapClamped(
     val normalizedValue = (this - inputMin) / (inputMax - inputMin)
 
     // Map the normalized value to the output range
-    val unclamped = outputMin + normalizedValue * (outputMax - outputMin)
-
-    return if (outputMin > outputMax) Math.clamp(unclamped, outputMax, outputMin) else Math.clamp(unclamped, outputMin, outputMax)
+    return Math.clamp(outputMin + normalizedValue * (outputMax - outputMin), outputMin, outputMax)
 }

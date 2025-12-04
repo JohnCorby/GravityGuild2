@@ -122,7 +122,7 @@ class GGArena : Arena() {
                 (entity as Arrow).stopTracking()
 //                (entity as Arrow).damage = 0.0
                 // salmon reflect can make it faster, make sure to clamp
-                val power = this.entity.velocity.length().toFloat().remapClamped(.3f, 3f, .3f, 3f)
+                val power = this.entity.velocity.length().toFloat().remapClamped(.3f, 3f, .1f, 3f)
                 entity.world.createExplosion(entity, power, false)
                 entity.remove() // dont stick
             }
@@ -139,11 +139,11 @@ class GGArena : Arena() {
 
                 // sideways movement on top of existing windcharge behavior
                 competition.players.forEach {
-                    if (it.player.location.distance(entity.location) < 2) {
-                        val dir = it.player.location.subtract(entity.location).toVector().normalize()
-                        val len = it.player.location.subtract(entity.location).toVector().length()
-//                        dir.y = 0.0
-                        it.player.velocity = it.player.velocity.add(dir.multiply(len.toFloat().remapClamped(0f, 2f, 2f, 0f)))
+                    val windToPlayer = it.player.location.subtract(entity.location.add(Vector(0.0, -0.5, 0.0))).toVector()
+                    val len = windToPlayer.length()
+                    if (len < 2) {
+                        val dir = windToPlayer.normalize()
+                        it.player.velocity = it.player.velocity.add(dir.multiply(len.toFloat().remapClamped(2f, 0f, 0f, 2f)))
                     }
                 }
             }
@@ -694,6 +694,6 @@ val dontGlide = mutableSetOf<Player>()
 
 fun Damageable.damage(amount: Double, source: Entity?, damageType: DamageType) {
     var builder = DamageSource.builder(damageType).withDamageLocation(this.location)
-    if (source != null) builder = builder.withDirectEntity(source)
+    if (source != null) builder = builder.withDirectEntity(source).withCausingEntity(source)
     this.damage(amount, builder.build())
 }
