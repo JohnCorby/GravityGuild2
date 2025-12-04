@@ -4,6 +4,7 @@ import com.destroystokyo.paper.event.player.PlayerPostRespawnEvent
 import com.johncorby.gravityGuild2.ArrowTracker.startTracking
 import com.johncorby.gravityGuild2.ArrowTracker.stopTracking
 import io.papermc.paper.datacomponent.DataComponentTypes
+import io.papermc.paper.event.entity.EntityKnockbackEvent
 import io.papermc.paper.event.player.PlayerFailMoveEvent
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
@@ -12,8 +13,8 @@ import net.kyori.adventure.title.Title
 import net.kyori.adventure.util.TriState
 import org.battleplugins.arena.Arena
 import org.battleplugins.arena.ArenaPlayer
-import org.battleplugins.arena.competition.Competition
 import org.battleplugins.arena.competition.LiveCompetition
+import org.battleplugins.arena.competition.PlayerRole
 import org.battleplugins.arena.competition.map.LiveCompetitionMap
 import org.battleplugins.arena.competition.phase.CompetitionPhaseType
 import org.battleplugins.arena.competition.phase.phases.VictoryPhase
@@ -26,6 +27,7 @@ import org.battleplugins.arena.event.player.ArenaLeaveEvent
 import org.battleplugins.arena.event.player.ArenaRespawnEvent
 import org.battleplugins.arena.stat.ArenaStats
 import org.bukkit.*
+import org.bukkit.attribute.Attribute
 import org.bukkit.damage.DamageSource
 import org.bukkit.damage.DamageType
 import org.bukkit.enchantments.Enchantment
@@ -40,6 +42,7 @@ import org.bukkit.event.entity.ProjectileLaunchEvent
 import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerItemDamageEvent
+import org.bukkit.event.player.PlayerItemHeldEvent
 import org.bukkit.inventory.ItemStack
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
@@ -71,6 +74,14 @@ class GGArena : Arena() {
     // use for movement cancel else it thinks ur falling slightly when ur not
     @Suppress("DEPRECATION")
     val Player.velocityZeroGround get() = if (isOnGround) Vector(0, 0, 0) else velocity
+
+    @ArenaEventHandler
+    fun EntityKnockbackEvent.handler() {
+        if (cause == EntityKnockbackEvent.Cause.EXPLOSION) {
+            // stop wind charge (and everything else)
+            isCancelled = true
+        }
+    }
 
     @ArenaEventHandler
     fun ProjectileLaunchEvent.handler() {
@@ -111,7 +122,7 @@ class GGArena : Arena() {
                 (entity as Arrow).stopTracking()
 //                (entity as Arrow).damage = 0.0
                 // salmon reflect can make it faster, make sure to clamp
-                val power = this.entity.velocity.length().toFloat().remapClamped(.3f, 3f, 0f, 3f)
+                val power = this.entity.velocity.length().toFloat().remapClamped(.3f, 3f, .3f, 3f)
                 entity.world.createExplosion(entity, power, false)
                 entity.remove() // dont stick
             }
@@ -119,7 +130,7 @@ class GGArena : Arena() {
             // death snowball
             is Snowball -> {
                 (hitEntity as? Damageable)?.damage(9999.0, entity.shooter as Player, DamageType.LIGHTNING_BOLT)
-                entity.world.strikeLightning(entity.location)
+                entity.world.strikeLightningEffect(entity.location)
             }
 
             is WindCharge -> {
@@ -128,11 +139,11 @@ class GGArena : Arena() {
 
                 // sideways movement on top of existing windcharge behavior
                 competition.players.forEach {
-                    if (it.player.location.distance(entity.location) < 4) {
+                    if (it.player.location.distance(entity.location) < 2) {
                         val dir = it.player.location.subtract(entity.location).toVector().normalize()
                         val len = it.player.location.subtract(entity.location).toVector().length()
-                        dir.y = 0.0
-                        it.player.velocity = dir.multiply(len.toFloat().remapClamped(0f, 4f, 3f, 0f))
+//                        dir.y = 0.0
+                        it.player.velocity = it.player.velocity.add(dir.multiply(len.toFloat().remapClamped(0f, 2f, 2f, 0f)))
                     }
                 }
             }
@@ -191,7 +202,7 @@ class GGArena : Arena() {
                             player.isGliding = false
                             player.velocity = player.velocity.multiply(-1.5)
                             nearbyEntities.forEach { (it as Damageable).damage(20.0, player, DamageType.MACE_SMASH) }
-                            player.world.strikeLightning(player.location)
+                            player.world.strikeLightningEffect(player.location)
                             player.fallDistance = 0f
                             player.world.playSound(player, Sound.ITEM_MACE_SMASH_GROUND_HEAVY, 1f, 1f)
 
@@ -306,12 +317,13 @@ class GGArena : Arena() {
                     competition.players.forEach {
                         it.player.damage(9999.0, null, DamageType.MAGIC)
                         it.player.showTitle(Title.title(Component.text("Shuffle!"), Component.empty()))
-                        it.player.world.strikeLightning(it.player.location)
+                        it.player.world.strikeLightningEffect(it.player.location)
                     }
                 }, 20 * 3)
             }
 
 
+/*
             Items.SPYGLASS.item -> {
                 if (!action.isLeftClick) return
                 if (player.hasCooldown(player.inventory.itemInMainHand)) {
@@ -329,7 +341,30 @@ class GGArena : Arena() {
                 player.world.playSound(player, Sound.ITEM_WOLF_ARMOR_DAMAGE, 1f, 1f)
                 player.setCooldown(player.inventory.itemInMainHand, 20)
             }
+*/
         }
+    }
+
+    @ArenaEventHandler
+    fun PlayerItemHeldEvent.handler() {
+        when(player.inventory.getItem(newSlot)) {
+            Items.SPYGLASS.item -> {
+                player.getAttribute(Attribute.ENTITY_INTERACTION_RANGE)!!.apply { baseValue = 9999.0 }
+                player.getAttribute(Attribute.BLOCK_INTERACTION_RANGE)!!.apply { baseValue = 9999.0 }
+            }
+            // custom left/right click is weird when hitting entity or block, so just make that impossible
+            Items.MACE.item, Items.ARROW.item, Items.SALMON.item, Items.TNT.item -> {
+                player.getAttribute(Attribute.ENTITY_INTERACTION_RANGE)!!.apply { baseValue = 0.0 }
+                player.getAttribute(Attribute.BLOCK_INTERACTION_RANGE)!!.apply { baseValue = 0.0 }
+            }
+
+            else -> {
+                player.getAttribute(Attribute.ENTITY_INTERACTION_RANGE)!!.apply { baseValue = defaultValue }
+                player.getAttribute(Attribute.BLOCK_INTERACTION_RANGE)!!.apply { baseValue = defaultValue }
+            }
+        }
+
+        PLUGIN.logger.info("held item = ${this.player.inventory.getItem(this.newSlot)}")
     }
 
     @ArenaEventHandler
@@ -362,16 +397,16 @@ class GGArena : Arena() {
 
         PLUGIN.logger.info("${entity.name} lost $damage health from $cause")
 
-        // revert non lethal damage only for hit ground and wall. everything else should be normal damage
-        if (cause == DamageCause.FALL || cause == DamageCause.FLY_INTO_WALL) {
-            // revert non-lethal damage
-            if ((entity as Player).health - damage > 0) damage = 0.0
-        }
-
         if ((entity as Player).hasPotionEffect(PotionEffectType.INVISIBILITY)) {
             // invisible = on cooldown. no hurt
             isCancelled = true
             return
+        }
+
+        // revert non lethal damage only for hit ground and wall. everything else should be normal damage
+        if (cause == DamageCause.FALL || cause == DamageCause.FLY_INTO_WALL) {
+            // revert non-lethal damage
+            if ((entity as Player).health - damage > 0) damage = 0.0
         }
 
         if (cause == DamageCause.VOID) damage = 9999.0 // just fuckin kill em
@@ -436,7 +471,7 @@ class GGArena : Arena() {
 
     @ArenaEventHandler
     fun ArenaJoinEvent.handler() {
-        if (this.competition.players.count() == 1) {
+        if (this.competition.players.size == 1) {
             Bukkit.broadcast(
                 Component.text("Arena ${this.competition.map.name} has someone in it! Click to join")
                     .color(NamedTextColor.GOLD)
@@ -451,7 +486,7 @@ class GGArena : Arena() {
         trackedMacePlayers.add(player)
 
         // if everyone is in, just start the game
-        if (this.competition.players.count() == Bukkit.getOnlinePlayers().count())
+        if (this.competition.players.size == Bukkit.getOnlinePlayers().size)
             Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable {
                 this.competition.phaseManager.setPhase(CompetitionPhaseType.INGAME, true)
             }, 10);
@@ -467,7 +502,7 @@ class GGArena : Arena() {
         playerLastDamager.remove(player)
 
         // because our victory condition is only time limit, it doesnt close early. we gotta do this ourselves
-        if (this.competition.players.count() <= 1) {
+        if (this.arenaPlayer.role == PlayerRole.PLAYING && this.competition.players.size <= 1) {
             this.competition.phaseManager.setPhase(CompetitionPhaseType.VICTORY, true)
             // actually trigger the victory for that player :P
             (this.competition.phaseManager.currentPhase as VictoryPhase).onVictory(this.competition.players.toSet())
