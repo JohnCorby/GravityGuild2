@@ -12,6 +12,7 @@ import net.kyori.adventure.title.Title
 import net.kyori.adventure.util.TriState
 import org.battleplugins.arena.Arena
 import org.battleplugins.arena.ArenaPlayer
+import org.battleplugins.arena.competition.Competition
 import org.battleplugins.arena.competition.LiveCompetition
 import org.battleplugins.arena.competition.map.LiveCompetitionMap
 import org.battleplugins.arena.competition.phase.CompetitionPhaseType
@@ -24,12 +25,7 @@ import org.battleplugins.arena.event.player.ArenaKillEvent
 import org.battleplugins.arena.event.player.ArenaLeaveEvent
 import org.battleplugins.arena.event.player.ArenaRespawnEvent
 import org.battleplugins.arena.stat.ArenaStats
-import org.bukkit.Bukkit
-import org.bukkit.FluidCollisionMode
-import org.bukkit.Material
-import org.bukkit.MusicInstrument
-import org.bukkit.Sound
-import org.bukkit.attribute.Attribute
+import org.bukkit.*
 import org.bukkit.damage.DamageSource
 import org.bukkit.damage.DamageType
 import org.bukkit.enchantments.Enchantment
@@ -248,10 +244,10 @@ class GGArena : Arena() {
                     { it != player }
                 )
                 for (it in nearbyEntities) {
-                    if (it is Projectile && it.shooter == player) continue // cant hit your own things
+                    if (it is Arrow && it.shooter == player) continue // cant hit your own things
                     it.velocity = this.player.eyeLocation.direction.multiply(5)
                     if (it is Arrow) it.startTracking() // set new velocity
-                    it.fireTicks = 20 * 5
+                    it.fireTicks = 20 * 10
                     if (it is Player) it.isMarkedForDeath = true
                     if (it is Projectile) it.shooter = player // to count the kill
                     player.attack(it)
@@ -397,6 +393,17 @@ class GGArena : Arena() {
     fun ArenaPhaseStartEvent.handler() {
         when (phase.type) {
             CompetitionPhaseType.INGAME -> {
+                // arena restore puts back entities, so lets remove current ones
+                val map = competition.map as LiveCompetitionMap
+                val bounds = map.bounds!!
+                for (entity in map.world.entities) {
+                    if (bounds.isInside(entity.boundingBox) && entity !is Player) {
+                        entity.remove()
+                    }
+                }
+                // arena restore happens after this call. it lags a bit on the main thread but its fine i guess
+
+
                 (competition as LiveCompetition).players.forEach { player ->
                     player.player.initInventory()
 
@@ -422,14 +429,7 @@ class GGArena : Arena() {
             }
 
             CompetitionPhaseType.VICTORY -> {
-                // arena restore puts back entities, so lets remove current ones
-                val map = competition.map as LiveCompetitionMap
-                val bounds = map.bounds!!
-                for (entity in map.world.entities) {
-                    if (bounds.isInside(entity.boundingBox) && entity !is Player) {
-                        entity.remove()
-                    }
-                }
+                // reload triggers this so nothing should happen here for speed lol
             }
         }
     }
@@ -470,7 +470,7 @@ class GGArena : Arena() {
         if (this.competition.players.count() <= 1) {
             this.competition.phaseManager.setPhase(CompetitionPhaseType.VICTORY, true)
             // actually trigger the victory for that player :P
-            (this.competition.phaseManager.currentPhase as VictoryPhase).onVictory(setOf(this.competition.players.first()))
+            (this.competition.phaseManager.currentPhase as VictoryPhase).onVictory(this.competition.players.toSet())
         }
     }
 

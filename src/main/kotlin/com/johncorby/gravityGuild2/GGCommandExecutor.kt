@@ -8,11 +8,6 @@ import org.bukkit.entity.Player
 class GGCommandExecutor(arena: Arena) : ArenaCommandExecutor(arena) {
     @ArenaCommand(commands = ["reload", "r"], description = "Reload plugin for debugging", permissionNode = "reload")
     fun reload(player: Player) {
-        player.performCommand("gg advance")
-        player.performCommand("gg advance")
-        player.performCommand("gg advance")
-        player.performCommand("gg advance")
-
         player.performCommand("plm reload GravityGuild2")
         player.performCommand("ba reload")
     }

@@ -58,7 +58,7 @@ object ArrowTracker {
 var Player.isMarkedForDeath: Boolean
     get() = this.hasPotionEffect(PotionEffectType.GLOWING)
     set(value) {
-        if (value) this.addPotionEffect(PotionEffect(PotionEffectType.GLOWING, 5 * 20, 1, false, false))
+        if (value) this.addPotionEffect(PotionEffect(PotionEffectType.GLOWING, 10 * 20, 1, false, false))
         else this.removePotionEffect(PotionEffectType.GLOWING)
     }
 

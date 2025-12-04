@@ -84,8 +84,7 @@ phases:
       - damage-players{option=other_team}
     events:
       on-start:
-        # TODO: restore arena when starting? teleport?
-#        - restore-arena
+        - restore-arena
         - teleport{location=team_spawn;random=true}
         - play-sound{sound=block.note_block.pling;pitch=2;volume=1}
         - apply-scoreboard{scoreboard=ingame-top-kills}
@@ -99,7 +98,7 @@ phases:
     events:
       on-complete:
         - leave
-        - restore-arena
+#        - restore-arena
         - remove-scoreboard
       on-victory:
         - send-message{message=<green>Congrats, you won!</green>}
