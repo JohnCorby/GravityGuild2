@@ -7,6 +7,11 @@
 - IDEA: if do this, make everything else have damage falloff
   - especially do this if hitscan
 - CONTINUE to add interactions between items, whether thats having one make another vulnerable (countering?) or use them together (chaining)
+- IDEA: party items
+  - horn shuffle
+  - enderpearl that teleports someone else
+  - make everyone glow so you can find them
+  - add cooldown to an item lol
 
 # flying
 
