@@ -34,7 +34,6 @@ import org.bukkit.event.player.PlayerItemDamageEvent
 import org.bukkit.event.player.PlayerItemHeldEvent
 import kotlin.random.Random
 
-// this file is probably way too big... too bad!
 class GGArena : Arena() {
     override fun createCommandExecutor() = GGCommandExecutor(this)
 
@@ -73,10 +72,10 @@ class GGArena : Arena() {
         when (entity) {
             is Arrow -> GGBow.hit(entity)
             is Snowball -> GGSnowball.hit(entity, hitEntity)
-            is WindCharge -> Mace.hit(entity, competition)
+            is WindCharge -> GGMace.hit(entity, competition)
             is EnderPearl -> {
                 isCancelled = true // dont teleport
-                Tnt.hit(entity)
+                GGTnt.hit(entity)
             }
         }
 
@@ -88,32 +87,32 @@ class GGArena : Arena() {
         when (player.inventory.itemInMainHand) {
             Items.MACE.item -> {
                 if (action.isRightClick)
-                    Mace.launch(player)
+                    GGMace.launch(player)
                 else if (action.isLeftClick)
-                    Mace.smash(player)
+                    GGMace.smash(player)
             }
 
             Items.TNT.item -> {
                 if (action == Action.PHYSICAL) return
-                Tnt.launch(player, action.isRightClick)
+                GGTnt.launch(player, action.isRightClick)
             }
 
             Items.FISH.item -> {
                 if (!action.isLeftClick) return
-                Fish.attack(player)
+                GGFish.attack(player)
             }
 
             Items.ARROW.item -> {
                 if (action.isLeftClick)
-                    Knife.attack(player)
+                    GGArrow.attack(player)
                 else if (action.isRightClick)
-                    Knife.launch(player)
+                    GGArrow.launch(player)
 
             }
 
             Items.HORN.item -> {
                 if (!action.isRightClick)
-                    Horn.use(player, competition)
+                    GGHorn.use(player, competition)
             }
         }
     }
@@ -264,7 +263,7 @@ class GGArena : Arena() {
         player.saturatedRegenRate = 20
         player.unsaturatedRegenRate = 20
 
-        Mace.trackedPlayers.add(player)
+        GGMace.trackedPlayers.add(player)
 
         // if everyone is in, just start the game
         if (this.competition.players.size == Bukkit.getOnlinePlayers().size)
@@ -278,7 +277,7 @@ class GGArena : Arena() {
 //        val team = Bukkit.getScoreboardManager().mainScoreboard.getTeam("GravityGuild")!!
 //        team.removePlayer(player)
 
-        Mace.trackedPlayers.remove(player)
+        GGMace.trackedPlayers.remove(player)
 
         playerLastDamager.remove(player)
 

@@ -1,7 +1,6 @@
 ﻿package com.johncorby.gravityGuild2
 
-import com.johncorby.gravityGuild2.ArrowTracker.startTracking
-import com.johncorby.gravityGuild2.ArrowTracker.stopTracking
+import com.johncorby.gravityGuild2.GGBow.startTracking
 import io.papermc.paper.datacomponent.DataComponentTypes
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -15,13 +14,15 @@ import org.bukkit.damage.DamageType
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.*
 import org.bukkit.inventory.ItemStack
+import org.bukkit.potion.PotionEffect
+import org.bukkit.potion.PotionEffectType
 import org.bukkit.util.Transformation
 import org.bukkit.util.Vector
 import org.joml.Quaternionf
 import org.joml.Vector3f
 
 
-object Mace {
+object GGMace {
     val trackedPlayers = mutableListOf<Player>()
 
     init {
@@ -100,12 +101,7 @@ object Mace {
 }
 
 
-// use for movement cancel else it thinks ur falling slightly when ur not
-@Suppress("DEPRECATION")
-val Player.velocityZeroGround get() = if (isOnGround) Vector(0, 0, 0) else velocity
-
-
-object Tnt {
+object GGTnt {
     fun launch(player: Player, small: Boolean) {
         if (player.hasCooldown(player.inventory.itemInMainHand)) {
             player.world.playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, .5f)
@@ -161,9 +157,53 @@ object GGBow {
         entity.world.createExplosion(entity, power, false)
         entity.remove() // dont stick
     }
+
+
+    // broken with multiple competitions? except its not, it works itself out i think...
+    val trackedArrows = mutableMapOf<Arrow, Vector>()
+
+    fun Arrow.startTracking() = trackedArrows.put(this, velocity)
+    fun Arrow.stopTracking() = trackedArrows.remove(this)
+    fun stopTracking() = trackedArrows.clear()
+
+    init {
+        Bukkit.getScheduler().runTaskTimer(PLUGIN, Runnable {
+            for ((arrow, velocity) in trackedArrows) {
+                arrow.velocity = velocity // arrow slows down, retain velocity
+
+                val nearbyEntities = arrow.world.getNearbyEntities(
+                    arrow.location,
+                    3.0, 3.0, 3.0,
+                    { it is Player && it != arrow && it != arrow.shooter && (it.isGliding || it.isMarkedForDeath) },
+                )
+                nearbyEntities.forEach {
+                    val nearbyPlayer = it as Player
+
+                    // was way too op for mace, now its way too op for arrows LOL
+//                    arrow.teleport(closestEntity)
+
+                    if (it.isMarkedForDeath) {
+                        arrow.hitEntity(nearbyPlayer) // bye bye
+                        return@forEach
+                    }
+
+
+                    nearbyPlayer.isGliding = false
+                    nearbyPlayer.world.playSound(nearbyPlayer, Sound.ENTITY_PLAYER_BURP, 1f, 1f)
+                    (arrow.shooter as Player).attack(nearbyPlayer)
+
+
+
+                    dontGlide.add(nearbyPlayer)
+                    Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable { dontGlide.remove(nearbyPlayer) }, 20)
+                }
+            }
+        }, 0, 0)
+    }
+
 }
 
-object Fish {
+object GGFish {
     fun attack(player: Player) {
         if (player.hasCooldown(player.inventory.itemInMainHand)) {
             player.world.playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, .5f)
@@ -194,7 +234,7 @@ object Fish {
     }
 }
 
-object Knife {
+object GGArrow {
     fun attack(player: Player) {
         val nearbyEntities = player.world.getNearbyEntities(
             player.eyeLocation.add(player.eyeLocation.direction.multiply(2)),
@@ -225,7 +265,7 @@ object Knife {
 }
 
 
-object Horn {
+object GGHorn {
 
     fun use(player: Player, competition: LiveCompetition<*>) {
         if (player.hasCooldown(player.inventory.itemInMainHand)) {
@@ -249,7 +289,7 @@ object Horn {
     }
 }
 
-object Gun {
+object GGGun {
     fun use(player: Player) {
         if (player.hasCooldown(player.inventory.itemInMainHand)) {
             player.world.playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, .5f)
@@ -366,4 +406,46 @@ fun Player.initInventory() {
     inventory.chestplate = Items.CHESTPLATE.item
 
     // TODO: teleport to random part on the map? or just use manual spawns like currently
+}
+
+
+// use for movement cancel else it thinks ur falling slightly when ur not
+@Suppress("DEPRECATION")
+val Player.velocityZeroGround get() = if (isOnGround) Vector(0, 0, 0) else velocity
+
+
+var Player.isMarkedForDeath: Boolean
+    get() = this.hasPotionEffect(PotionEffectType.GLOWING)
+    set(value) {
+        if (value) this.addPotionEffect(PotionEffect(PotionEffectType.GLOWING, 10 * 20, 1, false, false))
+        else this.removePotionEffect(PotionEffectType.GLOWING)
+    }
+
+var Player.isCooldown: Boolean
+    get() = hasPotionEffect(PotionEffectType.INVISIBILITY) && hasPotionEffect(PotionEffectType.NIGHT_VISION)
+    set(value) {
+        if (value) {
+            // BUG: doesnt hide clothes
+            addPotionEffect(PotionEffect(PotionEffectType.INVISIBILITY, 20 * 3, 1, false, false))
+            // just to get ur surroundings
+            addPotionEffect(PotionEffect(PotionEffectType.NIGHT_VISION, 20 * 3, 1, false, false))
+        } else {
+            removePotionEffect(PotionEffectType.INVISIBILITY)
+            removePotionEffect(PotionEffectType.NIGHT_VISION)
+        }
+    }
+
+
+// why is this here? who cares!
+fun Float.remapClamped(
+    inputMin: Float,
+    inputMax: Float,
+    outputMin: Float,
+    outputMax: Float
+): Float {
+    // Calculate the normalized position of the value within the input range (0 to 1)
+    val normalizedValue = (this - inputMin) / (inputMax - inputMin)
+
+    // Map the normalized value to the output range
+    return Math.clamp(outputMin + normalizedValue * (outputMax - outputMin), outputMin, outputMax)
 }
