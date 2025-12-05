@@ -23,6 +23,7 @@ import org.bukkit.util.Transformation
 import org.bukkit.util.Vector
 import org.joml.Quaternionf
 import org.joml.Vector3f
+import kotlin.math.absoluteValue
 
 
 object GGMace {
@@ -51,8 +52,9 @@ object GGMace {
                 PLUGIN.logger.info("mace HIT")
 
                 // mimic mace effect but bigger radius
-                player.isGliding = false
-                player.velocity = player.velocity.multiply(-1.5)
+//                player.isGliding = false
+//                player.velocity = player.velocity.multiply(-1.5)
+                player.velocity = Vector(player.velocity.x * 1.5, player.velocity.y.absoluteValue * 1.5, player.velocity.z * 1.5)
                 nearbyEntities.forEach { (it as? Damageable)?.damage(20.0, player, DamageType.MACE_SMASH) }
                 player.world.strikeLightningEffect(player.location)
                 player.fallDistance = 0f
@@ -409,14 +411,12 @@ var Player.isRespawnCooldown: Boolean
     set(value) {
         if (value) {
             // BUG: doesnt hide clothes
-            addPotionEffect(PotionEffect(PotionEffectType.INVISIBILITY, 20 * 3, 1, false, false))
+            addPotionEffect(PotionEffect(PotionEffectType.INVISIBILITY, 20 * 5, 1, false, false))
             // just to get ur surroundings
-//            addPotionEffect(PotionEffect(PotionEffectType.NIGHT_VISION, 20 * 3, 1, false, false))
-            addPotionEffect(PotionEffect(PotionEffectType.DARKNESS, 20 * 3, 1, false, false))
+            addPotionEffect(PotionEffect(PotionEffectType.NIGHT_VISION, 20 * 5, 1, false, false))
         } else {
             removePotionEffect(PotionEffectType.INVISIBILITY)
-//            removePotionEffect(PotionEffectType.NIGHT_VISION)
-            removePotionEffect(PotionEffectType.DARKNESS)
+            removePotionEffect(PotionEffectType.NIGHT_VISION)
         }
     }
 

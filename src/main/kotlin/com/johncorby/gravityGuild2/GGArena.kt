@@ -241,16 +241,18 @@ class GGArena : Arena() {
 
     @ArenaEventHandler
     fun EntityDamageEvent.handler(competition: LiveCompetition<*>) {
-        if (damageSource.damageType == DamageType.PLAYER_ATTACK &&
-            damageSource.causingEntity is Player &&
-            (damageSource.causingEntity as Player).inventory.itemInMainHand == Items.GUN.item
+        if (damageSource.causingEntity is Player &&
+            (damageSource.causingEntity as Player).inventory.itemInMainHand == Items.GUN.item &&
+            damageSource.damageType == DamageType.PLAYER_ATTACK
         ) {
             isCancelled = true
             GGGun.attack(entity, damageSource.causingEntity as Player)
             return
         }
 
-        if (damageSource.directEntity is WitherSkull) {
+        if (damageSource.causingEntity is Player &&
+            damageSource.directEntity is WitherSkull
+        ) {
             isCancelled = true
             GGArrow.hit(entity, damageSource.causingEntity as Player)
             return
