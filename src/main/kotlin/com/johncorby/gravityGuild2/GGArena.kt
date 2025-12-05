@@ -78,6 +78,8 @@ class GGArena : Arena() {
 
     @ArenaEventHandler
     fun PlayerInteractEvent.handler(competition: LiveCompetition<*>) {
+        if (player.isRespawnCooldown) return
+
         // off hand exists, i dont care
         when (player.inventory.itemInMainHand) {
             Items.MACE.item -> {
@@ -167,6 +169,8 @@ class GGArena : Arena() {
 
                 (competition as LiveCompetition).players.forEach { player ->
                     player.player.initInventory()
+
+                    player.player.isRespawnCooldown = true
 
                     // scoreboard module adds us to its own non global scoreboard. I THINK we need to add the team to THAT one to get the nametag thing working
                     // this gets removed on remove-scoerboard so hopefully thatll remove the team effects
@@ -302,22 +306,23 @@ class GGArena : Arena() {
         Bukkit.broadcast(this.deathMessage()!!)
 
         // okay, now use our custom killer thing to track kills
-        // TODO: maybe move this to PlayerDeathEvent if we wait before respawning
-        // TODO: check this after a second to make sure the killer didnt die themselves
-        playerLastDamager[player]?.let { lastDamager ->
-            PLUGIN.logger.info("${player.name} last damaged by ${lastDamager.first.name} at ${lastDamager.second} (now is ${Bukkit.getCurrentTick()})")
+        // TODO: check player dead later so suicides dont count
+        playerLastDamager[player]?.let { (lastDamager, lastDamageTick) ->
+            PLUGIN.logger.info("${player.name} last damaged by ${lastDamager.name} at $lastDamageTick (now is ${Bukkit.getCurrentTick()})")
 
-            if (Bukkit.getCurrentTick() - lastDamager.second < 20 * 5) { // did it recently enough, give em the kill
-                ArenaPlayer.getArenaPlayer(lastDamager.first)?.computeStat(ArenaStats.KILLS) { old -> (old ?: 0) + 1 }
-                Bukkit.broadcast(Component.text("Kill credit goes to ${lastDamager.first.name}").color(NamedTextColor.GRAY))
+            // did it recently enough, give em the kill
+            if (Bukkit.getCurrentTick() - lastDamageTick < 20 * 5) {
+                ArenaPlayer.getArenaPlayer(lastDamager)?.computeStat(ArenaStats.KILLS) { old -> (old ?: 0) + 1 }
+                Bukkit.broadcast(Component.text("KILL: ${lastDamager.name} -> ${player.name}").color(NamedTextColor.YELLOW))
 
 
                 // tf2 moment teehee
-                lastDamager.first.playSound(lastDamager.first, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f)
+                lastDamager.playSound(lastDamager, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f)
 
                 // v1 behavior: teleport killer to killed
-                player.teleport(lastDamager.first)
+                player.teleport(lastDamager)
             }
+
         }
 
         playerLastDamager.remove(player) // stop tracking who last hurt them becasue they are dead
@@ -328,7 +333,6 @@ class GGArena : Arena() {
             // respawn
             val spawns = competition.map.spawns!!.teamSpawns!!["Default"]!!.spawns!!
             val spawn = spawns[Random.nextInt(spawns.size)]
-            PLUGIN.logger.info("respawn at ${spawn.toLocation(competition.map.world)}")
             player.teleport(spawn.toLocation(competition.map.world))
 
 

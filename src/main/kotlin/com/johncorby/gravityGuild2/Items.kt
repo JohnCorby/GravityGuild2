@@ -55,7 +55,11 @@ object GGMace {
 //                player.isGliding = false
 //                player.velocity = player.velocity.multiply(-1.5)
                 player.velocity = Vector(player.velocity.x * 1.5, player.velocity.y.absoluteValue * 1.5, player.velocity.z * 1.5)
-                nearbyEntities.forEach { (it as? Damageable)?.damage(20.0, player, DamageType.MACE_SMASH) }
+//                nearbyEntities.forEach { (it as? Damageable)?.damage(20.0, player, DamageType.MACE_SMASH) }
+                nearbyEntities.forEach {
+                    (it as? Damageable)?.damage(10.0, player, DamageType.MACE_SMASH)
+                    (it as? Player)?.isMarkedForDeath = true
+                }
                 player.world.strikeLightningEffect(player.location)
                 player.fallDistance = 0f
                 player.world.playSound(player, Sound.ITEM_MACE_SMASH_GROUND_HEAVY, 1f, 1f)
@@ -289,6 +293,8 @@ object GGGun {
     }
 
     fun attack(entity: Entity?, player: Player) {
+        if (player.isRespawnCooldown) return // extra check since goofy melee moment
+
         if (player.doItemCooldown(20 * 2)) return
 
         (entity as? Damageable)?.damage(9999.0, player, DamageType.ARROW)
@@ -410,10 +416,14 @@ var Player.isRespawnCooldown: Boolean
     get() = hasPotionEffect(PotionEffectType.INVISIBILITY)
     set(value) {
         if (value) {
+            // TODO: just make this do full respawn and remove the stuff from config
+            clearActivePotionEffects()
+            fireTicks = 0
+
             // BUG: doesnt hide clothes
-            addPotionEffect(PotionEffect(PotionEffectType.INVISIBILITY, 20 * 5, 1, false, false))
+            addPotionEffect(PotionEffect(PotionEffectType.INVISIBILITY, 20 * 3, 1, false, false))
             // just to get ur surroundings
-            addPotionEffect(PotionEffect(PotionEffectType.NIGHT_VISION, 20 * 5, 1, false, false))
+            addPotionEffect(PotionEffect(PotionEffectType.NIGHT_VISION, 20 * 3, 1, false, false))
         } else {
             removePotionEffect(PotionEffectType.INVISIBILITY)
             removePotionEffect(PotionEffectType.NIGHT_VISION)
