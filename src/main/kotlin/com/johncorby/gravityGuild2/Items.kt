@@ -43,17 +43,9 @@ object GGMace {
 //                        player.fallDistance > 5
             player.velocity.length() > 1
         ) {
-            if (player.hasCooldown(player.inventory.itemInMainHand)) {
-                player.world.playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, .5f)
-                return
-            }
+            if (!player.doItemCooldown(10)) return
 
-            val nearbyEntities = player.world.getNearbyEntities(
-                // like airblast, check in front of where we're looking
-                player.eyeLocation.add(player.eyeLocation.direction.multiply(2)),
-                2.0, 2.0, 2.0,
-                { it is Damageable && it != player }
-            )
+            val nearbyEntities = player.checkHitbox(2.0)
             if (nearbyEntities.isNotEmpty()) {
                 PLUGIN.logger.info("mace HIT")
 
@@ -69,10 +61,6 @@ object GGMace {
                 player.world.playSound(player, Sound.ITEM_MACE_SMASH_AIR, 1f, 1f)
                 PLUGIN.logger.info("mace miss")
             }
-
-            player.setCooldown(Items.MACE.item, 10)
-//                        dontMace.add(player)
-//                        Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable { dontMace.remove(player) }, 10)
         }
     }
 
@@ -105,10 +93,7 @@ object GGMace {
 
 object GGTnt {
     fun launch(player: Player, small: Boolean) {
-        if (player.hasCooldown(player.inventory.itemInMainHand)) {
-            player.world.playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, .5f)
-            return
-        }
+        if (!player.doItemCooldown(20 * 5)) return
 
         val projectile = player.launchProjectile(EnderPearl::class.java, player.velocityZeroGround.add(player.eyeLocation.direction.multiply(.7)))
         val tnt = projectile.world.spawn(projectile.location, BlockDisplay::class.java)
@@ -122,7 +107,6 @@ object GGTnt {
         projectile.addPassenger(tnt)
 
         player.world.playSound(player, Sound.ENTITY_TNT_PRIMED, 1f, if (small) 1f else .5f)
-        player.setCooldown(player.inventory.itemInMainHand, 20 * 5)
     }
 
     fun hit(entity: EnderPearl) {
@@ -203,17 +187,9 @@ object GGBow {
 
 object GGFish {
     fun attack(player: Player) {
-        if (player.hasCooldown(player.inventory.itemInMainHand)) {
-            player.world.playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, .5f)
-            return
-        }
+        if (player.doItemCooldown(10)) return
 
-
-        val nearbyEntities = player.world.getNearbyEntities(
-            player.eyeLocation.add(player.eyeLocation.direction.multiply(3)),
-            3.0, 3.0, 3.0,
-            { it != player }
-        )
+        val nearbyEntities = player.checkHitbox(3.0)
         for (it in nearbyEntities) {
             if (it is Arrow && it.shooter == player) continue // cant hit your own things
             it.velocity = player.eyeLocation.direction.multiply(5)
@@ -226,19 +202,12 @@ object GGFish {
         if (nearbyEntities.isEmpty()) { // make sure to indicate whiff with sound
             player.world.playSound(player, Sound.ENTITY_PLAYER_ATTACK_NODAMAGE, 1f, 1f)
         }
-        // BUG: if you directly hit it does nothing lol
-
-        player.setCooldown(player.inventory.itemInMainHand, 10)
     }
 }
 
 object GGArrow {
     fun attack(player: Player) {
-        val nearbyEntities = player.world.getNearbyEntities(
-            player.eyeLocation.add(player.eyeLocation.direction.multiply(2)),
-            2.0, 2.0, 2.0,
-            { it is Damageable && it != player }
-        )
+        val nearbyEntities = player.checkHitbox(2.0)
         for (nearbyEntity in nearbyEntities) {
             // literally stealing from https://www.youtube.com/watch?v=gh5Fg5d_uBU
             val victimView = (nearbyEntity as LivingEntity).eyeLocation.direction
@@ -419,7 +388,7 @@ var Player.isMarkedForDeath: Boolean
         else this.removePotionEffect(PotionEffectType.GLOWING)
     }
 
-var Player.isCooldown: Boolean
+var Player.isRespawnCooldown: Boolean
     get() = hasPotionEffect(PotionEffectType.INVISIBILITY) && hasPotionEffect(PotionEffectType.NIGHT_VISION)
     set(value) {
         if (value) {
@@ -432,6 +401,23 @@ var Player.isCooldown: Boolean
             removePotionEffect(PotionEffectType.NIGHT_VISION)
         }
     }
+
+
+fun Player.doItemCooldown(ticks: Int): Boolean {
+    if (this.hasCooldown(inventory.itemInMainHand)) {
+        this.world.playSound(this, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, .5f)
+        return false
+    }
+
+    setCooldown(inventory.itemInMainHand, ticks)
+    return true
+}
+
+fun Player.checkHitbox(radius: Double): Collection<Entity> = this.world.getNearbyEntities(
+    this.eyeLocation.add(this.eyeLocation.direction.multiply(radius)),
+    radius, radius, radius,
+    { it is Damageable && it != this }
+)
 
 
 // why is this here? who cares!

@@ -178,7 +178,7 @@ class GGArena : Arena() {
 
         PLUGIN.logger.info("${entity.name} lost $damage health from $cause")
 
-        if ((entity as Player).isCooldown) {
+        if ((entity as Player).isRespawnCooldown) {
             isCancelled = true
             return
         }
@@ -348,7 +348,7 @@ class GGArena : Arena() {
 //            Items.entries.forEach { player.setCooldown(it.item, player.getCooldown(it.item)) }
 
             // this does cooldown
-            player.isCooldown = true
+            player.isRespawnCooldown = true
         })
     }
 
