@@ -62,20 +62,20 @@ class GGArena : Arena() {
         entity.velocity = entity.velocity.subtract((entity.shooter as Player).velocityZeroGround)
 
         when (entity) {
-            is Arrow -> GGBow.launch(entity)
-            is Snowball -> GGSnowball.launch(entity)
+            is Arrow -> GGBow.launch(entity as Arrow)
+            is Snowball -> GGSnowball.launch(entity as Snowball)
         }
     }
 
     @ArenaEventHandler
     fun ProjectileHitEvent.handler(competition: LiveCompetition<*>) {
         when (entity) {
-            is Arrow -> GGBow.hit(entity)
-            is Snowball -> GGSnowball.hit(entity, hitEntity)
-            is WindCharge -> GGMace.hit(entity, competition)
+            is Arrow -> GGBow.hit(entity as Arrow)
+            is Snowball -> GGSnowball.hit(entity as Snowball, hitEntity)
+            is WindCharge -> GGMace.hit(entity as WindCharge, competition)
             is EnderPearl -> {
                 isCancelled = true // dont teleport
-                GGTnt.hit(entity)
+                GGTnt.hit(entity as EnderPearl)
             }
         }
 

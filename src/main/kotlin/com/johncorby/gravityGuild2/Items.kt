@@ -1,6 +1,8 @@
-﻿package com.johncorby.gravityGuild2
+﻿// organizes data and logic by item. basically just a namespacing method
 
-import com.johncorby.gravityGuild2.GGBow.startTracking
+
+package com.johncorby.gravityGuild2
+
 import io.papermc.paper.datacomponent.DataComponentTypes
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
@@ -83,7 +85,7 @@ object GGMace {
     }
 
 
-    fun hit(entity: Projectile, competition: LiveCompetition<*>) {
+    fun hit(entity: WindCharge, competition: LiveCompetition<*>) {
 //                PLUGIN.logger.info("cancelling wind charge")
 //                isCancelled = true
 
@@ -123,7 +125,7 @@ object GGTnt {
         player.setCooldown(player.inventory.itemInMainHand, 20 * 5)
     }
 
-    fun hit(entity: Projectile) {
+    fun hit(entity: EnderPearl) {
         val display = entity.passengers.firstOrNull() as? BlockDisplay ?: return
         entity.world.createExplosion(
             entity,
@@ -137,20 +139,20 @@ object GGTnt {
 
 
 object GGBow {
-    fun launch(entity: Projectile) {
+    fun launch(entity: Arrow) {
         entity.setGravity(false)
         entity.visualFire = TriState.TRUE
 //                val tnt = entity.world.spawn(entity.location, TNTPrimed::class.java)
 //                entity.addPassenger(tnt)
-        (entity as Arrow).startTracking()
+        trackedArrows[entity] = entity.velocity
     }
 
-    fun hit(entity: Projectile) {
+    fun hit(entity: Arrow) {
         //                PLUGIN.logger.info("arrow vel = ${entity.velocity.length()}")
 
 
 //                (hitEntity as? Damageable)?.damage(9999.0)
-        (entity as Arrow).stopTracking()
+        trackedArrows.remove(entity)
 //                (entity as Arrow).damage = 0.0
         // salmon reflect can make it faster, make sure to clamp
         val power = entity.velocity.length().toFloat().remapClamped(.3f, 3f, .1f, 3f)
@@ -161,10 +163,6 @@ object GGBow {
 
     // broken with multiple competitions? except its not, it works itself out i think...
     val trackedArrows = mutableMapOf<Arrow, Vector>()
-
-    fun Arrow.startTracking() = trackedArrows.put(this, velocity)
-    fun Arrow.stopTracking() = trackedArrows.remove(this)
-    fun stopTracking() = trackedArrows.clear()
 
     init {
         Bukkit.getScheduler().runTaskTimer(PLUGIN, Runnable {
@@ -219,7 +217,7 @@ object GGFish {
         for (it in nearbyEntities) {
             if (it is Arrow && it.shooter == player) continue // cant hit your own things
             it.velocity = player.eyeLocation.direction.multiply(5)
-            if (it is Arrow) it.startTracking() // set new velocity
+            if (it is Arrow) GGBow.trackedArrows[it] = it.velocity // set new velocity
             it.fireTicks = 20 * 10
             if (it is Player) it.isMarkedForDeath = true
             if (it is Projectile) it.shooter = player // to count the kill
@@ -311,12 +309,12 @@ object GGGun {
 
 
 object GGSnowball {
-    fun launch(entity: Projectile) {
+    fun launch(entity: Snowball) {
         entity.isGlowing = true
         entity.visualFire = TriState.TRUE
     }
 
-    fun hit(entity: Projectile, hitEntity: Entity?) {
+    fun hit(entity: Snowball, hitEntity: Entity?) {
         (hitEntity as? Damageable)?.damage(9999.0, entity.shooter as Player, DamageType.LIGHTNING_BOLT)
         entity.world.strikeLightningEffect(entity.location)
     }
