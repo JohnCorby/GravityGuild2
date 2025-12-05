@@ -12,6 +12,7 @@ import org.battleplugins.arena.ArenaPlayer
 import org.battleplugins.arena.competition.LiveCompetition
 import org.battleplugins.arena.stat.ArenaStats
 import org.bukkit.*
+import org.bukkit.damage.DamageSource
 import org.bukkit.damage.DamageType
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.*
@@ -43,7 +44,7 @@ object GGMace {
 //                        player.fallDistance > 5
             player.velocity.length() > 1
         ) {
-            if (!player.doItemCooldown(10)) return
+            if (player.doItemCooldown(10)) return
 
             val nearbyEntities = player.checkHitbox(2.0)
             if (nearbyEntities.isNotEmpty()) {
@@ -52,7 +53,7 @@ object GGMace {
                 // mimic mace effect but bigger radius
                 player.isGliding = false
                 player.velocity = player.velocity.multiply(-1.5)
-                nearbyEntities.forEach { (it as Damageable).damage(20.0, player, DamageType.MACE_SMASH) }
+                nearbyEntities.forEach { (it as? Damageable)?.damage(20.0, player, DamageType.MACE_SMASH) }
                 player.world.strikeLightningEffect(player.location)
                 player.fallDistance = 0f
                 player.world.playSound(player, Sound.ITEM_MACE_SMASH_GROUND_HEAVY, 1f, 1f)
@@ -79,11 +80,11 @@ object GGMace {
 
         // sideways movement on top of existing windcharge behavior
         competition.players.forEach {
-            val windToPlayer = it.player.location.subtract(entity.location.add(Vector(0.0, -0.5, 0.0))).toVector()
+            val windToPlayer = it.player.location.subtract(entity.location.add(Vector(0.0, -1.0, 0.0))).toVector()
             val len = windToPlayer.length()
-            if (len < 3) {
+            if (len < 4) {
                 val dir = windToPlayer.normalize()
-                it.player.velocity = it.player.velocity.add(dir.multiply(len.toFloat().remapClamped(3f, 0f, 0f, 3f)))
+                it.player.velocity = it.player.velocity.add(dir.multiply(len.toFloat().remapClamped(4f, 0f, 0f, 2f)))
             }
         }
     }
@@ -93,7 +94,7 @@ object GGMace {
 
 object GGTnt {
     fun launch(player: Player, small: Boolean) {
-        if (!player.doItemCooldown(20 * 5)) return
+        if (player.doItemCooldown(20 * 5)) return
 
         val projectile = player.launchProjectile(EnderPearl::class.java, player.velocityZeroGround.add(player.eyeLocation.direction.multiply(.7)))
         val tnt = projectile.world.spawn(projectile.location, BlockDisplay::class.java)
@@ -109,8 +110,8 @@ object GGTnt {
         player.world.playSound(player, Sound.ENTITY_TNT_PRIMED, 1f, if (small) 1f else .5f)
     }
 
-    fun hit(entity: EnderPearl) {
-        val display = entity.passengers.firstOrNull() as? BlockDisplay ?: return
+    fun hit(entity: EnderPearl): Boolean {
+        val display = entity.passengers.firstOrNull() as? BlockDisplay ?: return false
         entity.world.createExplosion(
             entity,
             if (display.transformation.scale == Vector3f(.5f)) 2f else 5f,
@@ -118,6 +119,7 @@ object GGTnt {
         )
         display.remove()
         entity.remove()
+        return true
     }
 }
 
@@ -183,6 +185,10 @@ object GGBow {
         }, 0, 0)
     }
 
+
+    // dont feel like having custom competition logic so ill just track stuff globally and make sure to clear it out
+    // if you leave and join an arena really quickly youll get cleared out of this, but thats really unlikely
+    val dontGlide = mutableSetOf<Player>()
 }
 
 object GGFish {
@@ -209,8 +215,10 @@ object GGArrow {
     fun attack(player: Player) {
         val nearbyEntities = player.checkHitbox(2.0)
         for (nearbyEntity in nearbyEntities) {
+            if (nearbyEntity !is LivingEntity) return
+
             // literally stealing from https://www.youtube.com/watch?v=gh5Fg5d_uBU
-            val victimView = (nearbyEntity as LivingEntity).eyeLocation.direction
+            val victimView = nearbyEntity.eyeLocation.direction
             victimView.y = 0.0
             val spyView = player.eyeLocation.direction
             spyView.y = 0.0
@@ -265,10 +273,7 @@ object GGHorn {
 
 object GGGun {
     fun use(player: Player) {
-        if (player.hasCooldown(player.inventory.itemInMainHand)) {
-            player.world.playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, .5f)
-            return
-        }
+        if (player.doItemCooldown(20)) return
 
 //                val projectile = player.launchProjectile(Arrow::class.java, player.velocityZeroGround.add(player.eyeLocation.direction.multiply(1000)))
 
@@ -278,14 +283,15 @@ object GGGun {
         }
 
         player.world.playSound(player, Sound.ITEM_WOLF_ARMOR_DAMAGE, 1f, 1f)
-        player.setCooldown(player.inventory.itemInMainHand, 20)
 
     }
 
     fun attack(entity: Entity?, player: Player) {
-        if (!(player.doItemCooldown(20 * 5))) return
+        if (player.doItemCooldown(20 * 2)) return
 
-        (entity as? Damageable)?.damage(9999.0, player)
+        (entity as? Damageable)?.damage(9999.0, player, DamageType.ARROW)
+
+        player.world.playSound(player, Sound.ITEM_WOLF_ARMOR_DAMAGE, 1f, 1f)
     }
 }
 
@@ -399,16 +405,18 @@ var Player.isMarkedForDeath: Boolean
     }
 
 var Player.isRespawnCooldown: Boolean
-    get() = hasPotionEffect(PotionEffectType.INVISIBILITY) && hasPotionEffect(PotionEffectType.NIGHT_VISION)
+    get() = hasPotionEffect(PotionEffectType.INVISIBILITY)
     set(value) {
         if (value) {
             // BUG: doesnt hide clothes
             addPotionEffect(PotionEffect(PotionEffectType.INVISIBILITY, 20 * 3, 1, false, false))
             // just to get ur surroundings
-            addPotionEffect(PotionEffect(PotionEffectType.NIGHT_VISION, 20 * 3, 1, false, false))
+//            addPotionEffect(PotionEffect(PotionEffectType.NIGHT_VISION, 20 * 3, 1, false, false))
+            addPotionEffect(PotionEffect(PotionEffectType.DARKNESS, 20 * 3, 1, false, false))
         } else {
             removePotionEffect(PotionEffectType.INVISIBILITY)
-            removePotionEffect(PotionEffectType.NIGHT_VISION)
+//            removePotionEffect(PotionEffectType.NIGHT_VISION)
+            removePotionEffect(PotionEffectType.DARKNESS)
         }
     }
 
@@ -416,21 +424,27 @@ var Player.isRespawnCooldown: Boolean
 fun Player.doItemCooldown(ticks: Int): Boolean {
     if (this.hasCooldown(inventory.itemInMainHand)) {
         this.world.playSound(this, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, .5f)
-        return false
+        return true
     }
 
     setCooldown(inventory.itemInMainHand, ticks)
-    return true
+    return false
 }
 
 fun Player.checkHitbox(radius: Double): Collection<Entity> = this.world.getNearbyEntities(
     this.eyeLocation.add(this.eyeLocation.direction.multiply(radius)),
     radius, radius, radius,
-    { it is Damageable && it != this }
+    { it != this }
 )
 
 
-// why is this here? who cares!
+fun Damageable.damage(amount: Double, source: Entity?, damageType: DamageType) {
+    var builder = DamageSource.builder(damageType).withDamageLocation(this.location)
+    if (source != null) builder = builder.withDirectEntity(source).withCausingEntity(source)
+    this.damage(amount, builder.build())
+}
+
+
 fun Float.remapClamped(
     inputMin: Float,
     inputMax: Float,

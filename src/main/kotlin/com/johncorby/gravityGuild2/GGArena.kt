@@ -21,7 +21,6 @@ import org.battleplugins.arena.stat.ArenaStats
 import org.bukkit.Bukkit
 import org.bukkit.Sound
 import org.bukkit.attribute.Attribute
-import org.bukkit.damage.DamageSource
 import org.bukkit.damage.DamageType
 import org.bukkit.entity.*
 import org.bukkit.event.block.BlockPlaceEvent
@@ -72,10 +71,7 @@ class GGArena : Arena() {
             is Arrow -> GGBow.hit(entity as Arrow)
             is Snowball -> GGSnowball.hit(entity as Snowball, hitEntity)
             is WindCharge -> GGMace.hit(entity as WindCharge, competition)
-            is EnderPearl -> {
-                isCancelled = true // dont teleport
-                GGTnt.hit(entity as EnderPearl)
-            }
+            is EnderPearl -> isCancelled = GGTnt.hit(entity as EnderPearl)
         }
 
     }
@@ -149,51 +145,6 @@ class GGArena : Arena() {
             // allow moved too quickly so slap works
             isAllowed = true
             PLUGIN.logger.warning("ALLOW fail move ${this.failReason}")
-        }
-    }
-
-    @ArenaEventHandler
-    fun EntityDamageEvent.handler(competition: LiveCompetition<*>) {
-        if (cause == DamageCause.ENTITY_ATTACK &&
-            damageSource.causingEntity is Player &&
-            (damageSource.causingEntity as Player).inventory.itemInMainHand == Items.GUN.item
-        ) {
-            isCancelled = true
-            GGGun.attack(entity, damageSource.causingEntity as Player)
-            return
-        }
-
-        if (damageSource.directEntity is WitherSkull) {
-            isCancelled = true
-            GGArrow.hit(entity, damageSource.causingEntity as Player)
-            return
-        }
-
-        if (this.entity !is Player) return // the rest should only apply to players
-
-        PLUGIN.logger.info("${entity.name} lost $damage health from $cause")
-
-        if ((entity as Player).isRespawnCooldown) {
-            isCancelled = true
-            return
-        }
-
-        // revert non lethal damage only for hit ground and wall. everything else should be normal damage
-        if (cause == DamageCause.FALL || cause == DamageCause.FLY_INTO_WALL) {
-            // revert non-lethal damage
-            if ((entity as Player).health - damage > 0) damage = 0.0
-        }
-
-        if (cause == DamageCause.VOID) damage = 9999.0 // just fuckin kill em
-
-        val damagingPlayer = this.damageSource.causingEntity as? Player
-        if (damagingPlayer != null && damagingPlayer != entity) {
-            // damaged by other player. track this
-            playerLastDamager[entity as Player] = damagingPlayer to Bukkit.getCurrentTick()
-            PLUGIN.logger.info("tracking ${entity.name} got damaged by ${damagingPlayer.name} at ${Bukkit.getCurrentTick()}")
-
-            // tf2 moment teehee
-            damagingPlayer.playSound(damagingPlayer, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f)
         }
     }
 
@@ -289,6 +240,51 @@ class GGArena : Arena() {
     val playerLastDamager = mutableMapOf<Player, Pair<Player, Int>>()
 
     @ArenaEventHandler
+    fun EntityDamageEvent.handler(competition: LiveCompetition<*>) {
+        if (damageSource.damageType == DamageType.PLAYER_ATTACK &&
+            damageSource.causingEntity is Player &&
+            (damageSource.causingEntity as Player).inventory.itemInMainHand == Items.GUN.item
+        ) {
+            isCancelled = true
+            GGGun.attack(entity, damageSource.causingEntity as Player)
+            return
+        }
+
+        if (damageSource.directEntity is WitherSkull) {
+            isCancelled = true
+            GGArrow.hit(entity, damageSource.causingEntity as Player)
+            return
+        }
+
+        if (this.entity !is Player) return // the rest should only apply to players
+
+        PLUGIN.logger.info("${entity.name} lost $damage health from $cause")
+
+        if ((entity as Player).isRespawnCooldown) {
+            isCancelled = true
+            return
+        }
+
+        // revert non lethal damage only for hit ground and wall. everything else should be normal damage
+        if (cause == DamageCause.FALL || cause == DamageCause.FLY_INTO_WALL) {
+            // revert non-lethal damage
+            if ((entity as Player).health - damage > 0) damage = 0.0
+        }
+
+        if (cause == DamageCause.VOID) damage = 9999.0 // just fuckin kill em
+
+        val damagingPlayer = this.damageSource.causingEntity as? Player
+        if (damagingPlayer != null && damagingPlayer != entity) {
+            // damaged by other player. track this
+            playerLastDamager[entity as Player] = damagingPlayer to Bukkit.getCurrentTick()
+            PLUGIN.logger.info("tracking ${entity.name} got damaged by ${damagingPlayer.name} at ${Bukkit.getCurrentTick()}")
+
+            // tf2 moment teehee
+            damagingPlayer.playSound(damagingPlayer, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f)
+        }
+    }
+
+    @ArenaEventHandler
     fun PlayerDeathEvent.handler(competition: LiveCompetition<*>) {
         isCancelled = true // dont kill and dont call ArenaDeathEvent. we do our own thing
 
@@ -299,7 +295,7 @@ class GGArena : Arena() {
 //        }
 
         // death stuff
-        dontGlide.remove(player)
+        GGBow.dontGlide.remove(player)
 
         Bukkit.broadcast(this.deathMessage()!!)
 
@@ -318,7 +314,7 @@ class GGArena : Arena() {
                 lastDamager.first.playSound(lastDamager.first, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f)
 
                 // v1 behavior: teleport killer to killed
-//                player.teleport(lastDamager.first)
+                player.teleport(lastDamager.first)
             }
         }
 
@@ -369,7 +365,7 @@ class GGArena : Arena() {
 
     @ArenaEventHandler
     fun EntityToggleGlideEvent.handler() {
-        if (isGliding && entity in dontGlide) {
+        if (isGliding && entity in GGBow.dontGlide) {
             val player = entity as Player
             player.world.playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, .5f)
             isCancelled = true
@@ -378,14 +374,4 @@ class GGArena : Arena() {
 //            baseValue = if (isGliding) 3.0 else defaultValue
 //        }
     }
-}
-
-// dont feel like having custom competition logic so ill just track stuff globally and make sure to clear it out
-// if you leave and join an arena really quickly youll get cleared out of this, but thats really unlikely
-val dontGlide = mutableSetOf<Player>()
-
-fun Damageable.damage(amount: Double, source: Entity?, damageType: DamageType) {
-    var builder = DamageSource.builder(damageType).withDamageLocation(this.location)
-    if (source != null) builder = builder.withDirectEntity(source).withCausingEntity(source)
-    this.damage(amount, builder.build())
 }
