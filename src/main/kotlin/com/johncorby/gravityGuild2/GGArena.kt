@@ -141,9 +141,9 @@ class GGArena : Arena() {
                 competition.players.forEach {
                     val windToPlayer = it.player.location.subtract(entity.location.add(Vector(0.0, -0.5, 0.0))).toVector()
                     val len = windToPlayer.length()
-                    if (len < 2) {
+                    if (len < 3) {
                         val dir = windToPlayer.normalize()
-                        it.player.velocity = it.player.velocity.add(dir.multiply(len.toFloat().remapClamped(2f, 0f, 0f, 2f)))
+                        it.player.velocity = it.player.velocity.add(dir.multiply(len.toFloat().remapClamped(3f, 0f, 0f, 3f)))
                     }
                 }
             }
@@ -364,7 +364,7 @@ class GGArena : Arena() {
             }
         }
 
-        PLUGIN.logger.info("held item = ${this.player.inventory.getItem(this.newSlot)}")
+//        PLUGIN.logger.info("held item = ${this.player.inventory.getItem(this.newSlot)}")
     }
 
     @ArenaEventHandler
@@ -377,7 +377,7 @@ class GGArena : Arena() {
     }
 
     @ArenaEventHandler
-    fun EntityDamageEvent.handler() {
+    fun EntityDamageEvent.handler(competition: LiveCompetition<*>) {
         if (cause == DamageCause.FIRE_TICK) {
 //            PLUGIN.logger.info("fire tick on ${entity.name}")
 
@@ -385,8 +385,16 @@ class GGArena : Arena() {
 //            entity.velocity = unitRandom.multiply(.5)
         }
 
+        // TODO: fix gun logic
+        if (cause == DamageCause.ENTITY_ATTACK &&
+            damageSource.causingEntity is Player &&
+            (damageSource.causingEntity as Player).inventory.itemInMainHand == Items.SPYGLASS.item) {
+            damage = 9999.0
+        }
+
         if (damageSource.directEntity is WitherSkull) {
             // wither skulls do NOTHING
+            // BUG: 2 kill messages
             isCancelled = true
             // just kidding they do a little bit
             (entity as Damageable).damage(3.0, damageSource.causingEntity, DamageType.WITHER_SKULL)
@@ -397,8 +405,7 @@ class GGArena : Arena() {
 
         PLUGIN.logger.info("${entity.name} lost $damage health from $cause")
 
-        if ((entity as Player).hasPotionEffect(PotionEffectType.INVISIBILITY)) {
-            // invisible = on cooldown. no hurt
+        if ((entity as Player).isCooldown) {
             isCancelled = true
             return
         }
@@ -554,10 +561,7 @@ class GGArena : Arena() {
         Items.entries.forEach { player.setCooldown(it.item, player.getCooldown(it.item)) }
 
         // this does cooldown
-        // BUG: doesnt hide clothes
-        player.addPotionEffect(PotionEffect(PotionEffectType.INVISIBILITY, 20 * 3, 1, false, false))
-        // just to get ur surroundings
-        player.addPotionEffect(PotionEffect(PotionEffectType.NIGHT_VISION, 20 * 3, 1, false, false))
+        player.isCooldown = true
     }
 
     //    data class PlayerDamageData(var lastDamagedTick: Int, var totalDamage: Double)
@@ -643,8 +647,8 @@ class GGArena : Arena() {
         inventory.addItem(Items.SALMON.item)
         inventory.addItem(Items.TNT.item)
         inventory.addItem(Items.ARROW.item)
-//        inventory.addItem(Items.HORN.item)
-        inventory.addItem(Items.SPYGLASS.item)
+        inventory.addItem(Items.HORN.item)
+//        inventory.addItem(Items.SPYGLASS.item) TODO: add back when you refactor and add cooldown
         inventory.helmet = Items.HELMET.item
         inventory.chestplate = Items.CHESTPLATE.item
 

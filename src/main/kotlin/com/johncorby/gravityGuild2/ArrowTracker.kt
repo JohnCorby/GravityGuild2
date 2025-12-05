@@ -62,6 +62,21 @@ var Player.isMarkedForDeath: Boolean
         else this.removePotionEffect(PotionEffectType.GLOWING)
     }
 
+var Player.isCooldown: Boolean
+    get() = hasPotionEffect(PotionEffectType.INVISIBILITY) && hasPotionEffect(PotionEffectType.NIGHT_VISION)
+    set(value) {
+        if (value) {
+            // BUG: doesnt hide clothes
+            addPotionEffect(PotionEffect(PotionEffectType.INVISIBILITY, 20 * 3, 1, false, false))
+            // just to get ur surroundings
+            addPotionEffect(PotionEffect(PotionEffectType.NIGHT_VISION, 20 * 3, 1, false, false))
+        } else {
+            removePotionEffect(PotionEffectType.INVISIBILITY)
+            removePotionEffect(PotionEffectType.NIGHT_VISION)
+        }
+    }
+
+
 
 // why is this here? who cares!
 fun Float.remapClamped(
