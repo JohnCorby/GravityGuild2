@@ -23,7 +23,9 @@ import org.bukkit.util.Transformation
 import org.bukkit.util.Vector
 import org.joml.Quaternionf
 import org.joml.Vector3f
+import java.util.concurrent.ThreadLocalRandom
 import kotlin.math.absoluteValue
+import kotlin.random.Random
 
 
 object GGMace {
@@ -47,19 +49,19 @@ object GGMace {
         ) {
             if (player.doItemCooldown(10)) return
 
-            val nearbyEntities = player.checkHitbox(2.0)
-            if (nearbyEntities.isNotEmpty()) {
+            val nearbyEntities = player.checkHitbox(3.0)
+            if (nearbyEntities.any { it is Damageable }) {
                 PLUGIN.logger.info("mace HIT")
 
                 // mimic mace effect but bigger radius
 //                player.isGliding = false
 //                player.velocity = player.velocity.multiply(-1.5)
                 player.velocity = Vector(player.velocity.x * 1.5, player.velocity.y.absoluteValue * 1.5, player.velocity.z * 1.5)
-//                nearbyEntities.forEach { (it as? Damageable)?.damage(20.0, player, DamageType.MACE_SMASH) }
-                nearbyEntities.forEach {
-                    (it as? Damageable)?.damage(10.0, player, DamageType.MACE_SMASH)
-                    (it as? Player)?.isMarkedForDeath = true
-                }
+                nearbyEntities.forEach { (it as? Damageable)?.damage(20.0, player, DamageType.MACE_SMASH) }
+//                nearbyEntities.forEach {
+//                    (it as? Damageable)?.damage(10.0, player, DamageType.MACE_SMASH)
+//                    (it as? Player)?.isMarkedForDeath = true
+//                }
                 player.world.strikeLightningEffect(player.location)
                 player.fallDistance = 0f
                 player.world.playSound(player, Sound.ITEM_MACE_SMASH_GROUND_HEAVY, 1f, 1f)
@@ -85,6 +87,7 @@ object GGMace {
 //                isCancelled = true
 
         // sideways movement on top of existing windcharge behavior
+        return
         competition.players.forEach {
             val windToPlayer = it.player.location.subtract(entity.location.add(Vector(0.0, -1.0, 0.0))).toVector()
             val len = windToPlayer.length()
@@ -201,7 +204,7 @@ object GGFish {
     fun attack(player: Player) {
         if (player.doItemCooldown(10)) return
 
-        val nearbyEntities = player.checkHitbox(3.0)
+        val nearbyEntities = player.checkHitbox(4.0)
         for (it in nearbyEntities) {
             if (it is Arrow && it.shooter == player) continue // cant hit your own things
             it.velocity = player.eyeLocation.direction.multiply(5)
@@ -219,7 +222,7 @@ object GGFish {
 
 object GGArrow {
     fun attack(player: Player) {
-        val nearbyEntities = player.checkHitbox(2.0)
+        val nearbyEntities = player.checkHitbox(3.0)
         for (nearbyEntity in nearbyEntities) {
             if (nearbyEntity !is LivingEntity) return
 
@@ -293,8 +296,6 @@ object GGGun {
     }
 
     fun attack(entity: Entity?, player: Player) {
-        if (player.isRespawnCooldown) return // extra check since goofy melee moment
-
         if (player.doItemCooldown(20 * 2)) return
 
         (entity as? Damageable)?.damage(9999.0, player, DamageType.ARROW)
@@ -313,6 +314,23 @@ object GGSnowball {
     fun hit(entity: Snowball, hitEntity: Entity?) {
         (hitEntity as? Damageable)?.damage(9999.0, entity.shooter as Player, DamageType.LIGHTNING_BOLT)
         entity.world.strikeLightningEffect(entity.location)
+    }
+}
+
+object GGTree {
+    val playerLastPlanted = mutableMapOf<Player, Int>()
+
+    fun plant(player: Player) {
+        player.rayTraceBlocks(120.0)?.hitBlock?.let {
+            val time = Bukkit.getCurrentTick() - (playerLastPlanted[player] ?: Bukkit.getCurrentTick())
+            PLUGIN.logger.info("GENDER $time")
+            if (time > 20) {
+                player.world.generateTree(it.location, ThreadLocalRandom.current(), TreeType.MEGA_REDWOOD)
+            } else {
+                player.world.generateTree(it.location, ThreadLocalRandom.current(), TreeType.BIG_TREE)
+            }
+            playerLastPlanted[player] = Bukkit.getCurrentTick()
+        }
     }
 }
 
@@ -366,6 +384,12 @@ enum class Items(val item: ItemStack) {
 
         lore(listOf(Component.text("Hitscan shot on left click").color(NamedTextColor.BLUE)))
     }),
+    TREE(ItemStack.of(Material.OAK_SAPLING).apply {
+        addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
+        addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
+
+        lore(listOf(Component.text("Plant a tree on left click. Longer wait = bigger tree").color(NamedTextColor.BLUE)))
+    }),
 
 
     HELMET(ItemStack.of(Material.END_ROD).apply {
@@ -393,6 +417,7 @@ fun Player.initInventory() {
     inventory.addItem(Items.ARROW.item)
     inventory.addItem(Items.HORN.item)
     inventory.addItem(Items.GUN.item)
+    inventory.addItem(Items.TREE.item)
     inventory.helmet = Items.HELMET.item
     inventory.chestplate = Items.CHESTPLATE.item
 
@@ -412,11 +437,16 @@ var Player.isMarkedForDeath: Boolean
         else this.removePotionEffect(PotionEffectType.GLOWING)
     }
 
-var Player.isRespawnCooldown: Boolean
+var Player.isRespawning: Boolean
     get() = hasPotionEffect(PotionEffectType.INVISIBILITY)
     set(value) {
         if (value) {
-            // TODO: just make this do full respawn and remove the stuff from config
+            // respawn
+            val competition = ArenaPlayer.getArenaPlayer(this)!!.competition
+            val spawns = competition.map.spawns!!.teamSpawns!!["Default"]!!.spawns!!
+            val spawn = spawns[Random.nextInt(spawns.size)]
+            this.teleport(spawn.toLocation(competition.map.world))
+
             clearActivePotionEffects()
             fireTicks = 0
 

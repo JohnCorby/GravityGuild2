@@ -1,6 +1,5 @@
 ﻿package com.johncorby.gravityGuild2
 
-import io.papermc.paper.event.entity.EntityKnockbackEvent
 import io.papermc.paper.event.player.PlayerFailMoveEvent
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
@@ -30,7 +29,6 @@ import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerItemDamageEvent
 import org.bukkit.event.player.PlayerItemHeldEvent
-import kotlin.random.Random
 
 class GGArena : Arena() {
     override fun createCommandExecutor() = GGCommandExecutor(this)
@@ -44,13 +42,15 @@ class GGArena : Arena() {
         }
     }
 
-    @ArenaEventHandler
-    fun EntityKnockbackEvent.handler() {
-        if (cause == EntityKnockbackEvent.Cause.EXPLOSION) {
-            // stop wind charge (and everything else)
-            isCancelled = true
+    /*
+        @ArenaEventHandler
+        fun EntityKnockbackEvent.handler() {
+            if (cause == EntityKnockbackEvent.Cause.EXPLOSION) {
+                // stop wind charge (and everything else)
+                isCancelled = true
+            }
         }
-    }
+    */
 
     @ArenaEventHandler
     fun ProjectileLaunchEvent.handler() {
@@ -78,14 +78,12 @@ class GGArena : Arena() {
 
     @ArenaEventHandler
     fun PlayerInteractEvent.handler(competition: LiveCompetition<*>) {
-        if (player.isRespawnCooldown) return
-
         // off hand exists, i dont care
         when (player.inventory.itemInMainHand) {
             Items.MACE.item -> {
-                if (action.isRightClick)
+                if (action.isLeftClick)
                     GGMace.launch(player)
-                else if (action.isLeftClick)
+                else if (action.isRightClick)
                     GGMace.smash(player)
             }
 
@@ -116,6 +114,10 @@ class GGArena : Arena() {
                 if (action.isLeftClick)
                     GGGun.attack(null, player)
             }
+
+            Items.TREE.item -> {
+                if (action.isLeftClick) GGTree.plant(player)
+            }
         }
     }
 
@@ -127,7 +129,7 @@ class GGArena : Arena() {
                 player.getAttribute(Attribute.BLOCK_INTERACTION_RANGE)!!.apply { baseValue = 9999.0 }
             }
             // custom left/right click is weird when hitting entity or block, so just make that impossible
-            Items.MACE.item, Items.ARROW.item, Items.FISH.item, Items.TNT.item -> {
+            Items.ARROW.item, Items.FISH.item, Items.TNT.item, Items.TREE.item -> {
                 player.getAttribute(Attribute.ENTITY_INTERACTION_RANGE)!!.apply { baseValue = 0.0 }
                 player.getAttribute(Attribute.BLOCK_INTERACTION_RANGE)!!.apply { baseValue = 0.0 }
             }
@@ -170,7 +172,7 @@ class GGArena : Arena() {
                 (competition as LiveCompetition).players.forEach { player ->
                     player.player.initInventory()
 
-                    player.player.isRespawnCooldown = true
+                    player.player.isRespawning = true
 
                     // scoreboard module adds us to its own non global scoreboard. I THINK we need to add the team to THAT one to get the nametag thing working
                     // this gets removed on remove-scoerboard so hopefully thatll remove the team effects
@@ -228,8 +230,10 @@ class GGArena : Arena() {
 //        team.removePlayer(player)
 
         GGMace.trackedPlayers.remove(player)
+        GGTree.playerLastPlanted.remove(player)
 
         playerLastDamager.remove(player)
+        playerPendingKills.removeAll { (killer, event) -> killer == player || event.player == player }
 
         // because our victory condition is only time limit, it doesnt close early. we gotta do this ourselves
         if (this.arenaPlayer.role == PlayerRole.PLAYING && this.competition.players.size <= 1) {
@@ -239,12 +243,19 @@ class GGArena : Arena() {
         }
     }
 
-    //    data class PlayerDamageData(var lastDamagedTick: Int, var totalDamage: Double)
-
     val playerLastDamager = mutableMapOf<Player, Pair<Player, Int>>()
+    val playerPendingKills = mutableListOf<Pair<Player, PlayerDeathEvent>>()
 
     @ArenaEventHandler
     fun EntityDamageEvent.handler(competition: LiveCompetition<*>) {
+        if (damageSource.causingEntity is Player &&
+            (damageSource.causingEntity as Player).isRespawning
+        ) {
+            // respawning players can do no damage
+            isCancelled = true
+            return
+        }
+
         if (damageSource.causingEntity is Player &&
             (damageSource.causingEntity as Player).inventory.itemInMainHand == Items.GUN.item &&
             damageSource.damageType == DamageType.PLAYER_ATTACK
@@ -266,7 +277,7 @@ class GGArena : Arena() {
 
         PLUGIN.logger.info("${entity.name} lost $damage health from $cause")
 
-        if ((entity as Player).isRespawnCooldown) {
+        if ((entity as Player).isRespawning) {
             isCancelled = true
             return
         }
@@ -282,6 +293,7 @@ class GGArena : Arena() {
         val damagingPlayer = this.damageSource.causingEntity as? Player
         if (damagingPlayer != null && damagingPlayer != entity) {
             // damaged by other player. track this
+            // overwrite previous value in case of multiple damages
             playerLastDamager[entity as Player] = damagingPlayer to Bukkit.getCurrentTick()
             PLUGIN.logger.info("tracking ${entity.name} got damaged by ${damagingPlayer.name} at ${Bukkit.getCurrentTick()}")
 
@@ -306,46 +318,37 @@ class GGArena : Arena() {
         Bukkit.broadcast(this.deathMessage()!!)
 
         // okay, now use our custom killer thing to track kills
-        // TODO: check player dead later so suicides dont count
         playerLastDamager[player]?.let { (lastDamager, lastDamageTick) ->
             PLUGIN.logger.info("${player.name} last damaged by ${lastDamager.name} at $lastDamageTick (now is ${Bukkit.getCurrentTick()})")
 
             // did it recently enough, give em the kill
             if (Bukkit.getCurrentTick() - lastDamageTick < 20 * 5) {
-                ArenaPlayer.getArenaPlayer(lastDamager)?.computeStat(ArenaStats.KILLS) { old -> (old ?: 0) + 1 }
-                Bukkit.broadcast(Component.text("KILL: ${lastDamager.name} -> ${player.name}").color(NamedTextColor.YELLOW))
+                playerPendingKills.add(lastDamager to this)
+                // may be cancelled below next tick, so wait 2
+                Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable {
+                    if (playerPendingKills.removeAll { (killer, event) -> event == this }) {
+                        ArenaPlayer.getArenaPlayer(lastDamager)?.computeStat(ArenaStats.KILLS) { old -> (old ?: 0) + 1 }
+                        Bukkit.broadcast(Component.text("KILL: ${lastDamager.name} -> ${player.name}").color(NamedTextColor.YELLOW))
 
 
-                // tf2 moment teehee
-                lastDamager.playSound(lastDamager, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f)
-
-                // v1 behavior: teleport killer to killed
-                player.teleport(lastDamager)
+                        // tf2 moment teehee
+                        lastDamager.playSound(lastDamager, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f)
+                    }
+                }, 2)
             }
 
         }
-
-        playerLastDamager.remove(player) // stop tracking who last hurt them becasue they are dead
+        playerLastDamager.remove(player) // stop tracking who last hurt them because they are dead
 //        playerLastDamager.getOrPut(player) { mutableMapOf() }.clear()
+
+        Bukkit.getScheduler().runTask(PLUGIN, Runnable {
+            // if killer dies at the same tick as killed, no matter the order, killer pending kills will be cancelled
+            playerPendingKills.removeAll { (killer, event) -> killer == player }
+        })
 
 
         Bukkit.getScheduler().runTask(PLUGIN, Runnable {
-            // respawn
-            val spawns = competition.map.spawns!!.teamSpawns!!["Default"]!!.spawns!!
-            val spawn = spawns[Random.nextInt(spawns.size)]
-            player.teleport(spawn.toLocation(competition.map.world))
-
-
-            // post respawn effects
-            player.saturation = 9999f
-            player.saturatedRegenRate = 20
-            player.unsaturatedRegenRate = 20
-
-            // these persist but after death but not visually, so this makes the visual appear
-//            Items.entries.forEach { player.setCooldown(it.item, player.getCooldown(it.item)) }
-
-            // this does cooldown
-            player.isRespawnCooldown = true
+            player.isRespawning = true
         })
     }
 

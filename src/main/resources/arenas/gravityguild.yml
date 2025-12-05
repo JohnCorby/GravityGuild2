@@ -85,7 +85,7 @@ phases:
     events:
       on-start:
         - restore-arena
-        - teleport{location=team_spawn;random=true}
+#        - teleport{location=team_spawn;random=true}
         - play-sound{sound=block.note_block.pling;pitch=2;volume=1}
         - apply-scoreboard{scoreboard=ingame-top-kills}
       on-spectate:
