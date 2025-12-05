@@ -229,6 +229,10 @@ object GGArrow {
     fun launch(player: Player) {
         player.launchProjectile(WitherSkull::class.java, player.velocityZeroGround.add(player.eyeLocation.direction))
     }
+
+    fun hit(entity: Entity, player: Player) {
+        (entity as Damageable).damage(3.0, player, DamageType.WITHER_SKULL)
+    }
 }
 
 
@@ -240,9 +244,12 @@ object GGHorn {
             return
         }
 
-        competition.players.forEach {
-            it.player.setCooldown(player.inventory.itemInMainHand, 20 * 30)
-        }
+        // wait one frame to cooldown so horn sound still plays
+        Bukkit.getScheduler().runTask(PLUGIN, Runnable {
+            competition.players.forEach {
+                it.player.setCooldown(player.inventory.itemInMainHand, 20 * 30)
+            }
+        })
 
         // wait and then get players again in case they leave
         Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable {
@@ -273,6 +280,12 @@ object GGGun {
         player.world.playSound(player, Sound.ITEM_WOLF_ARMOR_DAMAGE, 1f, 1f)
         player.setCooldown(player.inventory.itemInMainHand, 20)
 
+    }
+
+    fun attack(entity: Entity?, player: Player) {
+        if (!(player.doItemCooldown(20 * 5))) return
+
+        (entity as? Damageable)?.damage(9999.0, player)
     }
 }
 
@@ -317,9 +330,6 @@ enum class Items(val item: ItemStack) {
         lore(listOf(Component.text("Left click to rocket jump, right click while at speed to smash entities in an area").color(NamedTextColor.BLUE)))
     }),
     FISH(ItemStack.of(Material.SALMON).apply {
-        // BUG: knockback doesnt work sometimes?
-//            addUnsafeEnchantment(Enchantment.KNOCKBACK, 9999)
-//            addUnsafeEnchantment(Enchantment.FIRE_ASPECT, 2)
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
         addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
 
@@ -368,7 +378,7 @@ fun Player.initInventory() {
     inventory.addItem(Items.TNT.item)
     inventory.addItem(Items.ARROW.item)
     inventory.addItem(Items.HORN.item)
-//        inventory.addItem(Items.SPYGLASS.item) TODO: add back when you refactor and add cooldown
+    inventory.addItem(Items.GUN.item)
     inventory.helmet = Items.HELMET.item
     inventory.chestplate = Items.CHESTPLATE.item
 

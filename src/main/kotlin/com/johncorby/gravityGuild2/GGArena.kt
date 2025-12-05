@@ -24,7 +24,6 @@ import org.bukkit.attribute.Attribute
 import org.bukkit.damage.DamageSource
 import org.bukkit.damage.DamageType
 import org.bukkit.entity.*
-import org.bukkit.event.block.Action
 import org.bukkit.event.block.BlockPlaceEvent
 import org.bukkit.event.entity.*
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause
@@ -93,13 +92,13 @@ class GGArena : Arena() {
             }
 
             Items.TNT.item -> {
-                if (action == Action.PHYSICAL) return
-                GGTnt.launch(player, action.isRightClick)
+                if (action.isLeftClick || action.isRightClick)
+                    GGTnt.launch(player, action.isRightClick)
             }
 
             Items.FISH.item -> {
-                if (!action.isLeftClick) return
-                GGFish.attack(player)
+                if (action.isLeftClick)
+                    GGFish.attack(player)
             }
 
             Items.ARROW.item -> {
@@ -111,8 +110,13 @@ class GGArena : Arena() {
             }
 
             Items.HORN.item -> {
-                if (!action.isRightClick)
+                if (action.isRightClick)
                     GGHorn.use(player, competition)
+            }
+
+            Items.GUN.item -> {
+                if (action.isLeftClick)
+                    GGGun.attack(null, player)
             }
         }
     }
@@ -150,27 +154,18 @@ class GGArena : Arena() {
 
     @ArenaEventHandler
     fun EntityDamageEvent.handler(competition: LiveCompetition<*>) {
-        if (cause == DamageCause.FIRE_TICK) {
-//            PLUGIN.logger.info("fire tick on ${entity.name}")
-
-//            val unitRandom = Vector.getRandom().multiply(2).subtract(Vector(1, 1, 1))
-//            entity.velocity = unitRandom.multiply(.5)
-        }
-
-        // TODO: fix gun logic
         if (cause == DamageCause.ENTITY_ATTACK &&
             damageSource.causingEntity is Player &&
             (damageSource.causingEntity as Player).inventory.itemInMainHand == Items.GUN.item
         ) {
-            damage = 9999.0
+            isCancelled = true
+            GGGun.attack(entity, damageSource.causingEntity as Player)
+            return
         }
 
         if (damageSource.directEntity is WitherSkull) {
-            // wither skulls do NOTHING
-            // BUG: 2 kill messages
             isCancelled = true
-            // just kidding they do a little bit
-            (entity as Damageable).damage(3.0, damageSource.causingEntity, DamageType.WITHER_SKULL)
+            GGArrow.hit(entity, damageSource.causingEntity as Player)
             return
         }
 
