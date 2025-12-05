@@ -37,12 +37,12 @@ events:
     - clear-effects
     - restore{types=all}
     - remove-scoreboard
-  on-death:
+#  on-death:
 #    - clear-inventory
-    - respawn
-    - delay{ticks=1}
+#    - respawn
+#    - delay{ticks=1}
 #    - teleport{location=waitroom}
-    - teleport{location=team_spawn;random=true}
+#    - teleport{location=team_spawn;random=true}
 options:
   - hunger-deplete{enabled=false}
   - keep-inventory{enabled=true}

@@ -37,6 +37,7 @@ import org.bukkit.event.block.BlockPlaceEvent
 import org.bukkit.event.entity.EntityDamageEvent
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause
 import org.bukkit.event.entity.EntityToggleGlideEvent
+import org.bukkit.event.entity.PlayerDeathEvent
 import org.bukkit.event.entity.ProjectileHitEvent
 import org.bukkit.event.entity.ProjectileLaunchEvent
 import org.bukkit.event.player.PlayerDropItemEvent
@@ -50,6 +51,7 @@ import org.bukkit.util.Transformation
 import org.bukkit.util.Vector
 import org.joml.Quaternionf
 import org.joml.Vector3f
+import kotlin.random.Random
 
 // this file is probably way too big... too bad!
 class GGArena : Arena() {
@@ -516,15 +518,24 @@ class GGArena : Arena() {
         }
     }
 
-    @ArenaEventHandler
-    fun ArenaRespawnEvent.handler() {
-        when (competition.phase) {
-            CompetitionPhaseType.INGAME -> {
-                //            player.initAndSpawn()
-            }
-        }
+    //    data class PlayerDamageData(var lastDamagedTick: Int, var totalDamage: Double)
 
+    val playerLastDamager = mutableMapOf<Player, Pair<Player, Int>>()
+
+    @ArenaEventHandler
+    fun PlayerDeathEvent.handler(competition: LiveCompetition<*>) {
+        isCancelled = true // dont kill and dont call ArenaDeathEvent. we do our own thing
+
+//        when (competition.phase) {
+//            CompetitionPhaseType.INGAME -> {
+//                            player.initAndSpawn()
+//            }
+//        }
+
+        // death stuff
         dontGlide.remove(player)
+
+        Bukkit.broadcast(this.deathMessage()!!)
 
         // okay, now use our custom killer thing to track kills
         // TODO: maybe move this to PlayerDeathEvent if we wait before respawning
@@ -547,31 +558,27 @@ class GGArena : Arena() {
 
         playerLastDamager.remove(player) // stop tracking who last hurt them becasue they are dead
 //        playerLastDamager.getOrPut(player) { mutableMapOf() }.clear()
-    }
 
-    // editing player stuff has to happen here, so says the docs
-    @ArenaEventHandler
-    fun PlayerPostRespawnEvent.handler() {
 
-        player.saturation = 9999f
-        player.saturatedRegenRate = 20
-        player.unsaturatedRegenRate = 20
+        Bukkit.getScheduler().runTask(PLUGIN, Runnable {
+            // respawn
+            val spawns = competition.map.spawns!!.teamSpawns!!["Default"]!!.spawns!!
+            val spawn = spawns[Random.nextInt(spawns.size)]
+            PLUGIN.logger.info("respawn at ${spawn.toLocation(competition.map.world)}")
+            player.teleport(spawn.toLocation(competition.map.world))
 
-        // these persist but after death but not visually, so this makes the visual appear
-        Items.entries.forEach { player.setCooldown(it.item, player.getCooldown(it.item)) }
 
-        // this does cooldown
-        player.isCooldown = true
-    }
+            // post respawn effects
+            player.saturation = 9999f
+            player.saturatedRegenRate = 20
+            player.unsaturatedRegenRate = 20
 
-    //    data class PlayerDamageData(var lastDamagedTick: Int, var totalDamage: Double)
+            // these persist but after death but not visually, so this makes the visual appear
+//            Items.entries.forEach { player.setCooldown(it.item, player.getCooldown(it.item)) }
 
-    val playerLastDamager = mutableMapOf<Player, Pair<Player, Int>>()
-
-    @ArenaEventHandler
-    fun ArenaKillEvent.handler() {
-        // cancel out kill increment that StatListener did. we do our own thing on respawn
-        this.killer.computeStat(ArenaStats.KILLS) { old: Int? -> (old ?: 0) - 1 }
+            // this does cooldown
+            player.isCooldown = true
+        })
     }
 
     enum class Items(val item: ItemStack) {
