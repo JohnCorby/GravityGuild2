@@ -333,7 +333,7 @@ object GGTree {
         (player.rayTraceEntities(120, true) ?: player.rayTraceBlocks(120.0, FluidCollisionMode.NEVER))
             ?.let {
                 val time = Bukkit.getCurrentTick() - (playerLastPlanted[player] ?: Bukkit.getCurrentTick())
-                created = player.world.generateTree(it.hitPosition.toLocation(player.world), ThreadLocalRandom.current(), if (time > 20) TreeType.MEGA_PINE else TreeType.DARK_OAK)
+                created = player.world.generateTree(it.hitPosition.toLocation(player.world), ThreadLocalRandom.current(), if (time > 20) TreeType.MEGA_REDWOOD else TreeType.BIG_TREE)
             }
         if (created) {
             playerLastPlanted[player] = Bukkit.getCurrentTick()
