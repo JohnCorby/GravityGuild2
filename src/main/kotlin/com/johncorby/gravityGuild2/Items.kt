@@ -211,8 +211,7 @@ object GGFish {
         val nearbyEntities = player.checkHitbox(3.0)
         for (it in nearbyEntities) {
             if (it is Projectile && it.shooter == player && it !is EnderPearl) continue // cant hit your own things
-            val knockback = if (it is Projectile) 3 else 5
-            it.velocity = Vector(player.eyeLocation.direction.x * knockback, player.eyeLocation.direction.y.absoluteValue * knockback, player.eyeLocation.direction.z * knockback)
+            it.velocity = player.eyeLocation.direction.multiply(if (it is Projectile) 3 else 5)
             hit = true
             if (it is Arrow) GGBow.trackedArrows[it] = it.velocity // set new velocity
             it.fireTicks = 20 * 10
