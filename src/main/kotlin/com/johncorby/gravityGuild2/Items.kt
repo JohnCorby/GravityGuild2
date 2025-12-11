@@ -211,7 +211,8 @@ object GGFish {
         val nearbyEntities = player.checkHitbox(3.0)
         for (it in nearbyEntities) {
             if (it is Projectile && it.shooter == player && it !is EnderPearl) continue // cant hit your own things
-            it.velocity = player.eyeLocation.direction.multiply(if (it is Projectile) 3 else 5)
+            val knockback = if (it is Projectile) 3 else 5
+            it.velocity = Vector(player.eyeLocation.direction.x * knockback, player.eyeLocation.direction.y.absoluteValue * knockback, player.eyeLocation.direction.z * knockback)
             hit = true
             if (it is Arrow) GGBow.trackedArrows[it] = it.velocity // set new velocity
             it.fireTicks = 20 * 10
@@ -222,7 +223,7 @@ object GGFish {
         if (nearbyEntities.isEmpty()) { // make sure to indicate whiff with sound
             player.world.playSound(player, Sound.ENTITY_PLAYER_ATTACK_NODAMAGE, 1f, 1f)
         } else if (hit) {
-            player.velocity = player.eyeLocation.direction.multiply(-3)
+            player.velocity = player.eyeLocation.direction.multiply(-1.5)
             player.isGliding = false
         }
     }
