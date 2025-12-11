@@ -75,7 +75,7 @@ object GGMace {
 
     fun launch(player: Player) {
         // shoot wind charge. it has the most fun movement. if its too OP, use fireball
-        player.launchProjectile(WindCharge::class.java, player.velocityZeroGround.add(player.eyeLocation.direction))
+        player.launchProjectile(WindCharge::class.java, player.eyeLocation.direction)
         // cancel so player doesnt break anything
         //        isCancelled = true
 
@@ -105,7 +105,7 @@ object GGTnt {
     fun launch(player: Player, small: Boolean) {
         if (player.doItemCooldown(20 * 5)) return
 
-        val projectile = player.launchProjectile(EnderPearl::class.java, player.velocityZeroGround.add(player.eyeLocation.direction.multiply(.7)))
+        val projectile = player.launchProjectile(EnderPearl::class.java, player.eyeLocation.direction.multiply(.7))
         val tnt = projectile.world.spawn(projectile.location, BlockDisplay::class.java)
         tnt.block = Material.TNT.createBlockData()
         tnt.transformation = Transformation(
@@ -135,6 +135,9 @@ object GGTnt {
 
 object GGBow {
     fun launch(entity: Arrow) {
+        // dont include player velocity in projectile velocity
+//        entity.velocity = entity.velocity.subtract((entity.shooter as Player).velocityZeroGround)
+
         entity.setGravity(false)
         entity.visualFire = TriState.TRUE
 //                val tnt = entity.world.spawn(entity.location, TNTPrimed::class.java)
@@ -204,10 +207,12 @@ object GGFish {
     fun attack(player: Player) {
         if (player.doItemCooldown(10)) return
 
-        val nearbyEntities = player.checkHitbox(4.0)
+        var hit = false
+        val nearbyEntities = player.checkHitbox(3.0)
         for (it in nearbyEntities) {
-            if (it is Arrow && it.shooter == player) continue // cant hit your own things
-            it.velocity = player.eyeLocation.direction.multiply(5)
+            if (it is Projectile && it.shooter == player && it !is EnderPearl) continue // cant hit your own things
+            it.velocity = player.eyeLocation.direction.multiply(if (it is Projectile) 3 else 5)
+            hit = true
             if (it is Arrow) GGBow.trackedArrows[it] = it.velocity // set new velocity
             it.fireTicks = 20 * 10
             if (it is Player) it.isMarkedForDeath = true
@@ -216,6 +221,9 @@ object GGFish {
         }
         if (nearbyEntities.isEmpty()) { // make sure to indicate whiff with sound
             player.world.playSound(player, Sound.ENTITY_PLAYER_ATTACK_NODAMAGE, 1f, 1f)
+        } else if (hit) {
+            player.velocity = player.eyeLocation.direction.multiply(-3)
+            player.isGliding = false
         }
     }
 }
@@ -244,7 +252,7 @@ object GGArrow {
     }
 
     fun launch(player: Player) {
-        player.launchProjectile(WitherSkull::class.java, player.velocityZeroGround.add(player.eyeLocation.direction))
+        player.launchProjectile(WitherSkull::class.java, player.eyeLocation.direction)
     }
 
     fun hit(entity: Entity, player: Player) {
@@ -284,7 +292,7 @@ object GGGun {
     fun use(player: Player) {
         if (player.doItemCooldown(20)) return
 
-//                val projectile = player.launchProjectile(Arrow::class.java, player.velocityZeroGround.add(player.eyeLocation.direction.multiply(1000)))
+//                val projectile = player.launchProjectile(Arrow::class.java, player.eyeLocation.direction.multiply(1000))
 
         val result = player.world.rayTrace(player.location, player.location.direction, 120.0, FluidCollisionMode.NEVER, true, 10.0, null)
         result?.hitEntity?.let {
@@ -296,11 +304,11 @@ object GGGun {
     }
 
     fun attack(entity: Entity?, player: Player) {
-        if (player.doItemCooldown(20 * 2)) return
+//        if (player.doItemCooldown(20 * 2)) return
 
-        (entity as? Damageable)?.damage(9999.0, player, DamageType.ARROW)
+        (entity as? Damageable)?.damage(3.0, player, DamageType.ARROW)
 
-        player.world.playSound(player, Sound.ITEM_WOLF_ARMOR_DAMAGE, 1f, 1f)
+//        player.world.playSound(player, Sound.ITEM_WOLF_ARMOR_DAMAGE, 1f, 1f)
     }
 }
 
@@ -321,23 +329,27 @@ object GGTree {
     val playerLastPlanted = mutableMapOf<Player, Int>()
 
     fun plant(player: Player) {
-        player.rayTraceBlocks(120.0)?.hitBlock?.let {
-            val time = Bukkit.getCurrentTick() - (playerLastPlanted[player] ?: Bukkit.getCurrentTick())
-            PLUGIN.logger.info("GENDER $time")
-            if (time > 20) {
-                player.world.generateTree(it.location, ThreadLocalRandom.current(), TreeType.MEGA_REDWOOD)
-            } else {
-                player.world.generateTree(it.location, ThreadLocalRandom.current(), TreeType.BIG_TREE)
+        var created = false
+        (player.rayTraceEntities(120, true) ?: player.rayTraceBlocks(120.0, FluidCollisionMode.NEVER))
+            ?.let {
+                val time = Bukkit.getCurrentTick() - (playerLastPlanted[player] ?: Bukkit.getCurrentTick())
+                created = player.world.generateTree(it.hitPosition.toLocation(player.world), ThreadLocalRandom.current(), if (time > 20) TreeType.MEGA_PINE else TreeType.DARK_OAK)
             }
+        if (created) {
             playerLastPlanted[player] = Bukkit.getCurrentTick()
+            player.setCooldown(player.inventory.itemInMainHand, 20)
+        } else {
+            player.world.playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, .5f)
         }
     }
 }
 
 
 enum class Items(val item: ItemStack) {
-    BOW(ItemStack.of(Material.BOW).apply {
+    BOW(ItemStack.of(Material.CROSSBOW).apply {
         addUnsafeEnchantment(Enchantment.INFINITY, 1)
+        addUnsafeEnchantment(Enchantment.QUICK_CHARGE, 2)
+//        addUnsafeEnchantment(Enchantment.MULTISHOT, 1)
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
         addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
 

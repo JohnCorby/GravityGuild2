@@ -56,9 +56,6 @@ class GGArena : Arena() {
     fun ProjectileLaunchEvent.handler() {
 //        PLUGIN.logger.info("${entity.shooter} shoot ${entity}\nshooter vel = ${(entity.shooter as Player).velocityZeroGround}")
 
-        // dont include player velocity in projectile velocity
-        entity.velocity = entity.velocity.subtract((entity.shooter as Player).velocityZeroGround)
-
         when (entity) {
             is Arrow -> GGBow.launch(entity as Arrow)
             is Snowball -> GGSnowball.launch(entity as Snowball)
@@ -268,6 +265,7 @@ class GGArena : Arena() {
         if (damageSource.causingEntity is Player &&
             damageSource.directEntity is WitherSkull
         ) {
+            // TODO: move this to projectile hit event
             isCancelled = true
             GGArrow.hit(entity, damageSource.causingEntity as Player)
             return
@@ -367,7 +365,7 @@ class GGArena : Arena() {
 
     @ArenaEventHandler
     fun BlockPlaceEvent.handler() {
-        if (itemInHand == Items.TNT.item) {
+        if (itemInHand == Items.TNT.item || itemInHand == Items.TREE.item) {
             isCancelled = true
         }
     }

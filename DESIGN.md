@@ -12,6 +12,8 @@
   - enderpearl that teleports someone else
   - make everyone glow so you can find them
   - add cooldown to an item lol
+- add custom death messages
+  - show scores on game end
 
 # flying
 
@@ -40,7 +42,10 @@
     - okay rn this is way too powerful
     - made it just knock, no explode. brings em down. we fight on ground
 - IDEA: turn into crossbow?
+  - lose arrow speed control, but i can control charge duration
+  - briefly testing, this makes it the bow TERRIBLE at short range (very slow). it hits the goal much better
 - IDEA: left click gives slowness for zoom?
+  - no. doesnt work in air
 
 # tnt
 
@@ -55,12 +60,13 @@
 - IDEA: air shot? just do arrow logic but explode.
   - this might throw balance off for diving in with mace? or could be cool counter 
   - could just reflect arrow instead? counter
+  - OR do uh ultrakill coin thing
 - IDEA: explode after seconds for cool kill and prevent long range?
   - or just make it longer between shots
 - might be too hard to escape? so if u shoot it the other person just dies lol
   - or make it counterable with arrow (ie shoot tnt to make it explode early)
 
-# trident (fish)
+# fish
 
 - GOAL: get em out of short range
 - GOAL: make em vulnerable
@@ -75,6 +81,11 @@
   - it means ur vulnerable, but you dont really get to do anything while vulnerable since you cant move much
   - how do you remain vulnerable while still giving a goal to the player lit on fire?
   - IDEA: glowing effect? mark for death? slowness?
+  - okay i did that. i like
+- IDEA: make YOU also bounce back in opposite direction
+  - mace used to do this, but now just makes you reflect off in same direction but up
+  - you can hit off ANYTHING, including your own wither skulls :P now you cant fly from ur own stuff
+  - you also get the same velocity every time, you more than wind charge hit from ground
 
 # mace
 
@@ -85,6 +96,7 @@
   - IDEA: kinda meh custom wind charge hit response (manually set velocity). rn its kinda finicky (you can only really go up).
 - wider range for mace hit. bounce. will try. might want a way to block?
   - also counters someone just standing under you to try and get you? maybe?
+- IDEA: less damage but mark for death, to chain with arrow
 
 # wither skull?
 - tunneling?
@@ -93,7 +105,9 @@
 - kinda makes bow obselete?
 - okay now its just tunneling thats it
 - IDEA: make it do a bit of damage
-- IDEA: backstab melee... does this make grenade obsolete? 
+  - okay
+- IDEA: backstab melee... does this make grenade obsolete?
+  - nope its fine, barely useful lol
 - IDEA: mark for death: arrows in range will explode like they used to (which was op). lasts for like 10 seconds
 
 # hitscan weapon?
