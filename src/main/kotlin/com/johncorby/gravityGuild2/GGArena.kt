@@ -29,6 +29,7 @@ import org.bukkit.event.player.PlayerDropItemEvent
 import org.bukkit.event.player.PlayerInteractEvent
 import org.bukkit.event.player.PlayerItemDamageEvent
 import org.bukkit.event.player.PlayerItemHeldEvent
+import org.bukkit.inventory.EquipmentSlot
 
 class GGArena : Arena() {
     override fun createCommandExecutor() = GGCommandExecutor(this)
@@ -75,13 +76,15 @@ class GGArena : Arena() {
 
     @ArenaEventHandler
     fun PlayerInteractEvent.handler(competition: LiveCompetition<*>) {
+        if (hand != EquipmentSlot.HAND) return
+
         // off hand exists, i dont care
         when (player.inventory.itemInMainHand) {
             Items.MACE.item -> {
                 if (action.isLeftClick)
-                    GGMace.launch(player)
-                else if (action.isRightClick)
                     GGMace.smash(player)
+                else if (action.isRightClick)
+                    GGMace.launch(player)
             }
 
             Items.TNT.item -> {
@@ -126,7 +129,7 @@ class GGArena : Arena() {
                 player.getAttribute(Attribute.BLOCK_INTERACTION_RANGE)!!.apply { baseValue = 9999.0 }
             }
             // custom left/right click is weird when hitting entity or block, so just make that impossible
-            Items.ARROW.item, Items.FISH.item, Items.TNT.item, Items.TREE.item -> {
+            Items.MACE.item, Items.ARROW.item, Items.FISH.item, Items.TNT.item, Items.TREE.item -> {
                 player.getAttribute(Attribute.ENTITY_INTERACTION_RANGE)!!.apply { baseValue = 0.0 }
                 player.getAttribute(Attribute.BLOCK_INTERACTION_RANGE)!!.apply { baseValue = 0.0 }
             }
@@ -265,7 +268,6 @@ class GGArena : Arena() {
         if (damageSource.causingEntity is Player &&
             damageSource.directEntity is WitherSkull
         ) {
-            // TODO: move this to projectile hit event
             isCancelled = true
             GGArrow.hit(entity, damageSource.causingEntity as Player)
             return

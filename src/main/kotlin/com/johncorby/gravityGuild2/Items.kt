@@ -215,14 +215,23 @@ object GGFish {
             hit = true
             if (it is Arrow) GGBow.trackedArrows[it] = it.velocity // set new velocity
             it.fireTicks = 20 * 10
-            if (it is Player) it.isMarkedForDeath = true
+            if (it is Player) {
+                it.isMarkedForDeath = true
+
+                // TODO: remove if this sucks
+                it.isGliding = false
+                it.world.playSound(it, Sound.ENTITY_PLAYER_BURP, 1f, 1f)
+                GGBow.dontGlide.add(it)
+                Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable { GGBow.dontGlide.remove(it) }, 20)
+            }
             if (it is Projectile) it.shooter = player // to count the kill
             player.attack(it)
         }
-        if (nearbyEntities.isEmpty()) { // make sure to indicate whiff with sound
+        if (!hit) { // make sure to indicate whiff with sound
             player.world.playSound(player, Sound.ENTITY_PLAYER_ATTACK_NODAMAGE, 1f, 1f)
-        } else if (hit) {
-            player.velocity = player.eyeLocation.direction.multiply(-1.5)
+        } else {
+            // TODO: remove if this sucks
+            player.velocity = player.eyeLocation.direction.multiply(-2)
             player.isGliding = false
         }
     }
@@ -315,6 +324,8 @@ object GGGun {
 
 object GGSnowball {
     fun launch(entity: Snowball) {
+        entity.velocity = entity.velocity.subtract((entity.shooter as Player).velocityZeroGround)
+
         entity.isGlowing = true
         entity.visualFire = TriState.TRUE
     }
@@ -348,7 +359,7 @@ object GGTree {
 enum class Items(val item: ItemStack) {
     BOW(ItemStack.of(Material.CROSSBOW).apply {
         addUnsafeEnchantment(Enchantment.INFINITY, 1)
-        addUnsafeEnchantment(Enchantment.QUICK_CHARGE, 2)
+//        addUnsafeEnchantment(Enchantment.QUICK_CHARGE, 2)
 //        addUnsafeEnchantment(Enchantment.MULTISHOT, 1)
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
         addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
@@ -371,7 +382,7 @@ enum class Items(val item: ItemStack) {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
         addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
 
-        lore(listOf(Component.text("Left click to rocket jump, right click while at speed to smash entities in an area").color(NamedTextColor.BLUE)))
+        lore(listOf(Component.text("Right click to rocket jump, left click while at speed to smash entities in an area").color(NamedTextColor.BLUE)))
     }),
     FISH(ItemStack.of(Material.SALMON).apply {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)

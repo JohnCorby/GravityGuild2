@@ -12,8 +12,8 @@
   - enderpearl that teleports someone else
   - make everyone glow so you can find them
   - add cooldown to an item lol
-- add custom death messages
-  - show scores on game end
+- TODO: add custom death messages
+- TODO: show scores on game end
 
 # flying
 
@@ -65,6 +65,7 @@
   - or just make it longer between shots
 - might be too hard to escape? so if u shoot it the other person just dies lol
   - or make it counterable with arrow (ie shoot tnt to make it explode early)
+- IDEA: switch small tnt for minecart that slide along da ground
 
 # fish
 
@@ -109,6 +110,7 @@
 - IDEA: backstab melee... does this make grenade obsolete?
   - nope its fine, barely useful lol
 - IDEA: mark for death: arrows in range will explode like they used to (which was op). lasts for like 10 seconds
+  - done for fish. wither skulls shouldnt be damager really... but maybe it should be
 
 # hitscan weapon?
 - GOAL: the only long range weapon (bow has deviation and may get damage falloff). really hard to hit shots with no lag compensation
@@ -117,3 +119,5 @@
 - mc has bad hitreg but could be fun
 - 
 - PROBLEM: mc hitreg is so bad its impossible to hit. making hitboxes bigger might defeat the point of the bow lol
+- 
+- every kill i got with this is player standing still and felt way cheaper than the other weapons. i just made this a long punch for now
