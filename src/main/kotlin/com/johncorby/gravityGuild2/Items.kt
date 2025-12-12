@@ -115,20 +115,55 @@ object GGTnt {
             Quaternionf()
         )
         projectile.addPassenger(tnt)
+        trackedTnt.add(projectile)
 
         player.world.playSound(player, Sound.ENTITY_TNT_PRIMED, 1f, if (small) 1f else .5f)
     }
 
     fun hit(entity: EnderPearl): Boolean {
         val display = entity.passengers.firstOrNull() as? BlockDisplay ?: return false
+        val small = display.transformation.scale == Vector3f(.5f)
         entity.world.createExplosion(
             entity,
-            if (display.transformation.scale == Vector3f(.5f)) 2f else 5f,
+            if (small) 2f else 5f,
             true
         )
         display.remove()
         entity.remove()
+        trackedTnt.remove(entity)
         return true
+    }
+
+    val trackedTnt = mutableListOf<EnderPearl>()
+
+    init {
+        Bukkit.getScheduler().runTaskTimer(PLUGIN, Runnable {
+            for (tnt in trackedTnt) {
+                val display = tnt.passengers.firstOrNull() as BlockDisplay
+                val small = display.transformation.scale == Vector3f(.5f)
+
+                val nearbyEntities = tnt.world.getNearbyEntities(
+                    tnt.location,
+                    3.0, 3.0, 3.0,
+                    { it != tnt && it != tnt.shooter },
+                )
+                nearbyEntities.forEach {
+                    when {
+                        it is Arrow -> {
+                            tnt.hitEntity(it)
+                            // ultrakill coin moment. go towards closest player
+                            val closestPlayer = it.world.players.filter { player -> player != it.shooter }.minByOrNull { player -> it.location.distance(player.eyeLocation) } ?: return@forEach
+                            it.velocity = closestPlayer.eyeLocation.subtract(it.location).toVector().normalize().multiply(3)
+                            GGBow.trackedArrows[it] = it.velocity
+                        }
+
+                        it is Player && small -> {
+                            tnt.hitEntity(it) // make small tnt useful by being able to hit in midair
+                        }
+                    }
+                }
+            }
+        }, 0, 0)
     }
 }
 
@@ -170,7 +205,7 @@ object GGBow {
                 val nearbyEntities = arrow.world.getNearbyEntities(
                     arrow.location,
                     3.0, 3.0, 3.0,
-                    { it is Player && it != arrow && it != arrow.shooter && (it.isGliding || it.isMarkedForDeath) },
+                    { it != arrow && it != arrow.shooter && it is Player && (it.isGliding || it.isMarkedForDeath) },
                 )
                 nearbyEntities.forEach {
                     val nearbyPlayer = it as Player

@@ -13,7 +13,7 @@
   - make everyone glow so you can find them
   - add cooldown to an item lol
 - TODO: add custom death messages
-- TODO: show scores on game end
+- DONE: show scores on game end
 
 # flying
 
@@ -43,7 +43,7 @@
     - made it just knock, no explode. brings em down. we fight on ground
 - IDEA: turn into crossbow?
   - lose arrow speed control, but i can control charge duration
-  - briefly testing, this makes it the bow TERRIBLE at short range (very slow). it hits the goal much better
+  - briefly testing, this makes it the bow TERRIBLE at short range (very slow). it hits the goal much better. idk if i like it tho
 - IDEA: left click gives slowness for zoom?
   - no. doesnt work in air
 
@@ -63,6 +63,7 @@
   - OR do uh ultrakill coin thing
 - IDEA: explode after seconds for cool kill and prevent long range?
   - or just make it longer between shots
+  - or make it so you can manually explode like stickybomb
 - might be too hard to escape? so if u shoot it the other person just dies lol
   - or make it counterable with arrow (ie shoot tnt to make it explode early)
 - IDEA: switch small tnt for minecart that slide along da ground

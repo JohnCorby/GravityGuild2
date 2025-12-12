@@ -181,6 +181,16 @@ class GGArena : Arena() {
 //                    team.addPlayer(player.player)
                 }
             }
+
+            CompetitionPhaseType.VICTORY -> {
+                // reload triggers this
+                if ((competition as LiveCompetition).players.isEmpty()) return
+
+                Bukkit.broadcast(Component.text("Game ${competition.map.name} ended with stats:").color(NamedTextColor.YELLOW))
+                (competition as LiveCompetition).players.sortedByDescending { it.stat(ArenaStats.KILLS).get() }.forEach {
+                    Bukkit.broadcast(Component.text("${it.player.name}: ${it.stat(ArenaStats.KILLS).get()} kills"))
+                }
+            }
         }
     }
 
@@ -196,7 +206,7 @@ class GGArena : Arena() {
             }
 
             CompetitionPhaseType.VICTORY -> {
-                // reload triggers this so nothing should happen here for speed lol
+                // reload triggers this
             }
         }
     }
