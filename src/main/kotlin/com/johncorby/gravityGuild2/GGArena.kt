@@ -82,9 +82,9 @@ class GGArena : Arena() {
         when (player.inventory.itemInMainHand) {
             Items.MACE.item -> {
                 if (action.isLeftClick)
-                    GGMace.smash(player)
-                else if (action.isRightClick)
                     GGMace.launch(player)
+                else if (action.isRightClick)
+                    GGMace.smash(player)
             }
 
             Items.TNT.item -> {
@@ -129,7 +129,7 @@ class GGArena : Arena() {
                 player.getAttribute(Attribute.BLOCK_INTERACTION_RANGE)!!.apply { baseValue = 9999.0 }
             }
             // custom left/right click is weird when hitting entity or block, so just make that impossible
-            Items.MACE.item, Items.ARROW.item, Items.FISH.item, Items.TNT.item, Items.TREE.item -> {
+            Items.ARROW.item, Items.FISH.item, Items.TNT.item, Items.TREE.item -> {
                 player.getAttribute(Attribute.ENTITY_INTERACTION_RANGE)!!.apply { baseValue = 0.0 }
                 player.getAttribute(Attribute.BLOCK_INTERACTION_RANGE)!!.apply { baseValue = 0.0 }
             }

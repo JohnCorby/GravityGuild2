@@ -103,7 +103,7 @@ object GGMace {
 
 object GGTnt {
     fun launch(player: Player, small: Boolean) {
-        if (player.doItemCooldown(20 * 5)) return
+        if (player.doItemCooldown(if (small) 20 * 10 else 20 * 5)) return
 
         val projectile = player.launchProjectile(EnderPearl::class.java, player.eyeLocation.direction.multiply(.7))
         val tnt = projectile.world.spawn(projectile.location, BlockDisplay::class.java)
@@ -139,7 +139,7 @@ object GGTnt {
     init {
         Bukkit.getScheduler().runTaskTimer(PLUGIN, Runnable {
             for (tnt in trackedTnt) {
-                val display = tnt.passengers.firstOrNull() as BlockDisplay
+                val display = tnt.passengers.firstOrNull() as? BlockDisplay ?: continue // i dont know why this happens sometimes but it does
                 val small = display.transformation.scale == Vector3f(.5f)
 
                 val nearbyEntities = tnt.world.getNearbyEntities(
@@ -150,14 +150,23 @@ object GGTnt {
                 nearbyEntities.forEach {
                     when {
                         it is Arrow -> {
-                            tnt.hitEntity(it)
-                            // ultrakill coin moment. go towards closest player
-                            val closestPlayer = it.world.players.filter { player -> player != it.shooter }.minByOrNull { player -> it.location.distance(player.eyeLocation) } ?: return@forEach
-                            it.velocity = closestPlayer.eyeLocation.subtract(it.location).toVector().normalize().multiply(3)
-                            GGBow.trackedArrows[it] = it.velocity
+                            if (small) {
+                                tnt.hitEntity(it)
+                                // ultrakill coin moment. go towards closest player
+                                it.shooter = tnt.shooter // so you can reflect with it :P
+                                var players = ArenaPlayer.getArenaPlayer(it.shooter as Player)!!.competition.players.map { it.player }
+                                val closestPlayer = players.filter { player -> player != it.shooter }.minByOrNull { player -> it.location.distance(player.location) } ?: return@forEach
+                                it.velocity = closestPlayer.location.subtract(it.location).toVector().normalize().multiply(3)
+                                GGBow.trackedArrows[it] = it.velocity
+                            } else {
+                                it.addPassenger(tnt)
+                                tnt.shooter = it.shooter // inherit shooter
+                                // this will also work on opponent arrows.... maybe dont want that
+                            }
                         }
 
                         it is Player && small -> {
+                            tnt.teleport(it.location)
                             tnt.hitEntity(it) // make small tnt useful by being able to hit in midair
                         }
                     }
@@ -182,6 +191,9 @@ object GGBow {
 
     fun hit(entity: Arrow) {
         //                PLUGIN.logger.info("arrow vel = ${entity.velocity.length()}")
+
+        val maybeTnt = entity.passengers.firstOrNull()
+        if (maybeTnt is EnderPearl) GGTnt.hit(maybeTnt)
 
 
 //                (hitEntity as? Damageable)?.damage(9999.0)
@@ -259,14 +271,18 @@ object GGFish {
                 GGBow.dontGlide.add(it)
                 Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable { GGBow.dontGlide.remove(it) }, 20)
             }
-            if (it is Projectile) it.shooter = player // to count the kill
+            if (it is Projectile) {
+                if (it.shooter != player)
+                    (it.shooter as? Player)?.isMarkedForDeath = true // for fun
+                it.shooter = player // to count the kill
+            }
             player.attack(it)
         }
         if (!hit) { // make sure to indicate whiff with sound
             player.world.playSound(player, Sound.ENTITY_PLAYER_ATTACK_NODAMAGE, 1f, 1f)
         } else {
             // TODO: remove if this sucks
-            player.velocity = player.eyeLocation.direction.multiply(-2)
+            player.velocity = player.eyeLocation.direction.multiply(2)
             player.isGliding = false
         }
     }
@@ -394,7 +410,7 @@ object GGTree {
 enum class Items(val item: ItemStack) {
     BOW(ItemStack.of(Material.CROSSBOW).apply {
         addUnsafeEnchantment(Enchantment.INFINITY, 1)
-//        addUnsafeEnchantment(Enchantment.QUICK_CHARGE, 2)
+        addUnsafeEnchantment(Enchantment.QUICK_CHARGE, 1)
 //        addUnsafeEnchantment(Enchantment.MULTISHOT, 1)
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
         addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
@@ -507,6 +523,7 @@ var Player.isRespawning: Boolean
 
             clearActivePotionEffects()
             fireTicks = 0
+            killer = null
 
             // BUG: doesnt hide clothes
             addPotionEffect(PotionEffect(PotionEffectType.INVISIBILITY, 20 * 3, 1, false, false))
