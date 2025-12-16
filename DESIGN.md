@@ -14,6 +14,7 @@
   - add cooldown to an item lol
 - TODO: add custom death messages
 - DONE: show scores on game end
+- IDEA: beds can set spawn until destroyed
 
 # flying
 
@@ -61,12 +62,16 @@
   - this might throw balance off for diving in with mace? or could be cool counter 
   - could just reflect arrow instead? counter
   - OR do uh ultrakill coin thing
+  - RESULT: coin cool, not too op. you can use it as compass
 - IDEA: explode after seconds for cool kill and prevent long range?
   - or just make it longer between shots
   - or make it so you can manually explode like stickybomb
+  - UPDATE: still kinda wanna try this...?
 - might be too hard to escape? so if u shoot it the other person just dies lol
   - or make it counterable with arrow (ie shoot tnt to make it explode early)
+  - UPDATE: u can do that now sorta lol with the passenger thing or fish
 - IDEA: switch small tnt for minecart that slide along da ground
+  - nope, just made small tnt better (and longer cooldown to balance it out)
 
 # fish
 

@@ -35,7 +35,7 @@ object GGMace {
         Bukkit.getScheduler().runTaskTimer(PLUGIN, Runnable {
             trackedPlayers.forEach {
                 it.exp = it.velocity.length().toFloat().remapClamped(0f, 1f, 0f, 1f)
-                it.level = ArenaPlayer.getArenaPlayer(it)!!.getStat<Int>(ArenaStats.KILLS)!!
+                it.level = it.velocity.length().toInt()
             }
         }, 0, 0)
     }
@@ -47,7 +47,7 @@ object GGMace {
 //                        player.fallDistance > 5
             player.velocity.length() > 1
         ) {
-            if (player.doItemCooldown(10)) return
+            if (player.doItemCooldown(20)) return
 
             val nearbyEntities = player.checkHitbox(3.0)
             if (nearbyEntities.any { it is Damageable }) {
@@ -283,7 +283,7 @@ object GGFish {
         } else {
             // TODO: remove if this sucks
             player.velocity = player.eyeLocation.direction.multiply(2)
-            player.isGliding = false
+//            player.isGliding = false
         }
     }
 }
