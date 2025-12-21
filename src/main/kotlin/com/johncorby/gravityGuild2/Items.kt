@@ -36,6 +36,11 @@ object GGMace {
             trackedPlayers.forEach {
                 it.exp = it.velocity.length().toFloat().remapClamped(0f, 1f, 0f, 1f)
                 it.level = it.velocity.length().toInt()
+
+                if (it.velocity.length() > 1)
+                    for (otherPlayer in ArenaPlayer.getArenaPlayer(it)!!.competition.players)
+                        if (otherPlayer.player != it)
+                            otherPlayer.player.playSound(it, Sound.BLOCK_NOTE_BLOCK_BANJO, 2f, 1f)
             }
         }, 0, 0)
     }
@@ -125,7 +130,7 @@ object GGTnt {
         val small = display.transformation.scale == Vector3f(.5f)
         entity.world.createExplosion(
             entity,
-            if (small) 2f else 5f,
+            if (small) 2f else 7f,
             true
         )
         display.remove()

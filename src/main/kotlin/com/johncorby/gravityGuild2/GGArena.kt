@@ -327,6 +327,10 @@ class GGArena : Arena() {
 
         Bukkit.broadcast(this.deathMessage()!!)
 
+        if (damageSource.damageType == DamageType.FLY_INTO_WALL || damageSource.damageType == DamageType.FALL) {
+            player.world.createExplosion(player.location, 5f) // for literally no reason
+        }
+
         // okay, now use our custom killer thing to track kills
         playerLastDamager[player]?.let { (lastDamager, lastDamageTick) ->
             PLUGIN.logger.info("${player.name} last damaged by ${lastDamager.name} at $lastDamageTick (now is ${Bukkit.getCurrentTick()})")

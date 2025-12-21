@@ -66,7 +66,7 @@
 - IDEA: explode after seconds for cool kill and prevent long range?
   - or just make it longer between shots
   - or make it so you can manually explode like stickybomb
-  - UPDATE: still kinda wanna try this...?
+  - UPDATE: still kinda wanna try this...? you can already just explode small tnt by shooting an arrow at it
 - might be too hard to escape? so if u shoot it the other person just dies lol
   - or make it counterable with arrow (ie shoot tnt to make it explode early)
   - UPDATE: u can do that now sorta lol with the passenger thing or fish
