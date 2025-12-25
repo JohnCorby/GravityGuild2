@@ -54,5 +54,5 @@ tasks.shadowJar {
     minimize()
 
     // just hardcode output dir
-    destinationDirectory.set(file("E:\\Minecraft Servers\\Joe Server\\plugins"))
+    destinationDirectory.set(file("D:\\Other Games\\Joe Server\\plugins"))
 }

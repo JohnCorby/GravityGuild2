@@ -95,6 +95,8 @@ class GGArena : Arena() {
             Items.FISH.item -> {
                 if (action.isLeftClick)
                     GGFish.attack(player)
+                else if (action.isRightClick)
+                    GGFish.puffer(player)
             }
 
             Items.ARROW.item -> {
@@ -250,6 +252,7 @@ class GGArena : Arena() {
             this.competition.phaseManager.setPhase(CompetitionPhaseType.VICTORY, true)
             // actually trigger the victory for that player :P
             (this.competition.phaseManager.currentPhase as VictoryPhase).onVictory(this.competition.players.toSet())
+            this.competition.victoryManager.end(false)
         }
     }
 
@@ -279,7 +282,7 @@ class GGArena : Arena() {
             damageSource.directEntity is WitherSkull
         ) {
             isCancelled = true
-            GGArrow.hit(entity, damageSource.causingEntity as Player)
+            GGArrow.hit(entity, damageSource.directEntity as WitherSkull)
             return
         }
 

@@ -37,10 +37,10 @@ object GGMace {
                 it.exp = it.velocity.length().toFloat().remapClamped(0f, 1f, 0f, 1f)
                 it.level = it.velocity.length().toInt()
 
-                if (it.velocity.length() > 1)
+                if (it.velocity.length() > 1 && it.inventory.itemInMainHand != Items.ARROW.item)
                     for (otherPlayer in ArenaPlayer.getArenaPlayer(it)!!.competition.players)
                         if (otherPlayer.player != it)
-                            otherPlayer.player.playSound(it, Sound.BLOCK_NOTE_BLOCK_BANJO, 2f, 1f)
+                            otherPlayer.player.playSound(it, Sound.BLOCK_NOTE_BLOCK_BANJO, it.velocity.length().toFloat(), 1f)
             }
         }, 0, 0)
     }
@@ -156,16 +156,21 @@ object GGTnt {
                     when {
                         it is Arrow -> {
                             if (small) {
+                                if (it.shooter != tnt.shooter) return@forEach // can only coin ur own arrow
+
                                 tnt.hitEntity(it)
                                 // ultrakill coin moment. go towards closest player
-                                it.shooter = tnt.shooter // so you can reflect with it :P
+//                                it.shooter = tnt.shooter // so you can reflect with it :P
                                 var players = ArenaPlayer.getArenaPlayer(it.shooter as Player)!!.competition.players.map { it.player }
                                 val closestPlayer = players.filter { player -> player != it.shooter }.minByOrNull { player -> it.location.distance(player.location) } ?: return@forEach
-                                it.velocity = closestPlayer.location.subtract(it.location).toVector().normalize().multiply(3)
+                                it.velocity = closestPlayer.location.subtract(it.location).toVector().normalize().multiply(5)
                                 GGBow.trackedArrows[it] = it.velocity
                             } else {
                                 it.addPassenger(tnt)
                                 tnt.shooter = it.shooter // inherit shooter
+                                it.velocity = it.velocity.multiply(0.5)
+                                GGBow.trackedArrows[it] = it.velocity
+                                trackedTnt.remove(tnt)
                                 // this will also work on opponent arrows.... maybe dont want that
                             }
                         }
@@ -257,10 +262,10 @@ object GGBow {
 
 object GGFish {
     fun attack(player: Player) {
-        if (player.doItemCooldown(10)) return
+        if (player.doItemCooldown(20)) return
 
         var hit = false
-        val nearbyEntities = player.checkHitbox(3.0)
+        val nearbyEntities = player.checkHitbox(5.0)
         for (it in nearbyEntities) {
             if (it is Projectile && it.shooter == player && it !is EnderPearl) continue // cant hit your own things
             it.velocity = player.eyeLocation.direction.multiply(if (it is Projectile) 3 else 5)
@@ -277,8 +282,14 @@ object GGFish {
                 Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable { GGBow.dontGlide.remove(it) }, 20)
             }
             if (it is Projectile) {
-                if (it.shooter != player)
-                    (it.shooter as? Player)?.isMarkedForDeath = true // for fun
+                if (it.shooter is Player && it.shooter != player) {
+                    (it.shooter as Player).isMarkedForDeath = true // for fun
+
+                    // TODO: remove if this sucks
+                    it.velocity = (it.shooter as Player).location.subtract(it.location).toVector().normalize().multiply(it.velocity.length())
+                    if (it is Arrow)
+                        GGBow.trackedArrows[it] = it.velocity
+                }
                 it.shooter = player // to count the kill
             }
             player.attack(it)
@@ -291,11 +302,18 @@ object GGFish {
 //            player.isGliding = false
         }
     }
+
+    fun puffer(player: Player) {
+        if (player.doItemCooldown(10)) return
+
+        val puffer = player.world.spawn(player.eyeLocation, PufferFish::class.java)
+        puffer.velocity = player.eyeLocation.direction.multiply(2)
+    }
 }
 
 object GGArrow {
     fun attack(player: Player) {
-        val nearbyEntities = player.checkHitbox(3.0)
+        val nearbyEntities = player.checkHitbox(5.0)
         for (nearbyEntity in nearbyEntities) {
             if (nearbyEntity !is LivingEntity) return
 
@@ -320,8 +338,10 @@ object GGArrow {
         player.launchProjectile(WitherSkull::class.java, player.eyeLocation.direction)
     }
 
-    fun hit(entity: Entity, player: Player) {
-        (entity as Damageable).damage(3.0, player, DamageType.WITHER_SKULL)
+    fun hit(entity: Entity, witherSkull: WitherSkull) {
+        (entity as Damageable).damage(3.0, witherSkull.shooter as Player, DamageType.WITHER_SKULL)
+        if (entity != witherSkull.shooter)
+            (entity as? Player)?.isMarkedForDeath = true
     }
 }
 
@@ -420,7 +440,7 @@ enum class Items(val item: ItemStack) {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
         addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
 
-        lore(listOf(Component.text("Shoots explosive antigravity arrows. Power is based on speed. Also knocks players out of elytra").color(NamedTextColor.BLUE)))
+        lore(listOf(Component.text("Shoots explosive antigravity arrows. Knocks players out of elytra").color(NamedTextColor.BLUE)))
     }),
     ARROW(ItemStack.of(Material.ARROW).apply {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)

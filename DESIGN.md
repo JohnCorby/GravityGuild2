@@ -15,6 +15,7 @@
 - TODO: add custom death messages
 - DONE: show scores on game end
 - IDEA: beds can set spawn until destroyed
+- TODO: accessibility: switch to previous slot on use offhand
 
 # flying
 
