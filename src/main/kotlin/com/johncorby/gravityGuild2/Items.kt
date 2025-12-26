@@ -440,31 +440,36 @@ enum class Items(val item: ItemStack) {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
         addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
 
-        lore(listOf(Component.text("Shoots explosive antigravity arrows. Knocks players out of elytra").color(NamedTextColor.BLUE)))
+        lore(listOf(Component.text("Shoots explosive antigravity arrows. Knocks players out of elytra.").color(NamedTextColor.BLUE)))
     }),
     ARROW(ItemStack.of(Material.ARROW).apply {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
         addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
 
-        lore(listOf(Component.text("Shoots wither skulls").color(NamedTextColor.BLUE)))
+        lore(listOf(Component.text("Shoots wither skulls on right click. Become silent and backstab on left click.").color(NamedTextColor.BLUE)))
     }),
     TNT(ItemStack.of(Material.TNT).apply {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
         addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
 
-        lore(listOf(Component.text("Shoots grenades. Left click for big, right click for small").color(NamedTextColor.BLUE)))
+        lore(listOf(Component.text("Shoots grenades. Left click for big, right click for small. Has interactions with arrow.").color(NamedTextColor.BLUE)))
     }),
     MACE(ItemStack.of(Material.MACE).apply {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
         addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
 
-        lore(listOf(Component.text("Right click to rocket jump, left click while at speed to smash entities in an area").color(NamedTextColor.BLUE)))
+        lore(listOf(Component.text("Left click to rocket jump. Right click while at speed to smash entities in an area").color(NamedTextColor.BLUE)))
     }),
     FISH(ItemStack.of(Material.SALMON).apply {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
         addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
 
-        lore(listOf(Component.text("Slap anything in an area away from you and light them on fire").color(NamedTextColor.BLUE)))
+        lore(
+            listOf(
+                Component.text("Slap anything in an area away from you and mark them for death (glowing and more vulnerable to arrows)").color(NamedTextColor.BLUE),
+                Component.text("Right click for pufferfish").color(NamedTextColor.BLUE)
+            )
+        )
     }),
 
 
@@ -481,7 +486,7 @@ enum class Items(val item: ItemStack) {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
         addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
 
-        lore(listOf(Component.text("Hitscan shot on left click").color(NamedTextColor.BLUE)))
+        lore(listOf(Component.text("Long punch").color(NamedTextColor.BLUE)))
     }),
     TREE(ItemStack.of(Material.OAK_SAPLING).apply {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
