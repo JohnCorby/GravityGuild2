@@ -62,7 +62,7 @@ object GGMace {
 //                player.isGliding = false
 //                player.velocity = player.velocity.multiply(-1.5)
                 player.velocity = Vector(player.velocity.x * 1.5, player.velocity.y.absoluteValue * 1.5, player.velocity.z * 1.5)
-                nearbyEntities.forEach { (it as? Damageable)?.damage(20.0, player, DamageType.MACE_SMASH) }
+                nearbyEntities.forEach { (it as? Damageable)?.damageWith(20.0, player, player) }
 //                nearbyEntities.forEach {
 //                    (it as? Damageable)?.damage(10.0, player, DamageType.MACE_SMASH)
 //                    (it as? Player)?.isMarkedForDeath = true
@@ -243,7 +243,7 @@ object GGBow {
                     }
 
                     nearbyPlayer.dontGlide = true
-                    (arrow.shooter as Player).attack(nearbyPlayer)
+                    nearbyPlayer.damageWith(0.0, arrow, arrow.shooter as Player)
                 }
             }
         }, 0, 0)
@@ -281,7 +281,7 @@ object GGFish {
                 }
                 it.shooter = player // to count the kill
             }
-            player.attack(it)
+            (it as? Damageable)?.damageWith(0.0, player, player)
         }
         if (!hit) { // make sure to indicate whiff with sound
             player.world.playSound(player, Sound.ENTITY_PLAYER_ATTACK_NODAMAGE, 1f, 1f)
@@ -300,9 +300,10 @@ object GGFish {
         puffer.setMetadata("player", FixedMetadataValue(PLUGIN, player))
     }
 
-    fun hit(cause: Player, entity: Entity) {
-        if (cause == entity) return
-        cause.attack(entity)
+    fun hit(pufferFish: PufferFish, entity: Entity) {
+        val player = pufferFish.getMetadata("player").firstOrNull()?.value() as? Player ?: return
+        if (player == entity) return
+        (entity as Damageable).damageWith(0.0, pufferFish, player)
         (entity as? Player)?.let { it.isMarkedForDeath = true }
     }
 }
@@ -327,7 +328,7 @@ object GGArrow {
             val `facing same dierction` = Math.toDegrees(spyView.angle(victimView).toDouble()) < 107.5
 
             if (`behind the victim` && `looking towards the victim` && `facing same dierction`)
-                nearbyEntity.damage(9999.0, player)
+                nearbyEntity.damageWith(9999.0, player, player)
         }
     }
 
@@ -336,7 +337,7 @@ object GGArrow {
     }
 
     fun hit(entity: Entity, witherSkull: WitherSkull) {
-        (entity as Damageable).damage(3.0, witherSkull.shooter as Player, DamageType.WITHER_SKULL)
+        (entity as Damageable).damageWith(3.0, witherSkull, witherSkull.shooter as Player)
         if (entity != witherSkull.shooter)
             (entity as? Player)?.isMarkedForDeath = true
     }
@@ -361,7 +362,7 @@ object GGHorn {
         // wait and then get players again in case they leave
         Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable {
             competition.players.forEach {
-                it.player.damage(9999.0, null, DamageType.MAGIC)
+                it.player.damageWith(9999.0, null, null)
                 it.player.showTitle(Title.title(Component.text("Shuffle!"), Component.empty()))
                 it.player.world.strikeLightningEffect(it.player.location)
             }
@@ -378,7 +379,7 @@ object GGGun {
 
         val result = player.world.rayTrace(player.location, player.location.direction, 120.0, FluidCollisionMode.NEVER, true, 10.0, null)
         result?.hitEntity?.let {
-            (it as? Damageable)?.damage(20.0, player)
+            (it as? Damageable)?.damageWith(20.0, player, player)
         }
 
         player.world.playSound(player, Sound.ITEM_WOLF_ARMOR_DAMAGE, 1f, 1f)
@@ -388,7 +389,7 @@ object GGGun {
     fun attack(entity: Entity?, player: Player) {
 //        if (player.doItemCooldown(20 * 2)) return
 
-        (entity as? Damageable)?.damage(3.0, player, DamageType.ARROW)
+        (entity as? Damageable)?.damageWith(3.0, player, player)
 
 //        player.world.playSound(player, Sound.ITEM_WOLF_ARMOR_DAMAGE, 1f, 1f)
     }
@@ -404,7 +405,7 @@ object GGSnowball {
     }
 
     fun hit(entity: Snowball, hitEntity: Entity?) {
-        (hitEntity as? Damageable)?.damage(9999.0, entity.shooter as Player, DamageType.LIGHTNING_BOLT)
+        (hitEntity as? Damageable)?.damageWith(9999.0, entity, entity.shooter as Player)
         entity.world.strikeLightningEffect(entity.location)
     }
 }
@@ -590,9 +591,12 @@ fun Player.checkHitbox(radius: Double): Collection<Entity> = this.world.getNearb
 )
 
 
-fun Damageable.damage(amount: Double, source: Entity?, damageType: DamageType) {
-    var builder = DamageSource.builder(damageType).withDamageLocation(this.location)
-    if (source != null) builder = builder.withDirectEntity(source).withCausingEntity(source)
+fun Damageable.damageWith(amount: Double, source: Entity?, player: Player?) {
+    var builder = DamageSource.builder(DamageType.GENERIC)
+    if (source != null) {
+        builder = builder.withCausingEntity(source)
+        builder = builder.withDirectEntity(player!!)
+    }
     this.damage(amount, builder.build())
 }
 

@@ -284,8 +284,7 @@ class GGArena : Arena() {
     @ArenaEventHandler
     fun EntityDamageEvent.handler(competition: LiveCompetition<*>) {
         if (damageSource.directEntity is PufferFish) {
-            val player = damageSource.directEntity!!.getMetadata("player").firstOrNull()?.value() as? Player
-            player?.let { GGFish.hit(it, entity) }
+            GGFish.hit(damageSource.directEntity as PufferFish, entity)
         }
 
         if (damageSource.causingEntity is Player &&
@@ -306,7 +305,8 @@ class GGArena : Arena() {
         }
 
         if (damageSource.causingEntity is Player &&
-            damageSource.directEntity is WitherSkull
+            damageSource.directEntity is WitherSkull &&
+            damageSource.damageType != DamageType.GENERIC
         ) {
             isCancelled = true
             GGArrow.hit(entity, damageSource.directEntity as WitherSkull)
