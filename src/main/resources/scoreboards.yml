@@ -1,0 +1,107 @@
+# -----------------
+# Scoreboards configuration for BattleArena
+#
+# Documentation: https://docs.battleplugins.org/books/user-guide/page/scoreboards
+# Support: https://discord.gg/tMVPVJf
+# GitHub: https://github.com/BattlePlugins/BattleArena
+# -----------------
+config-version: 1.0 # The config version, do not change!
+
+# Whether to replace the player's existing scoreboard.
+replace-scoreboard: true
+
+# The scoreboard templates to use.
+templates:
+  waiting:
+    title: "<gold>Waiting for players..."
+    refresh-time: 1s
+    lines:
+      - simple:
+          lines:
+            - " "
+            - "<yellow>Players: <white>%online_players%/%max_players%"
+            - "<yellow>Map: <white>%map%"
+            - " "
+            - "<white>battleplugins.org"
+  countdown:
+    title: "<gold>Starting in: <yellow>%remaining_start_time%"
+    refresh-time: 1s
+    lines:
+      - simple:
+          lines:
+            - " "
+            - "<yellow>Players: <white>%online_players%/%max_players%"
+            - "<yellow>Map: <white>%map%"
+            - " "
+            - "<white>battleplugins.org"
+  ingame-list:
+    title: "<gold>%arena%"
+    refresh-time: 1s
+    lines:
+      - simple:
+          lines:
+            - " "
+            - "<yellow>Map: <white>%map%"
+            - "<yellow>Time remaining: <white>%time_remaining_short%"
+            - " "
+            - "<yellow>Players:"
+      - player-list:
+          max-entries: 8
+      - simple:
+          lines:
+            - " "
+            - "<white>battleplugins.org"
+  ingame-list-alive:
+    title: "<gold>%arena%"
+    refresh-time: 1s
+    lines:
+      - simple:
+          lines:
+            - " "
+            - "<yellow>Map: <white>%map%"
+            - "<yellow>Time remaining: <white>%time_remaining_short%"
+            - " "
+            - "<yellow>Alive players:"
+      - player-list:
+          max-entries: 8
+          require-alive: true
+      - simple:
+          lines:
+            - " "
+            - "<white>battleplugins.org"
+  ingame-top-kills:
+    title: "<gold>%arena%"
+    refresh-time: 1s
+    lines:
+      - simple:
+          lines:
+            - " "
+            - "<yellow>Map: <white>%map%"
+            - "<yellow>Time remaining: <white>%time_remaining_short%"
+            - " "
+            - "<yellow>Top kills:"
+      - top-stat:
+          stat: kills
+          max-entries: 8
+      - simple:
+          lines:
+            - " "
+            - "<white>battleplugins.org"
+  ingame-top-team-kills:
+    title: "<gold>%arena%"
+    refresh-time: 1s
+    lines:
+      - simple:
+          lines:
+            - " "
+            - "<yellow>Map: <white>%map%"
+            - "<yellow>Time remaining: <white>%time_remaining_short%"
+            - " "
+            - "<yellow>Top teams:"
+      - top-team-stat:
+          stat: kills
+          max-entries: 8
+      - simple:
+          lines:
+            - " "
+            - "<white>battleplugins.org"
