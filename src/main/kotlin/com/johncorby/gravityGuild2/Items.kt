@@ -10,13 +10,13 @@ import net.kyori.adventure.title.Title
 import net.kyori.adventure.util.TriState
 import org.battleplugins.arena.ArenaPlayer
 import org.battleplugins.arena.competition.LiveCompetition
-import org.battleplugins.arena.stat.ArenaStats
 import org.bukkit.*
 import org.bukkit.damage.DamageSource
 import org.bukkit.damage.DamageType
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.*
 import org.bukkit.inventory.ItemStack
+import org.bukkit.metadata.FixedMetadataValue
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.util.Transformation
@@ -247,7 +247,7 @@ object GGBow {
                     (arrow.shooter as Player).attack(nearbyPlayer)
 
 
-
+                    // TODO use effect for timer lol
                     dontGlide.add(nearbyPlayer)
                     Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable { dontGlide.remove(nearbyPlayer) }, 20)
                 }
@@ -269,11 +269,13 @@ object GGFish {
         val nearbyEntities = player.checkHitbox(5.0)
         for (it in nearbyEntities) {
             if (it is Projectile && it.shooter == player && it !is EnderPearl) continue // cant hit your own things
+            val oldVel = it.velocity
             it.velocity = player.eyeLocation.direction.multiply(if (it is Projectile) 3 else 5)
             hit = true
             if (it is Arrow) GGBow.trackedArrows[it] = it.velocity // set new velocity
             it.fireTicks = 20 * 10
             if (it is Player) {
+                if (it.inventory.itemInMainHand == Items.ARROW.item) it.velocity = oldVel // super bad way of writing this but it works
                 it.isMarkedForDeath = true
 
                 // TODO: remove if this sucks
@@ -304,16 +306,24 @@ object GGFish {
         }
     }
 
-    fun puffer(player: Player) {
+    fun launch(player: Player) {
         if (player.doItemCooldown(10)) return
 
         val puffer = player.world.spawn(player.eyeLocation, PufferFish::class.java)
         puffer.velocity = player.eyeLocation.direction.multiply(2)
+        puffer.setMetadata("player", FixedMetadataValue(PLUGIN, player))
+    }
+
+    fun hit(cause: Player, entity: Entity) {
+        if (cause == entity) return
+        cause.attack(entity)
+        (entity as? Player)?.let { it.isMarkedForDeath = true }
     }
 }
 
 object GGArrow {
     fun attack(player: Player) {
+        // TODO: make 3?
         val nearbyEntities = player.checkHitbox(5.0)
         for (nearbyEntity in nearbyEntities) {
             if (nearbyEntity !is LivingEntity) return
@@ -520,9 +530,9 @@ fun Player.initInventory() {
     inventory.addItem(Items.FISH.item)
     inventory.addItem(Items.TNT.item)
     inventory.addItem(Items.ARROW.item)
-    inventory.addItem(Items.HORN.item)
-    inventory.addItem(Items.GUN.item)
-    inventory.addItem(Items.TREE.item)
+//    inventory.addItem(Items.HORN.item)
+//    inventory.addItem(Items.GUN.item)
+//    inventory.addItem(Items.TREE.item)
     inventory.helmet = Items.HELMET.item
     inventory.chestplate = Items.CHESTPLATE.item
 

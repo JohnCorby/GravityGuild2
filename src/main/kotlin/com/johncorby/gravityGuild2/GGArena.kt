@@ -92,7 +92,7 @@ class GGArena : Arena() {
                 if (action.isLeftClick)
                     GGFish.attack(player)
                 else if (action.isRightClick)
-                    GGFish.puffer(player)
+                    GGFish.launch(player)
             }
 
             Items.ARROW.item -> {
@@ -283,6 +283,11 @@ class GGArena : Arena() {
 
     @ArenaEventHandler
     fun EntityDamageEvent.handler(competition: LiveCompetition<*>) {
+        if (damageSource.directEntity is PufferFish) {
+            val player = damageSource.directEntity!!.getMetadata("player").firstOrNull()?.value() as? Player
+            player?.let { GGFish.hit(it, entity) }
+        }
+
         if (damageSource.causingEntity is Player &&
             (damageSource.causingEntity as Player).isRespawning
         ) {
