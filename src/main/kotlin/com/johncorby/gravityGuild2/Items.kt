@@ -17,6 +17,7 @@ import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.*
 import org.bukkit.inventory.ItemStack
 import org.bukkit.metadata.FixedMetadataValue
+import org.bukkit.metadata.Metadatable
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.util.Transformation
@@ -62,7 +63,7 @@ object GGMace {
 //                player.isGliding = false
 //                player.velocity = player.velocity.multiply(-1.5)
                 player.velocity = Vector(player.velocity.x * 1.5, player.velocity.y.absoluteValue * 1.5, player.velocity.z * 1.5)
-                nearbyEntities.forEach { (it as? Damageable)?.damageWith(20.0, player, player) }
+                nearbyEntities.forEach { (it as? Damageable)?.run { damagePrecise(20.0, player, player)} }
 //                nearbyEntities.forEach {
 //                    (it as? Damageable)?.damage(10.0, player, DamageType.MACE_SMASH)
 //                    (it as? Player)?.isMarkedForDeath = true
@@ -243,7 +244,7 @@ object GGBow {
                     }
 
                     nearbyPlayer.dontGlide = true
-                    nearbyPlayer.damageWith(0.0, arrow, arrow.shooter as Player)
+                    nearbyPlayer.damagePrecise(0.0, arrow, arrow.shooter as Player)
                 }
             }
         }, 0, 0)
@@ -281,7 +282,7 @@ object GGFish {
                 }
                 it.shooter = player // to count the kill
             }
-            (it as? Damageable)?.damageWith(0.0, player, player)
+            (it as? Damageable)?.damagePrecise(0.0, player, player)
         }
         if (!hit) { // make sure to indicate whiff with sound
             player.world.playSound(player, Sound.ENTITY_PLAYER_ATTACK_NODAMAGE, 1f, 1f)
@@ -303,7 +304,7 @@ object GGFish {
     fun hit(pufferFish: PufferFish, entity: Entity) {
         val player = pufferFish.getMetadata("player").firstOrNull()?.value() as? Player ?: return
         if (player == entity) return
-        (entity as Damageable).damageWith(0.0, pufferFish, player)
+        (entity as Damageable).damagePrecise(0.0, pufferFish, player)
         (entity as? Player)?.let { it.isMarkedForDeath = true }
     }
 }
@@ -328,7 +329,7 @@ object GGArrow {
             val `facing same dierction` = Math.toDegrees(spyView.angle(victimView).toDouble()) < 107.5
 
             if (`behind the victim` && `looking towards the victim` && `facing same dierction`)
-                nearbyEntity.damageWith(9999.0, player, player)
+                nearbyEntity.damagePrecise(9999.0, player, player)
         }
     }
 
@@ -337,7 +338,7 @@ object GGArrow {
     }
 
     fun hit(entity: Entity, witherSkull: WitherSkull) {
-        (entity as Damageable).damageWith(3.0, witherSkull, witherSkull.shooter as Player)
+        (entity as Damageable).damagePrecise(3.0, witherSkull, witherSkull.shooter as Player)
         if (entity != witherSkull.shooter)
             (entity as? Player)?.isMarkedForDeath = true
     }
@@ -362,7 +363,8 @@ object GGHorn {
         // wait and then get players again in case they leave
         Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable {
             competition.players.forEach {
-                it.player.damageWith(9999.0, null, null)
+                // damage self so no kill count
+                it.player.damagePrecise(9999.0, it.player, it.player)
                 it.player.showTitle(Title.title(Component.text("Shuffle!"), Component.empty()))
                 it.player.world.strikeLightningEffect(it.player.location)
             }
@@ -379,7 +381,7 @@ object GGGun {
 
         val result = player.world.rayTrace(player.location, player.location.direction, 120.0, FluidCollisionMode.NEVER, true, 10.0, null)
         result?.hitEntity?.let {
-            (it as? Damageable)?.damageWith(20.0, player, player)
+            (it as? Damageable)?.damagePrecise(20.0, player, player)
         }
 
         player.world.playSound(player, Sound.ITEM_WOLF_ARMOR_DAMAGE, 1f, 1f)
@@ -389,7 +391,7 @@ object GGGun {
     fun attack(entity: Entity?, player: Player) {
 //        if (player.doItemCooldown(20 * 2)) return
 
-        (entity as? Damageable)?.damageWith(3.0, player, player)
+        (entity as? Damageable)?.damagePrecise(3.0, player, player)
 
 //        player.world.playSound(player, Sound.ITEM_WOLF_ARMOR_DAMAGE, 1f, 1f)
     }
@@ -404,9 +406,9 @@ object GGSnowball {
         entity.visualFire = TriState.TRUE
     }
 
-    fun hit(entity: Snowball, hitEntity: Entity?) {
-        (hitEntity as? Damageable)?.damageWith(9999.0, entity, entity.shooter as Player)
-        entity.world.strikeLightningEffect(entity.location)
+    fun hit(snowball: Snowball, hitEntity: Entity?) {
+        (hitEntity as? Damageable)?.damagePrecise(9999.0, snowball, snowball.shooter as Player)
+        snowball.world.strikeLightningEffect(snowball.location)
     }
 }
 
@@ -590,15 +592,8 @@ fun Player.checkHitbox(radius: Double): Collection<Entity> = this.world.getNearb
     { it != this }
 )
 
-
-fun Damageable.damageWith(amount: Double, source: Entity?, player: Player?) {
-    var builder = DamageSource.builder(DamageType.GENERIC)
-    if (source != null) {
-        builder = builder.withCausingEntity(source)
-        builder = builder.withDirectEntity(player!!)
-    }
-    this.damage(amount, builder.build())
-}
+fun Damageable.damagePrecise(amount: Double, source: Entity, player: Player) =
+    damage(amount, DamageSource.builder(DamageType.GENERIC).withDirectEntity(source).withCausingEntity(player).build())
 
 
 fun Float.remapClamped(
@@ -613,3 +608,7 @@ fun Float.remapClamped(
     // Map the normalized value to the output range
     return Math.clamp(outputMin + normalizedValue * (outputMax - outputMin), outputMin, outputMax)
 }
+
+
+inline fun <reified T> Metadatable.getMetadata(key: String) = this.getMetadata(key).firstOrNull { it.owningPlugin == PLUGIN && it is T } as? T
+fun <T> Metadatable.setMetadata(key: String, value: T) = this.setMetadata(key, FixedMetadataValue(PLUGIN, value))

@@ -37,6 +37,11 @@ class GGArena : Arena() {
         eventManager.registerArenaResolver(ProjectileHitEvent::class.java) { event ->
             ArenaPlayer.getArenaPlayer(event.entity.shooter as? Player)?.competition
         }
+        // need to grab non direct player damage too
+        eventManager.registerArenaResolver(EntityDamageEvent::class.java) { event ->
+            val player = event.entity as? Player ?: event.damageSource.directEntity as? Player ?: event.damageSource.causingEntity as? Player
+            ArenaPlayer.getArenaPlayer(player)?.competition
+        }
     }
 
     /*
@@ -53,19 +58,19 @@ class GGArena : Arena() {
     fun ProjectileLaunchEvent.handler() {
 //        PLUGIN.logger.info("${entity.shooter} shoot ${entity}\nshooter vel = ${(entity.shooter as Player).velocityZeroGround}")
 
-        when (entity) {
-            is Arrow -> GGBow.launch(entity as Arrow)
-            is Snowball -> GGSnowball.launch(entity as Snowball)
+        when (val it = entity) {
+            is Arrow -> GGBow.launch(it)
+            is Snowball -> GGSnowball.launch(it)
         }
     }
 
     @ArenaEventHandler
     fun ProjectileHitEvent.handler(competition: LiveCompetition<*>) {
-        when (entity) {
-            is Arrow -> GGBow.hit(entity as Arrow)
-            is Snowball -> GGSnowball.hit(entity as Snowball, hitEntity)
-            is WindCharge -> GGMace.hit(entity as WindCharge, competition)
-            is EnderPearl -> isCancelled = GGTnt.hit(entity as EnderPearl)
+        when (val it = entity) {
+            is Arrow -> GGBow.hit(it)
+            is Snowball -> GGSnowball.hit(it, hitEntity)
+            is WindCharge -> GGMace.hit(it, competition)
+            is EnderPearl -> isCancelled = GGTnt.hit(it)
         }
 
     }
@@ -283,9 +288,7 @@ class GGArena : Arena() {
 
     @ArenaEventHandler
     fun EntityDamageEvent.handler(competition: LiveCompetition<*>) {
-        if (damageSource.directEntity is PufferFish) {
-            GGFish.hit(damageSource.directEntity as PufferFish, entity)
-        }
+//        PLUGIN.logger.info("DAMAGE ${this.damageSource.directEntity} from ${damageSource.causingEntity} -> $entity")
 
         if (damageSource.causingEntity is Player &&
             (damageSource.causingEntity as Player).isRespawning
@@ -295,9 +298,13 @@ class GGArena : Arena() {
             return
         }
 
-        if (damageSource.causingEntity is Player &&
-            (damageSource.causingEntity as Player).inventory.itemInMainHand == Items.GUN.item &&
-            damageSource.damageType == DamageType.PLAYER_ATTACK
+        if (damageSource.directEntity is PufferFish) {
+            GGFish.hit(damageSource.directEntity as PufferFish, entity)
+        }
+
+        if (damageSource.directEntity is Player &&
+            (damageSource.directEntity as Player).inventory.itemInMainHand == Items.GUN.item &&
+            damageSource.damageType != DamageType.GENERIC
         ) {
             isCancelled = true
             GGGun.attack(entity, damageSource.causingEntity as Player)
@@ -315,7 +322,7 @@ class GGArena : Arena() {
 
         if (this.entity !is Player) return // the rest should only apply to players
 
-        PLUGIN.logger.info("${entity.name} lost $damage health from $cause")
+//        PLUGIN.logger.info("${entity.name} lost $damage health from $cause")
 
         if ((entity as Player).isRespawning) {
             isCancelled = true
@@ -352,11 +359,11 @@ class GGArena : Arena() {
 //            }
 //        }
 
-        Bukkit.broadcast(this.deathMessage()!!)
-
         if (damageSource.damageType == DamageType.FLY_INTO_WALL || damageSource.damageType == DamageType.FALL) {
-            player.world.createExplosion(player.location, 5f) // for literally no reason
+            player.world.createExplosion(player, 5f) // for literally no reason
         }
+
+        PLUGIN.logger.info("death by ${damageSource.toString()}")
 
         // okay, now use our custom killer thing to track kills
         playerLastDamager[player]?.let { (lastDamager, lastDamageTick) ->
@@ -369,16 +376,31 @@ class GGArena : Arena() {
                 Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable {
                     if (playerPendingKills.removeAll { (killer, event) -> event == this }) {
                         ArenaPlayer.getArenaPlayer(lastDamager)?.computeStat(ArenaStats.KILLS) { old -> (old ?: 0) + 1 }
-                        Bukkit.broadcast(Component.text("KILL: ${lastDamager.name} -> ${player.name}").color(NamedTextColor.YELLOW))
+                        val killThing = when (val it = damageSource.directEntity) {
+                            is Player -> when (val it = it.inventory.itemInMainHand) {
+                                Items.MACE.item -> "Smash"
+                                Items.FISH.item -> "Fish"
+                                Items.ARROW.item -> "Backstab"
+                                Items.GUN.item -> "Gun"
+                                else -> "TODO ${it.type}"
+                            }
+                            is PufferFish -> "Puffer"
+                            is Arrow -> "Arrow"
+                            is EnderPearl -> "Grenade"
+                            is Snowball -> "Snowball"
+                            is WitherSkull -> "Skull"
+                            else -> "TODO ${it?.type}"
+                        }
+                        Bukkit.broadcast(Component.text("KILL: ${lastDamager.name} -$killThing> ${player.name}").color(NamedTextColor.YELLOW))
 
 
                         // tf2 moment teehee
                         lastDamager.playSound(lastDamager, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f)
-                    }
+                    } else Bukkit.broadcast(this.deathMessage()!!)
                 }, 2)
-            }
+            } else Bukkit.broadcast(this.deathMessage()!!)
 
-        }
+        } ?: Bukkit.broadcast(this.deathMessage()!!)
         playerLastDamager.remove(player) // stop tracking who last hurt them because they are dead
 //        playerLastDamager.getOrPut(player) { mutableMapOf() }.clear()
 
