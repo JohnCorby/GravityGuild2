@@ -137,7 +137,7 @@ class GGArena : Arena() {
 
     // hack cuz event doesnt trigger it all the time
     fun heldItemChanged(player: Player, oldSlot: Int, newSlot: Int) {
-        playerLastSlot[player] = oldSlot
+        playerLastSlot[player] = if (newSlot == 0) oldSlot else 0
 
         when (player.inventory.getItem(newSlot)) {
             Items.GUN.item -> {
