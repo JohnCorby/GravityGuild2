@@ -353,6 +353,8 @@ class GGArena : Arena() {
     fun PlayerDeathEvent.handler(competition: LiveCompetition<*>) {
         isCancelled = true // dont kill and dont call ArenaDeathEvent. we do our own thing
 
+        PLUGIN.logger.info("COMBAT:\n" + this.entity.combatTracker.combatEntries.joinToString(separator = "\n"))
+
 //        when (competition.phase) {
 //            CompetitionPhaseType.INGAME -> {
 //                            player.initAndSpawn()
@@ -362,8 +364,6 @@ class GGArena : Arena() {
         if (damageSource.damageType == DamageType.FLY_INTO_WALL || damageSource.damageType == DamageType.FALL) {
             player.world.createExplosion(player.location, 5f) // for literally no reason
         }
-
-        PLUGIN.logger.info("death by ${damageSource.toString()}")
 
         // okay, now use our custom killer thing to track kills
         playerLastDamager[player]?.let { (lastDamager, lastDamageTick) ->
