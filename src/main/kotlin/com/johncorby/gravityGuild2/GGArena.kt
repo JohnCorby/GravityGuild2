@@ -22,13 +22,9 @@ import org.bukkit.Sound
 import org.bukkit.attribute.Attribute
 import org.bukkit.damage.DamageType
 import org.bukkit.entity.*
-import org.bukkit.event.block.BlockPlaceEvent
 import org.bukkit.event.entity.*
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause
-import org.bukkit.event.player.PlayerDropItemEvent
-import org.bukkit.event.player.PlayerInteractEvent
-import org.bukkit.event.player.PlayerItemDamageEvent
-import org.bukkit.event.player.PlayerItemHeldEvent
+import org.bukkit.event.player.*
 import org.bukkit.inventory.EquipmentSlot
 
 class GGArena : Arena() {
@@ -123,8 +119,26 @@ class GGArena : Arena() {
         }
     }
 
+    val playerLastSlot = mutableMapOf<Player, Int>()
+
+    @ArenaEventHandler
+    fun PlayerSwapHandItemsEvent.handler() {
+        isCancelled = true
+
+        val oldSlot = player.inventory.heldItemSlot
+        player.inventory.heldItemSlot = playerLastSlot[player] ?: return
+        heldItemChanged(player, oldSlot, player.inventory.heldItemSlot)
+    }
+
     @ArenaEventHandler
     fun PlayerItemHeldEvent.handler() {
+        heldItemChanged(player, previousSlot, newSlot)
+    }
+
+    // hack cuz event doesnt trigger it all the time
+    fun heldItemChanged(player: Player, oldSlot:Int, newSlot: Int) {
+        playerLastSlot[player] = oldSlot
+
         when (player.inventory.getItem(newSlot)) {
             Items.GUN.item -> {
                 player.getAttribute(Attribute.ENTITY_INTERACTION_RANGE)!!.apply { baseValue = 9999.0 }
@@ -173,6 +187,7 @@ class GGArena : Arena() {
 
                 (competition as LiveCompetition).players.forEach { player ->
                     player.player.initInventory()
+                    heldItemChanged(player.player, player.player.inventory.heldItemSlot, player.player.inventory.heldItemSlot)
 
                     player.player.isRespawning = true
 
@@ -244,6 +259,9 @@ class GGArena : Arena() {
         GGMace.trackedPlayers.remove(player)
         GGTree.playerLastPlanted.remove(player)
 
+        // TODO: remove all projectiles associated with player
+
+        playerLastSlot.remove(player)
         playerLastDamager.remove(player)
         playerPendingKills.removeAll { (killer, event) -> killer == player || event.player == player }
 
@@ -382,12 +400,14 @@ class GGArena : Arena() {
             isCancelled = true
     }
 
+/*
     @ArenaEventHandler
     fun BlockPlaceEvent.handler() {
         if (itemInHand == Items.TNT.item || itemInHand == Items.TREE.item) {
             isCancelled = true
         }
     }
+*/
 
     @ArenaEventHandler
     fun EntityToggleGlideEvent.handler() {
