@@ -162,7 +162,7 @@ object GGTnt {
 
                                 tnt.hitEntity(it)
                                 // ultrakill coin moment. go towards closest player
-                                it.shooter = tnt.shooter
+                                tnt.shooter = it.shooter // arrow shooter steals tnt
                                 var players = ArenaPlayer.getArenaPlayer(it.shooter as Player)!!.competition.players.map { it.player }
                                 val closestPlayer = players.filter { player -> player != it.shooter }.minByOrNull { player -> it.location.distance(player.location) } ?: return@forEach
                                 it.velocity = closestPlayer.location.subtract(it.location).toVector().normalize().multiply(5)
