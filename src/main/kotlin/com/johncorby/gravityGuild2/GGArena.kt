@@ -360,7 +360,7 @@ class GGArena : Arena() {
 //        }
 
         if (damageSource.damageType == DamageType.FLY_INTO_WALL || damageSource.damageType == DamageType.FALL) {
-            player.world.createExplosion(player, 5f) // for literally no reason
+            player.world.createExplosion(player.location, 5f) // for literally no reason
         }
 
         PLUGIN.logger.info("death by ${damageSource.toString()}")

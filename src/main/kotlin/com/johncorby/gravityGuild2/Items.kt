@@ -363,8 +363,7 @@ object GGHorn {
         // wait and then get players again in case they leave
         Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable {
             competition.players.forEach {
-                // damage self so no kill count
-                it.player.damagePrecise(9999.0, it.player, it.player)
+                it.player.damage(9999.0)
                 it.player.showTitle(Title.title(Component.text("Shuffle!"), Component.empty()))
                 it.player.world.strikeLightningEffect(it.player.location)
             }
