@@ -150,18 +150,19 @@ object GGTnt {
                 val nearbyEntities = tnt.world.getNearbyEntities(
                     tnt.location,
                     3.0, 3.0, 3.0,
-                    { it != tnt && it != tnt.shooter },
+                    { it != tnt && it != tnt.shooter && tnt !in it.passengers },
                 )
                 nearbyEntities.forEach {
                     when {
                         it is Arrow -> {
                             if (small) {
-                                if (it.shooter != tnt.shooter) return@forEach // can only coin ur own arrow
-                                // TODO: whoever first hits it gets it
+                                // whoever coins the arrow first gets it
+                                if (it.hasMetadata("coined")) return@forEach
+                                it.setMetadata("coined", FixedMetadataValue(PLUGIN, null))
 
                                 tnt.hitEntity(it)
                                 // ultrakill coin moment. go towards closest player
-//                                it.shooter = tnt.shooter // so you can reflect with it :P
+                                it.shooter = tnt.shooter
                                 var players = ArenaPlayer.getArenaPlayer(it.shooter as Player)!!.competition.players.map { it.player }
                                 val closestPlayer = players.filter { player -> player != it.shooter }.minByOrNull { player -> it.location.distance(player.location) } ?: return@forEach
                                 it.velocity = closestPlayer.location.subtract(it.location).toVector().normalize().multiply(5)
@@ -171,8 +172,8 @@ object GGTnt {
                                 tnt.shooter = it.shooter // inherit shooter
                                 it.velocity = it.velocity.multiply(0.5)
                                 GGBow.trackedArrows[it] = it.velocity
-                                trackedTnt.remove(tnt)
-                                // this will also work on opponent arrows.... maybe dont want that
+//                                trackedTnt.remove(tnt)
+                                // you should be able to steal tnt already riding guy but idk if thatll actually work. TODO: test
                             }
                         }
 

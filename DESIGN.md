@@ -8,9 +8,9 @@
   - especially do this if hitscan
   - meh nah
 - CONTINUE to add interactions between items, whether thats having one make another vulnerable (countering?) or use them together (chaining)
-- IDEA: party items
+- IDEA: party items (items you get when you die that help you and are chaotic)
   - horn shuffle
-  - enderpearl that teleports someone else
+  - enderpearl that teleports someone else. maybe the guy ur looking at
   - make everyone glow so you can find them
   - add cooldown to an item lol
 - TODO: add custom death messages
@@ -18,6 +18,8 @@
 - IDEA: beds can set spawn until destroyed
 - DONE: accessibility: switch to previous slot on use offhand
 - TODO: configurable map timer
+  - nope too annoying to implement and too hacky
+- IDEA: "10 kills without dying gets a nuke" so reverse party item
 
 # flying
 
@@ -75,6 +77,8 @@
   - UPDATE: u can do that now sorta lol with the passenger thing or fish
 - IDEA: switch small tnt for minecart that slide along da ground
   - nope, just made small tnt better (and longer cooldown to balance it out)
+- PROBLEM: small tnt might be too overpowered, gotta test if u can win with only it lol
+- make it extinguish fires???? idk why this was wanted but it was
 
 # fish
 
@@ -108,18 +112,23 @@
   - also counters someone just standing under you to try and get you? maybe?
 - IDEA: less damage but mark for death, to chain with arrow
 
-# wither skull?
-- tunneling?
-- also u can pepper someone until they die
-- also wither effect 30 seconds :(
-- kinda makes bow obselete?
-- okay now its just tunneling thats it
-- IDEA: make it do a bit of damage
-  - okay
+# arrow
+- wither skull
+  - tunneling?
+  - also u can pepper someone until they die
+  - also wither effect 30 seconds :(
+  - kinda makes bow obselete?
+  - okay now its just tunneling thats it
+  - IDEA: make it do a bit of damage
+    - okay
+  - IDEA: mark for death: arrows in range will explode like they used to (which was op). lasts for like 10 seconds
+    - done for fish. wither skulls shouldnt be damager really... but maybe it should be
+    - okay i did that aaaand it rarely happens
 - IDEA: backstab melee... does this make grenade obsolete?
   - nope its fine, barely useful lol
-- IDEA: mark for death: arrows in range will explode like they used to (which was op). lasts for like 10 seconds
-  - done for fish. wither skulls shouldnt be damager really... but maybe it should be
+  - okay it makes u silent when moving in the air
+  - okay also i prevent knockback now but its not that useful
+  - its another situational mace! like small tnt 
 
 # hitscan weapon?
 - GOAL: the only long range weapon (bow has deviation and may get damage falloff). really hard to hit shots with no lag compensation
