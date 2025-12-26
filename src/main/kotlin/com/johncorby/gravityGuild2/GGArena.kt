@@ -352,9 +352,6 @@ class GGArena : Arena() {
 //            }
 //        }
 
-        // death stuff
-        GGBow.dontGlide.remove(player)
-
         Bukkit.broadcast(this.deathMessage()!!)
 
         if (damageSource.damageType == DamageType.FLY_INTO_WALL || damageSource.damageType == DamageType.FALL) {
@@ -420,8 +417,8 @@ class GGArena : Arena() {
 
     @ArenaEventHandler
     fun EntityToggleGlideEvent.handler() {
-        if (isGliding && entity in GGBow.dontGlide) {
-            val player = entity as Player
+        val player = entity as Player
+        if (isGliding && player.dontGlide) {
             player.world.playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, .5f)
             isCancelled = true
         }

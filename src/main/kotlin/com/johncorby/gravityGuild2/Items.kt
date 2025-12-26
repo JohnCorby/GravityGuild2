@@ -242,24 +242,12 @@ object GGBow {
                         return@forEach
                     }
 
-
-                    nearbyPlayer.isGliding = false
-                    nearbyPlayer.world.playSound(nearbyPlayer, Sound.ENTITY_PLAYER_BURP, 1f, 1f)
+                    nearbyPlayer.dontGlide = true
                     (arrow.shooter as Player).attack(nearbyPlayer)
-
-
-                    // TODO use effect for timer lol
-                    dontGlide.add(nearbyPlayer)
-                    Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable { dontGlide.remove(nearbyPlayer) }, 20)
                 }
             }
         }, 0, 0)
     }
-
-
-    // dont feel like having custom competition logic so ill just track stuff globally and make sure to clear it out
-    // if you leave and join an arena really quickly youll get cleared out of this, but thats really unlikely
-    val dontGlide = mutableSetOf<Player>()
 }
 
 object GGFish {
@@ -280,10 +268,7 @@ object GGFish {
                 it.isMarkedForDeath = true
 
                 // TODO: remove if this sucks
-                it.isGliding = false
-                it.world.playSound(it, Sound.ENTITY_PLAYER_BURP, 1f, 1f)
-                GGBow.dontGlide.add(it)
-                Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable { GGBow.dontGlide.remove(it) }, 20)
+                it.dontGlide = true
             }
             if (it is Projectile) {
                 if (it.shooter is Player && it.shooter != player) {
@@ -551,6 +536,16 @@ var Player.isMarkedForDeath: Boolean
     set(value) {
         if (value) this.addPotionEffect(PotionEffect(PotionEffectType.GLOWING, 10 * 20, 1, false, false))
         else this.removePotionEffect(PotionEffectType.GLOWING)
+    }
+
+var Player.dontGlide: Boolean
+    get() = this.hasPotionEffect(PotionEffectType.SLOWNESS)
+    set(value) {
+        if (value) {
+            this.addPotionEffect(PotionEffect(PotionEffectType.SLOWNESS, 10 * 20, 1, false, false))
+            isGliding = false
+            world.playSound(this, Sound.ENTITY_PLAYER_BURP, 1f, 1f)
+        } else this.removePotionEffect(PotionEffectType.SLOWNESS)
     }
 
 var Player.isRespawning: Boolean
