@@ -136,7 +136,7 @@ class GGArena : Arena() {
     }
 
     // hack cuz event doesnt trigger it all the time
-    fun heldItemChanged(player: Player, oldSlot:Int, newSlot: Int) {
+    fun heldItemChanged(player: Player, oldSlot: Int, newSlot: Int) {
         playerLastSlot[player] = oldSlot
 
         when (player.inventory.getItem(newSlot)) {
@@ -259,7 +259,11 @@ class GGArena : Arena() {
         GGMace.trackedPlayers.remove(player)
         GGTree.playerLastPlanted.remove(player)
 
-        // TODO: remove all projectiles associated with player
+        // remove all projectiles associated with player in the dumbest way possible. TODO: make this better
+        player.world.entities.filter { it is Projectile && it.shooter == player }.forEach {
+            it.remove()
+            it.passengers.forEach { it.remove() }
+        }
 
         playerLastSlot.remove(player)
         playerLastDamager.remove(player)
@@ -400,14 +404,14 @@ class GGArena : Arena() {
             isCancelled = true
     }
 
-/*
-    @ArenaEventHandler
-    fun BlockPlaceEvent.handler() {
-        if (itemInHand == Items.TNT.item || itemInHand == Items.TREE.item) {
-            isCancelled = true
+    /*
+        @ArenaEventHandler
+        fun BlockPlaceEvent.handler() {
+            if (itemInHand == Items.TNT.item || itemInHand == Items.TREE.item) {
+                isCancelled = true
+            }
         }
-    }
-*/
+    */
 
     @ArenaEventHandler
     fun EntityToggleGlideEvent.handler() {
