@@ -6,6 +6,7 @@
   - IDEA: make it only count if you live the next or 2 seconds after to prevent suicide bombs
 - IDEA: if do this, make everything else have damage falloff
   - especially do this if hitscan
+  - meh nah
 - CONTINUE to add interactions between items, whether thats having one make another vulnerable (countering?) or use them together (chaining)
 - IDEA: party items
   - horn shuffle
@@ -16,6 +17,7 @@
 - DONE: show scores on game end
 - IDEA: beds can set spawn until destroyed
 - DONE: accessibility: switch to previous slot on use offhand
+- TODO: configurable map timer
 
 # flying
 

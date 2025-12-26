@@ -157,6 +157,7 @@ object GGTnt {
                         it is Arrow -> {
                             if (small) {
                                 if (it.shooter != tnt.shooter) return@forEach // can only coin ur own arrow
+                                // TODO: whoever first hits it gets it
 
                                 tnt.hitEntity(it)
                                 // ultrakill coin moment. go towards closest player
