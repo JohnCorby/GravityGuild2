@@ -145,7 +145,9 @@ object GGTnt {
 
     init {
         Bukkit.getScheduler().runTaskTimer(PLUGIN, Runnable {
-            for (tnt in trackedTnt) {
+            val iter = trackedTnt.iterator() // so we can remove
+            while (iter.hasNext()) {
+                val tnt = iter.next()
                 val display = tnt.passengers.firstOrNull() as? BlockDisplay ?: continue // i dont know why this happens sometimes but it does
                 val small = display.transformation.scale == Vector3f(.5f)
 
@@ -162,6 +164,7 @@ object GGTnt {
                                 if (it.hasMetadata("coined")) return@forEach
                                 it.setMetadata("coined", null)
 
+                                iter.remove()
                                 tnt.hitEntity(it)
                                 // ultrakill coin moment. go towards closest player
                                 tnt.shooter = it.shooter // arrow shooter steals tnt
@@ -174,12 +177,14 @@ object GGTnt {
                                 tnt.shooter = it.shooter // inherit shooter
                                 it.velocity = it.velocity.multiply(0.5)
                                 GGBow.trackedArrows[it] = it.velocity
+                                iter.remove()
                                 trackedTnt.remove(tnt)
                             }
                         }
 
                         it is Player && small -> {
                             tnt.teleport(it.location)
+                            iter.remove()
                             tnt.hitEntity(it) // make small tnt useful by being able to hit in midair
                         }
                     }
@@ -224,7 +229,9 @@ object GGBow {
 
     init {
         Bukkit.getScheduler().runTaskTimer(PLUGIN, Runnable {
-            for ((arrow, velocity) in trackedArrows) {
+            val iter = trackedArrows.iterator() // so we can remove
+            while (iter.hasNext()) {
+                val (arrow, velocity) = iter.next()
                 arrow.velocity = velocity // arrow slows down, retain velocity
 
                 val nearbyEntities = arrow.world.getNearbyEntities(
@@ -239,6 +246,7 @@ object GGBow {
 //                    arrow.teleport(closestEntity)
 
                     if (it.isMarkedForDeath) {
+                        iter.remove()
                         arrow.hitEntity(nearbyPlayer) // bye bye
                         return@forEach
                     }
