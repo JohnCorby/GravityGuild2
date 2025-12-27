@@ -384,7 +384,7 @@ class GGArena : Arena() {
                     if (playerPendingKills.removeAll { (killer, event) -> event == this }) {
                         ArenaPlayer.getArenaPlayer(lastDamager)?.computeStat(ArenaStats.KILLS) { old -> (old ?: 0) + 1 }
                         // TODO fall, reflected, marked for death
-                        val killThing = when (val it = lastDamagerDirect) {
+                        var killCause = when (val it = lastDamagerDirect) {
                             is Player -> when (val it = lastDamagerItem) {
                                 Items.MACE.item -> "Smash"
                                 Items.FISH.item -> "Fish"
@@ -401,7 +401,11 @@ class GGArena : Arena() {
                             is WindCharge -> "Wind"
                             else -> "TODO entity ${it.type}"
                         }
-                        Bukkit.broadcast(Component.text("KILL: ${lastDamager.name} -$killThing> ${player.name}").color(NamedTextColor.YELLOW))
+                        if (lastDamagerDirect.hasMetadata("coined")) killCause += " (coined)"
+                        if (lastDamagerDirect.hasMetadata("reflected")) killCause += " (reflected)"
+                        if (damageSource.damageType == DamageType.FALL) killCause += " (fell)"
+                        if (player.isMarkedForDeath) killCause += " (marked for death)"
+                        Bukkit.broadcast(Component.text("KILL: ${lastDamager.name} -> ${player.name} | $killCause").color(NamedTextColor.YELLOW))
 
 
                         // tf2 moment teehee

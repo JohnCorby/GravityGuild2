@@ -281,6 +281,7 @@ object GGFish {
                         GGBow.trackedArrows[it] = it.velocity
                 }
                 it.shooter = player // to count the kill
+                it.setMetadata("reflected", null)
             }
             (it as? Damageable)?.damagePrecise(0.0, player, player)
         }
