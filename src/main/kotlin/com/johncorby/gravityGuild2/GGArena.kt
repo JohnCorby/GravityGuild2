@@ -123,9 +123,11 @@ class GGArena : Arena() {
             Items.TREE.item -> {
                 if (action.isLeftClick) GGTree.plant(player)
             }
-
-            Items.GLOWBERRY.item -> if (action.isRightClick) GGGlowberry.eat(player)
         }
+    }
+
+    fun PlayerItemConsumeEvent.handler() {
+        if (item.isSimilar(Items.GLOWBERRY.item)) GGGlowberry.eat(player)
     }
 
     val playerLastSlot = mutableMapOf<Player, Int>()
@@ -397,17 +399,21 @@ class GGArena : Arena() {
                             is WindCharge -> "Wind"
                             else -> "TODO entity ${it.type}"
                         }
+                        // just a buncha extra details for fun
                         if (lastDamagerDirect.hasMetadata("coined")) killCause += " (coined)"
                         if (lastDamagerDirect.hasMetadata("reflected")) killCause += " (reflected)"
+                        // TODO?: tnt riding arrow
                         if (damageSource.damageType == DamageType.FALL) killCause += " (fell)"
+                        else if (damageSource.causingEntity == player) killCause += " (suicide)"
                         if (player.isMarkedForDeath) killCause += " (marked for death)"
+
                         Bukkit.broadcast(Component.text("KILL: ${lastDamager.name} -> ${player.name} | $killCause").color(NamedTextColor.YELLOW))
 
 
                         // tf2 moment teehee
                         lastDamager.playSound(lastDamager, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f)
 
-                        player.givePartyItem()
+//                        player.givePartyItem()
                     } else Bukkit.broadcast(this.deathMessage()!!)
                 }, 2)
             } else Bukkit.broadcast(this.deathMessage()!!)
@@ -425,14 +431,14 @@ class GGArena : Arena() {
         Bukkit.getScheduler().runTask(PLUGIN, Runnable {
             player.isRespawning = true
 
-//            player.givePartyItem()
+            player.givePartyItem()
         })
     }
 
     @ArenaEventHandler
     fun PlayerDropItemEvent.handler() {
         // dont let players drop our items
-        if (Items.entries.any { it.item == itemDrop.itemStack })
+        if (Items.entries.any { it.item.isSimilar(itemDrop.itemStack) })
             isCancelled = true
     }
 

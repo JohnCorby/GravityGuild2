@@ -4,6 +4,7 @@
 package com.johncorby.gravityGuild2
 
 import io.papermc.paper.datacomponent.DataComponentTypes
+import io.papermc.paper.datacomponent.item.FoodProperties
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.format.NamedTextColor
 import net.kyori.adventure.title.Title
@@ -444,7 +445,7 @@ object GGTree {
 
 object GGGlowberry {
     fun eat(player: Player) {
-
+        player.addPotionEffect(PotionEffect(PotionEffectType.NIGHT_VISION, 20 * 10, 1, false, false, true))
         for (otherPlayer in player.world.players) {
             if (otherPlayer == player) continue
 
@@ -522,6 +523,9 @@ enum class Items(val item: ItemStack, val partyWeight: Double? = null) {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
 
         lore(listOf(Component.text("Eat to make everyone glow so you can KILL THEM").color(NamedTextColor.BLUE)))
+
+        @Suppress("UnstableApiUsage")
+        this.setData(DataComponentTypes.FOOD, FoodProperties.food().canAlwaysEat(true).build())
     }, 1.0),
 
 
@@ -590,7 +594,7 @@ val Player.velocityZeroGround get() = if (isOnGround) Vector(0, 0, 0) else veloc
 var Player.isMarkedForDeath: Boolean
     get() = this.hasPotionEffect(PotionEffectType.GLOWING)
     set(value) {
-        if (value) this.addPotionEffect(PotionEffect(PotionEffectType.GLOWING, 10 * 20, 1, false, false))
+        if (value) this.addPotionEffect(PotionEffect(PotionEffectType.GLOWING, 10 * 20, 1, false, false, true))
         else this.removePotionEffect(PotionEffectType.GLOWING)
     }
 
@@ -598,14 +602,14 @@ var Player.dontGlide: Boolean
     get() = this.hasPotionEffect(PotionEffectType.SLOWNESS)
     set(value) {
         if (value) {
-            this.addPotionEffect(PotionEffect(PotionEffectType.SLOWNESS, 20, 1, false, false))
+            this.addPotionEffect(PotionEffect(PotionEffectType.SLOWNESS, 20, 1, false, false, true))
             isGliding = false
             world.playSound(this, Sound.ENTITY_PLAYER_BURP, 1f, 1f)
         } else this.removePotionEffect(PotionEffectType.SLOWNESS)
     }
 
 var Player.isRespawning: Boolean
-    get() = hasPotionEffect(PotionEffectType.INVISIBILITY)
+    get() = hasPotionEffect(PotionEffectType.INVISIBILITY) && hasPotionEffect(PotionEffectType.NIGHT_VISION)
     set(value) {
         if (value) {
             // respawn
@@ -620,9 +624,9 @@ var Player.isRespawning: Boolean
             combatTracker.resetCombatState() // to reset death message
 
             // BUG: doesnt hide clothes
-            addPotionEffect(PotionEffect(PotionEffectType.INVISIBILITY, 20 * 3, 1, false, false))
+            addPotionEffect(PotionEffect(PotionEffectType.INVISIBILITY, 20 * 3, 1, false, false, true))
             // just to get ur surroundings
-            addPotionEffect(PotionEffect(PotionEffectType.NIGHT_VISION, 20 * 3, 1, false, false))
+            addPotionEffect(PotionEffect(PotionEffectType.NIGHT_VISION, 20 * 3, 1, false, false, true))
         } else {
             removePotionEffect(PotionEffectType.INVISIBILITY)
             removePotionEffect(PotionEffectType.NIGHT_VISION)
