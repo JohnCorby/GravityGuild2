@@ -320,8 +320,7 @@ object GGFish {
 
 object GGArrow {
     fun attack(player: Player) {
-        // TODO: make 3?
-        val nearbyEntities = player.checkHitbox(5.0)
+        val nearbyEntities = player.checkHitbox(5.0) // its hard to hit back so just make this huge
         for (nearbyEntity in nearbyEntities) {
             if (nearbyEntity !is LivingEntity) return
 
@@ -335,9 +334,9 @@ object GGArrow {
 
             val `behind the victim` = Math.toDegrees(victimView.angle(deltaPosition).toDouble()) < 90
             val `looking towards the victim` = Math.toDegrees(spyView.angle(deltaPosition).toDouble()) < 60
-            val `facing same dierction` = Math.toDegrees(spyView.angle(victimView).toDouble()) < 107.5
+            val `facing same direction` = Math.toDegrees(spyView.angle(victimView).toDouble()) < 107.5
 
-            if (`behind the victim` && `looking towards the victim` && `facing same dierction`)
+            if (`behind the victim` && `looking towards the victim` && `facing same direction`)
                 nearbyEntity.damagePrecise(9999.0, player, player)
         }
     }

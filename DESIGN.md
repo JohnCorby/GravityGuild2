@@ -15,7 +15,7 @@
   - add cooldown to an item lol
     - snowball does this now
   - spawn anvil above someone LOL
-- TODO: add custom death messages
+- DONE: add custom death messages
 - DONE: show scores on game end
 - IDEA: beds can set spawn until destroyed
 - DONE: accessibility: switch to previous slot on use offhand

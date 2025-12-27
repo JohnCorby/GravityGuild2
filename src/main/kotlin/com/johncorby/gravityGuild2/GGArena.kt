@@ -268,15 +268,12 @@ class GGArena : Arena() {
         GGMace.trackedPlayers.remove(player)
         GGTree.playerLastPlanted.remove(player)
 
-        // remove all projectiles associated with player in the dumbest way possible. TODO: make this better
-        player.world.entities.filter { it is Projectile && it.shooter == player }.forEach {
-            it.remove()
-            it.passengers.forEach { it.remove() }
-        }
+        GGBow.trackedArrows.keys.removeIf { it.shooter == player }
+        GGTnt.trackedTnt.removeIf { it.shooter == player }
 
         playerLastSlot.remove(player)
         playerLastDamager.remove(player)
-        playerPendingKills.removeAll { (killer, event) -> killer == player || event.player == player }
+        playerPendingKills.removeIf { (killer, event) -> killer == player || event.player == player }
 
         // because our victory condition is only time limit, it doesnt close early. we gotta do this ourselves
         if (this.arenaPlayer.role == PlayerRole.PLAYING && this.competition.players.size <= 1) {
@@ -381,9 +378,8 @@ class GGArena : Arena() {
                 playerPendingKills.add(lastDamager to this)
                 // may be cancelled below next tick, so wait 2
                 Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable {
-                    if (playerPendingKills.removeAll { (killer, event) -> event == this }) {
+                    if (playerPendingKills.removeIf { (killer, event) -> event == this }) {
                         ArenaPlayer.getArenaPlayer(lastDamager)?.computeStat(ArenaStats.KILLS) { old -> (old ?: 0) + 1 }
-                        // TODO fall, reflected, marked for death
                         var killCause = when (val it = lastDamagerDirect) {
                             is Player -> when (val it = lastDamagerItem) {
                                 Items.MACE.item -> "Smash"
@@ -422,7 +418,7 @@ class GGArena : Arena() {
 
         Bukkit.getScheduler().runTask(PLUGIN, Runnable {
             // if killer dies at the same tick as killed, no matter the order, killer pending kills will be cancelled
-            playerPendingKills.removeAll { (killer, event) -> killer == player }
+            playerPendingKills.removeIf { (killer, event) -> killer == player }
         })
 
 

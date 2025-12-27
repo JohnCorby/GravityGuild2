@@ -18,6 +18,7 @@ templates:
     lines:
       - simple:
           lines:
+            - " "
             - "<yellow>Map: <white>%map%"
             - " "
             - "<yellow>Players: <white>%online_players%/%max_players%"
@@ -29,6 +30,7 @@ templates:
     lines:
       - simple:
           lines:
+            - " "
             - "<yellow>Map: <white>%map%"
             - " "
             - "<yellow>Players: <white>%online_players%/%max_players%"
@@ -38,6 +40,7 @@ templates:
     lines:
       - simple:
           lines:
+            - " "
             - "<yellow>Map: <white>%map%"
             - "<yellow>Time remaining: <white>%time_remaining_short%"
             - " "
