@@ -3,6 +3,7 @@ package com.johncorby.gravityGuild2
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.text.format.TextDecoration
 import org.battleplugins.arena.BattleArena
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
@@ -41,18 +42,21 @@ class GravityGuild2 : JavaPlugin(), Listener {
         // silly hack
         player.performCommand("mvtp gg_arenas")
         player.gameMode = GameMode.ADVENTURE
-        player.sendMessage(
-            Component.text("Welcome to GravityGuild").color(NamedTextColor.GOLD)
-                .appendNewline()
-                .append(Component.text("Created by JohnCorby and FunkyBoots111").color(NamedTextColor.YELLOW))
-                .appendNewline()
-                .append(Component.text("Maps by FunkyBoots111 and WonkyPanda").color(NamedTextColor.YELLOW))
-                .appendNewline()
-                .append(Component.text("Design by JohnCorby, FunkyBoots111, WonkyPanda, and PowerUser64").color(NamedTextColor.YELLOW))
-                .appendNewline()
-                .append(Component.text("Type /gg_arenas or CLICK HERE to see maps").color(NamedTextColor.WHITE).clickEvent(ClickEvent.runCommand("/gg_arenas")))
-                .appendNewline()
-                .append(Component.text("Type /gg to see list of all the other commands").color(NamedTextColor.WHITE))
-        )
+        Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable {
+            player.sendMessage(
+                Component.newline()
+                    .append(Component.text("Welcome to GravityGuild").color(NamedTextColor.GOLD))
+                    .appendNewline()
+                    .append(Component.text("Created by JohnCorby and FunkyBoots111").color(NamedTextColor.YELLOW))
+                    .appendNewline()
+                    .append(Component.text("Maps by FunkyBoots111 and WonkyPanda").color(NamedTextColor.YELLOW))
+                    .appendNewline()
+                    .append(Component.text("Design by JohnCorby, FunkyBoots111, WonkyPanda, and PowerUser64").color(NamedTextColor.YELLOW))
+                    .appendNewline()
+                    .append(Component.text("Type /gg_arenas or CLICK HERE to see maps").color(NamedTextColor.WHITE).clickEvent(ClickEvent.runCommand("/gg_arenas")))
+                    .appendNewline()
+                    .append(Component.text("Type /gg to see list of all the other commands").color(NamedTextColor.WHITE))
+            )
+        }, 10)
     }
 }
