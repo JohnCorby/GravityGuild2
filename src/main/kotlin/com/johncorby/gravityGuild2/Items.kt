@@ -28,6 +28,7 @@ import java.util.concurrent.ThreadLocalRandom
 import kotlin.math.absoluteValue
 import kotlin.random.Random
 
+///////// regular items /////////////
 
 object GGMace {
     val trackedPlayers = mutableListOf<Player>()
@@ -63,7 +64,7 @@ object GGMace {
 //                player.isGliding = false
 //                player.velocity = player.velocity.multiply(-1.5)
                 player.velocity = Vector(player.velocity.x * 1.5, player.velocity.y.absoluteValue * 1.5, player.velocity.z * 1.5)
-                nearbyEntities.forEach { (it as? Damageable)?.run { damagePrecise(20.0, player, player)} }
+                nearbyEntities.forEach { (it as? Damageable)?.run { damagePrecise(20.0, player, player) } }
 //                nearbyEntities.forEach {
 //                    (it as? Damageable)?.damage(10.0, player, DamageType.MACE_SMASH)
 //                    (it as? Player)?.isMarkedForDeath = true
@@ -302,8 +303,8 @@ object GGFish {
 
     fun hit(pufferFish: PufferFish, entity: Entity) {
         val player = pufferFish.getMetadata<Player>("player") ?: return
-        if (player == entity) return
-        (entity as Damageable).damagePrecise(3.0, pufferFish, player)
+        if (entity == player) return
+        (entity as? Damageable)?.damagePrecise(3.0, pufferFish, player)
         (entity as? Player)?.let { it.isMarkedForDeath = true }
     }
 }
@@ -333,18 +334,20 @@ object GGArrow {
     }
 
     fun launch(player: Player) {
-        player.launchProjectile(WitherSkull::class.java, player.eyeLocation.direction.multiply(2))
+        player.launchProjectile(WitherSkull::class.java, player.eyeLocation.direction.multiply(5))
     }
 
     fun hit(entity: Entity, witherSkull: WitherSkull) {
-        (entity as Damageable).damagePrecise(3.0, witherSkull, witherSkull.shooter as Player)
-        if (entity != witherSkull.shooter)
-            (entity as? Player)?.isMarkedForDeath = true
+        if (entity == witherSkull.shooter) return
+        (entity as? Damageable)?.damagePrecise(3.0, witherSkull, witherSkull.shooter as Player)
+        (entity as? Player)?.isMarkedForDeath = true
     }
 }
 
 
-object GGHorn {
+////////////// party items ////////////////
+
+object GGShuffleHorn {
 
     fun use(player: Player, competition: LiveCompetition<*>) {
         if (player.hasCooldown(player.inventory.itemInMainHand)) {
@@ -387,11 +390,11 @@ object GGGun {
     }
 
     fun attack(entity: Entity?, player: Player) {
-//        if (player.doItemCooldown(20 * 2)) return
+        if (player.doItemCooldown(20 * 2)) return
 
-        (entity as? Damageable)?.damagePrecise(3.0, player, player)
+        (entity as? Damageable)?.damagePrecise(9999.0, player, player)
 
-//        player.world.playSound(player, Sound.ITEM_WOLF_ARMOR_DAMAGE, 1f, 1f)
+        player.world.playSound(player, Sound.ITEM_WOLF_ARMOR_DAMAGE, 1f, 1f)
     }
 }
 
@@ -407,6 +410,8 @@ object GGSnowball {
     fun hit(snowball: Snowball, hitEntity: Entity?) {
         (hitEntity as? Damageable)?.damagePrecise(9999.0, snowball, snowball.shooter as Player)
         snowball.world.strikeLightningEffect(snowball.location)
+
+        if (hitEntity is Player) hitEntity.inventory.forEach { hitEntity.setCooldown(it, 20 * 5) }
     }
 }
 
@@ -429,6 +434,18 @@ object GGTree {
     }
 }
 
+object GGGlowberry {
+    fun eat(player: Player) {
+
+        for (otherPlayer in player.world.players) {
+            if (otherPlayer == player) continue
+
+            otherPlayer.isMarkedForDeath = true // maybe make this non mark for death glow but this is funnier
+        }
+    }
+}
+
+////////// item management /////////////
 
 enum class Items(val item: ItemStack, val partyWeight: Double? = null) {
     BOW(ItemStack.of(Material.CROSSBOW).apply {
@@ -471,26 +488,32 @@ enum class Items(val item: ItemStack, val partyWeight: Double? = null) {
     }),
 
 
-    HORN(ItemStack.of(Material.GOAT_HORN).apply {
+    NO_PARTY_ITEM(ItemStack.empty(), 1.0),
+    SNOWBALLS(ItemStack.of(Material.SNOWBALL, 32), 1.0),
+    SHUFFLE_HORN(ItemStack.of(Material.GOAT_HORN).apply {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
-        addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
 
         lore(listOf(Component.text("Shuffle!").color(NamedTextColor.BLUE)))
 
         @Suppress("UnstableApiUsage")
         this.setData(DataComponentTypes.INSTRUMENT, MusicInstrument.CALL_GOAT_HORN)
-    }, 1.0),
+    }, 0.3),
     GUN(ItemStack.of(Material.SPYGLASS).apply {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
-        addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
 
-        lore(listOf(Component.text("Long punch").color(NamedTextColor.BLUE)))
-    }, 1.0),
+        lore(listOf(Component.text("Long punch that insta kills").color(NamedTextColor.BLUE)))
+    }, 0.3),
     TREE(ItemStack.of(Material.OAK_SAPLING).apply {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
-        addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
 
         lore(listOf(Component.text("Plant a tree on left click. Longer wait = bigger tree").color(NamedTextColor.BLUE)))
+    }, 0.5),
+
+    // TODO teleport enderpearl
+    GLOWBERRY(ItemStack.of(Material.GLOW_BERRIES, 3).apply {
+        addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
+
+        lore(listOf(Component.text("Eat to make everyone glow so you can KILL THEM").color(NamedTextColor.BLUE)))
     }, 1.0),
 
 
@@ -528,24 +551,28 @@ fun Player.initInventory() {
 
 fun Player.givePartyItem() {
     // https://dev.to/jacktt/understanding-the-weighted-random-algorithm-581p
-    val partyItems = Items.entries.filter { it.partyWeight != null }
+    val partyItems = Items.entries.filter { it.partyWeight != null && (it.item.isEmpty || it.item !in inventory) }
 
     val totalWeight = partyItems.sumOf { it.partyWeight!! }
-    val randomNumber = Random.nextDouble(totalWeight)
+    val random = Random.nextDouble(totalWeight)
 
     var total = 0.0
-    var partyItem: ItemStack? = null
+    var partyItem: Items? = null
     for (item in partyItems) {
         total += item.partyWeight!!
-        if (randomNumber >= total) {
-            partyItem = item.item
+        if (total >= random) {
+            partyItem = item
+            PLUGIN.logger.info("choosing party item $partyItem")
             break
         }
     }
 
-    inventory.addItem(partyItem!!)
+    if (partyItem == Items.NO_PARTY_ITEM) return
+    inventory.addItem(partyItem!!.item)
+    sendMessage(Component.text("You got party item ${partyItem}!"))
 }
 
+///////// utils used by items ///////////////
 
 // use for movement cancel else it thinks ur falling slightly when ur not
 @Suppress("DEPRECATION")

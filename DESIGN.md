@@ -13,6 +13,8 @@
   - enderpearl that teleports someone else. maybe the guy ur looking at
   - make everyone glow so you can find them
   - add cooldown to an item lol
+    - snowball does this now
+  - spawn anvil above someone LOL
 - TODO: add custom death messages
 - DONE: show scores on game end
 - IDEA: beds can set spawn until destroyed

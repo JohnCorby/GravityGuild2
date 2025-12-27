@@ -109,9 +109,10 @@ class GGArena : Arena() {
 
             }
 
-            Items.HORN.item -> {
+
+            Items.SHUFFLE_HORN.item -> {
                 if (action.isRightClick)
-                    GGHorn.use(player, competition)
+                    GGShuffleHorn.use(player, competition)
             }
 
             Items.GUN.item -> {
@@ -122,6 +123,8 @@ class GGArena : Arena() {
             Items.TREE.item -> {
                 if (action.isLeftClick) GGTree.plant(player)
             }
+
+            Items.GLOWBERRY.item -> if (action.isRightClick) GGGlowberry.eat(player)
         }
     }
 
@@ -285,6 +288,7 @@ class GGArena : Arena() {
     }
 
     val playerLastDamager = mutableMapOf<Player, LastDamagerData>()
+
     data class LastDamagerData(val lastDamager: Player, val lastDamagerDirect: Entity, val lastDamagerItem: ItemStack, val lastDamageTick: Int)
 
     val playerPendingKills = mutableListOf<Pair<Player, PlayerDeathEvent>>()
@@ -302,7 +306,8 @@ class GGArena : Arena() {
         }
 
         if (damageSource.directEntity is PufferFish &&
-            damageSource.damageType != DamageType.GENERIC) {
+            damageSource.damageType != DamageType.GENERIC
+        ) {
             GGFish.hit(damageSource.directEntity as PufferFish, entity)
         }
 
@@ -387,6 +392,7 @@ class GGArena : Arena() {
                                 Items.GUN.item -> "Gun"
                                 else -> "TODO item ${it.type}"
                             }
+
                             is PufferFish -> "Puffer"
                             is Arrow -> "Arrow"
                             is EnderPearl -> "Grenade"
