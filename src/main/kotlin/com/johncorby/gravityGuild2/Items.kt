@@ -659,7 +659,7 @@ var Player.isRespawning: Boolean
             spawns = spawns.filter {spawn ->
                 val spawnLoc = spawn.toLocation(competition.map.world)
                 // too close to other player
-                if (competition.players.any { player -> player.player.location.distance(spawnLoc) < 4.0 }) return@filter false
+                if (competition.players.any { player -> player.player.location.distance(spawnLoc) < 20.0 }) return@filter false
                 // if ur inside blocks... oh well, i dont wanna bother checking for that
                 return@filter true
             }
