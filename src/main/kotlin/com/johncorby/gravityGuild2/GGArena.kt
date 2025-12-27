@@ -270,8 +270,7 @@ class GGArena : Arena() {
         GGMace.trackedPlayers.remove(player)
         GGTree.playerLastPlanted.remove(player)
 
-        GGBow.trackedArrows.keys.removeIf { it.shooter == player }
-        GGTnt.trackedTnt.removeIf { it.shooter == player }
+        // keep player projectiles. they will be removed at some point
 
         playerLastSlot.remove(player)
         playerLastDamager.remove(player)

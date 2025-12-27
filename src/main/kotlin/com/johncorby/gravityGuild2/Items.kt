@@ -149,6 +149,11 @@ object GGTnt {
             val iter = trackedTnt.iterator() // so we can remove
             while (iter.hasNext()) {
                 val tnt = iter.next()
+                if (!tnt.isValid) { // check for deletion
+                    iter.remove()
+                    continue
+                }
+
                 val display = tnt.passengers.firstOrNull() as? BlockDisplay ?: continue // i dont know why this happens sometimes but it does
                 val small = display.transformation.scale == Vector3f(.5f)
 
@@ -233,6 +238,11 @@ object GGBow {
             val iter = trackedArrows.iterator() // so we can remove
             while (iter.hasNext()) {
                 val (arrow, velocity) = iter.next()
+                if (!arrow.isValid) { // check for deletion
+                    iter.remove()
+                    continue
+                }
+
                 arrow.velocity = velocity // arrow slows down, retain velocity
 
                 val nearbyEntities = arrow.world.getNearbyEntities(
