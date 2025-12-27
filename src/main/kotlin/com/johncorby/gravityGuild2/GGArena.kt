@@ -128,6 +128,7 @@ class GGArena : Arena() {
         }
     }
 
+    @ArenaEventHandler
     fun PlayerItemConsumeEvent.handler() {
         if (item.isSimilar(Items.GLOWBERRIES.item)) GGGlowberry.eat(player)
     }
@@ -339,10 +340,12 @@ class GGArena : Arena() {
         }
 
         // revert non lethal damage only for hit ground and wall. everything else should be normal damage
+/*
         if (cause == DamageCause.FALL || cause == DamageCause.FLY_INTO_WALL) {
             // revert non-lethal damage
             if ((entity as Player).health - damage > 0) damage = 0.0
         }
+*/
 
         if (cause == DamageCause.VOID) damage = 9999.0 // just fuckin kill em
 
@@ -387,7 +390,7 @@ class GGArena : Arena() {
                         var killCause = when (val it = lastDamagerDirect) {
                             is Player -> when (val it = lastDamagerItem) {
                                 Items.MACE.item -> "Smash"
-                                Items.FISH.item -> "Fish"
+                                Items.FISH.item -> "Fish Slap"
                                 Items.ARROW.item -> "Backstab"
                                 Items.GUN.item -> "Gun"
                                 else -> "TODO item ${it.type}"

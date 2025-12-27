@@ -465,10 +465,12 @@ object GGTree {
 object GGGlowberry {
     fun eat(player: Player) {
         player.addPotionEffect(PotionEffect(PotionEffectType.NIGHT_VISION, 20 * 10, 1, false, false, true))
-        for (otherPlayer in player.world.players) {
-            if (otherPlayer == player) continue
 
-            otherPlayer.isMarkedForDeath = true // maybe make this non mark for death glow but this is funnier
+        val competition = ArenaPlayer.getArenaPlayer(player)!!.competition
+        for (otherPlayer in competition.players) {
+            if (otherPlayer.player == player) continue
+
+            otherPlayer.player.isMarkedForDeath = true // maybe make this non mark for death glow but this is funnier
         }
     }
 }
