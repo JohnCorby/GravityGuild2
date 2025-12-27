@@ -245,7 +245,7 @@ class GGArena : Arena() {
     fun ArenaJoinEvent.handler() {
         if (this.competition.players.size == 1) {
             Bukkit.broadcast(
-                Component.text("Arena ${this.competition.map.name} has someone in it! Click to join")
+                Component.text("Arena ${this.competition.map.name} has someone in it! CLICK HERE to join")
                     .color(NamedTextColor.GOLD)
                     .clickEvent(ClickEvent.runCommand("/gg join ${this.competition.map.name}"))
             )

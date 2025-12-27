@@ -50,7 +50,7 @@ class GravityGuild2 : JavaPlugin(), Listener {
                 .appendNewline()
                 .append(Component.text("Design by JohnCorby, FunkyBoots111, WonkyPanda, and PowerUser64").color(NamedTextColor.YELLOW))
                 .appendNewline()
-                .append(Component.text("Type /gg_arenas or click this text to see maps").color(NamedTextColor.WHITE).clickEvent(ClickEvent.runCommand("/gg_arenas")))
+                .append(Component.text("Type /gg_arenas or CLICK HERE to see maps").color(NamedTextColor.WHITE).clickEvent(ClickEvent.runCommand("/gg_arenas")))
                 .appendNewline()
                 .append(Component.text("Type /gg to see list of all the other commands").color(NamedTextColor.WHITE))
         )
