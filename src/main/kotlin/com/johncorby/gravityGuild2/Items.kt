@@ -177,11 +177,12 @@ object GGTnt {
                                 // ultrakill coin moment. go towards closest player
                                 tnt.shooter = it.shooter // arrow shooter steals tnt
                                 var players = ArenaPlayer.getArenaPlayer(it.shooter as Player)!!.competition.players.map { it.player }
-                                val closestPlayer = players.filter { player -> player != it.shooter }.minByOrNull { player -> it.location.distance(player.location) } ?: return@forEach
-                                it.velocity = closestPlayer.location.subtract(it.location).toVector().normalize().multiply(5)
+                                val closestPlayer = players.filter { player -> player != it.shooter }.minByOrNull { player -> it.location.distance(player.eyeLocation) } ?: return@forEach
+                                it.velocity = closestPlayer.eyeLocation.subtract(it.location).toVector().normalize().multiply(5)
                                 GGBow.trackedArrows[it] = it.velocity
                             } else {
                                 it.addPassenger(tnt)
+                                tnt.setMetadata("riding arrow", null)
                                 tnt.shooter = it.shooter // inherit shooter
                                 it.velocity = it.velocity.multiply(0.5)
                                 GGBow.trackedArrows[it] = it.velocity
@@ -297,7 +298,7 @@ object GGFish {
                     (it.shooter as Player).isMarkedForDeath = true // for fun
 
                     // TODO: remove if this sucks
-                    it.velocity = (it.shooter as Player).location.subtract(it.location).toVector().normalize().multiply(it.velocity.length())
+                    it.velocity = (it.shooter as Player).eyeLocation.subtract(it.location).toVector().normalize().multiply(it.velocity.length())
                     if (it is Arrow)
                         GGBow.trackedArrows[it] = it.velocity
                 }

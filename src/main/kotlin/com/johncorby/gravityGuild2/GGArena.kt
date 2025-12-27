@@ -380,6 +380,7 @@ class GGArena : Arena() {
             if (Bukkit.getCurrentTick() - lastDamageTick < 20 * 5) {
                 playerPendingKills.add(lastDamager to this)
                 // may be cancelled below next tick, so wait 2
+                val isMarkedForDeath = player.isMarkedForDeath
                 Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable {
                     if (playerPendingKills.removeIf { (killer, event) -> event == this }) {
                         ArenaPlayer.getArenaPlayer(lastDamager)?.computeStat(ArenaStats.KILLS) { old -> (old ?: 0) + 1 }
@@ -403,10 +404,11 @@ class GGArena : Arena() {
                         // just a buncha extra details for fun
                         if (lastDamagerDirect.hasMetadata("coined")) killCause += " (coined)"
                         if (lastDamagerDirect.hasMetadata("reflected")) killCause += " (reflected)"
+                        if (lastDamagerDirect.hasMetadata("riding arrow")) killCause += " (riding arrow)"
                         // TODO?: tnt riding arrow
                         if (damageSource.damageType == DamageType.FALL) killCause += " (fell)"
                         else if (damageSource.causingEntity == player) killCause += " (suicide)"
-                        if (player.isMarkedForDeath) killCause += " (marked for death)"
+                        if (isMarkedForDeath) killCause += " (marked for death)"
 
                         Bukkit.broadcast(Component.text("KILL: ${lastDamager.name} -> ${player.name} | $killCause").color(NamedTextColor.YELLOW))
 
