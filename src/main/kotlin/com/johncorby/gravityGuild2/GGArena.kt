@@ -27,6 +27,7 @@ import org.bukkit.event.entity.EntityDamageEvent.DamageCause
 import org.bukkit.event.player.*
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemStack
+import org.bukkit.potion.PotionEffectType
 
 class GGArena : Arena() {
     override fun createCommandExecutor() = GGCommandExecutor(this)
@@ -412,7 +413,7 @@ class GGArena : Arena() {
                         // tf2 moment teehee
                         lastDamager.playSound(lastDamager, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f)
 
-//                        player.givePartyItem()
+                        player.givePartyItem()
                     } else Bukkit.broadcast(this.deathMessage()!!)
                 }, 2)
             } else Bukkit.broadcast(this.deathMessage()!!)
@@ -430,7 +431,7 @@ class GGArena : Arena() {
         Bukkit.getScheduler().runTask(PLUGIN, Runnable {
             player.isRespawning = true
 
-            player.givePartyItem()
+//            player.givePartyItem()
         })
     }
 
@@ -466,5 +467,11 @@ class GGArena : Arena() {
 //        (entity as Attributable).getAttribute(Attribute.SCALE)!!.apply {
 //            baseValue = if (isGliding) 3.0 else defaultValue
 //        }
+    }
+
+    @ArenaEventHandler
+    fun EntityPotionEffectEvent.handler() {
+        // literally only to make Dark (the map) tolerable
+        if (newEffect?.type == PotionEffectType.DARKNESS) isCancelled = true
     }
 }

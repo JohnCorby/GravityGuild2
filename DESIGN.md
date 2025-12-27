@@ -3,18 +3,19 @@
 
 - armor that does something (e.g. small durability but resistant to arrows)
 - custom killer tracker: any hit you get on them and then they die will count within n seconds of their hit. maybe track who did the most damage if theres multiple
-  - IDEA: make it only count if you live the next or 2 seconds after to prevent suicide bombs
+  - DONE: make it only count if you live the next or 2 seconds after to prevent suicide bombs
 - IDEA: if do this, make everything else have damage falloff
   - especially do this if hitscan
-  - meh nah
+  - NO
 - CONTINUE to add interactions between items, whether thats having one make another vulnerable (countering?) or use them together (chaining)
 - IDEA: party items (items you get when you die that help you and are chaotic)
-  - horn shuffle
+  - DONE: horn shuffle
   - enderpearl that teleports someone else. maybe the guy ur looking at
-  - make everyone glow so you can find them
+  - DONE: make everyone glow so you can find them
   - add cooldown to an item lol
-    - snowball does this now
+    - DONE: snowball does this now
   - spawn anvil above someone LOL
+  - IDEA: remove on death? i dont really wanna do this
 - DONE: add custom death messages
 - DONE: show scores on game end
 - IDEA: beds can set spawn until destroyed
@@ -22,6 +23,7 @@
 - TODO: configurable map timer
   - nope too annoying to implement and too hacky
 - IDEA: "10 kills without dying gets a nuke" so reverse party item
+  - meh ig
 
 # flying
 
@@ -79,7 +81,7 @@
   - UPDATE: u can do that now sorta lol with the passenger thing or fish
 - IDEA: switch small tnt for minecart that slide along da ground
   - nope, just made small tnt better (and longer cooldown to balance it out)
-- PROBLEM: small tnt might be too overpowered, gotta test if u can win with only it lol
+- PROBLEM?: small tnt might be too overpowered, gotta test if u can win with only it lol
 - make it extinguish fires???? idk why this was wanted but it was
 
 # fish
@@ -102,6 +104,7 @@
   - mace used to do this, but now just makes you reflect off in same direction but up
   - you can hit off ANYTHING, including your own wither skulls :P now you cant fly from ur own stuff
   - you also get the same velocity every time, you more than wind charge hit from ground
+  - UPDATE: you go forward now. is cool
 
 # mace
 
@@ -113,6 +116,7 @@
 - wider range for mace hit. bounce. will try. might want a way to block?
   - also counters someone just standing under you to try and get you? maybe?
 - IDEA: less damage but mark for death, to chain with arrow
+  - meh, you continue in direction so for now nah
 
 # arrow
 - wither skull
@@ -130,7 +134,7 @@
   - nope its fine, barely useful lol
   - okay it makes u silent when moving in the air
   - okay also i prevent knockback now but its not that useful
-  - its another situational mace! like small tnt 
+  - its another situational mace! like small tnt. but thats okay it works
 
 # hitscan weapon?
 - GOAL: the only long range weapon (bow has deviation and may get damage falloff). really hard to hit shots with no lag compensation

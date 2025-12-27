@@ -374,12 +374,12 @@ object GGShuffleHorn {
             return
         }
 
-        // wait one frame to cooldown so horn sound still plays
-        Bukkit.getScheduler().runTask(PLUGIN, Runnable {
-            competition.players.forEach {
-                it.player.setCooldown(player.inventory.itemInMainHand, 20 * 30)
-            }
-        })
+        // immediately setting cooldown makes horn sound not play. thats fine cuz i want to play even louder one
+        // yes itll play for local player twice. i dont care
+        player.world.playSound(player, Sound.ITEM_GOAT_HORN_SOUND_5, 9999f, 1f)
+        competition.players.forEach {
+            it.player.setCooldown(player.inventory.itemInMainHand, 20 * 30)
+        }
 
         // wait and then get players again in case they leave
         Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable {
@@ -388,6 +388,8 @@ object GGShuffleHorn {
                 it.player.showTitle(Title.title(Component.text("Shuffle!"), Component.empty()))
                 it.player.world.strikeLightningEffect(it.player.location)
             }
+
+            player.inventory.removeItem(Items.SHUFFLE_HORN.item)
         }, 20 * 3)
 
     }
@@ -412,6 +414,7 @@ object GGGun {
         if (player.doItemCooldown(20 * 2)) return
 
         (entity as? Damageable)?.damagePrecise(9999.0, player, player)
+        if (entity != null) player.consumePartyItem()
 
         player.world.playSound(player, Sound.ITEM_WOLF_ARMOR_DAMAGE, 1f, 1f)
     }
@@ -438,6 +441,7 @@ object GGTree {
     val playerLastPlanted = mutableMapOf<Player, Int>()
 
     fun plant(player: Player) {
+
         var created = false
         (player.rayTraceEntities(120, true) ?: player.rayTraceBlocks(120.0, FluidCollisionMode.NEVER))
             ?.let {
@@ -447,6 +451,8 @@ object GGTree {
         if (created) {
             playerLastPlanted[player] = Bukkit.getCurrentTick()
             player.setCooldown(player.inventory.itemInMainHand, 20)
+
+            player.consumePartyItem()
         } else {
             player.world.playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, .5f)
         }
@@ -675,6 +681,13 @@ fun Float.remapClamped(
 
     // Map the normalized value to the output range
     return Math.clamp(outputMin + normalizedValue * (outputMax - outputMin), outputMin, outputMax)
+}
+
+fun Player.consumePartyItem(time: Long = 20 * 20) {
+    this.sendActionBar(Component.text("Consuming this party item in ${time / 20} seconds..."))
+
+    val item = inventory.itemInMainHand
+    Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable { inventory.removeItem(item) }, time)
 }
 
 
