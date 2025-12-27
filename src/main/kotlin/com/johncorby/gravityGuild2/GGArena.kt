@@ -396,6 +396,8 @@ class GGArena : Arena() {
 
                         // tf2 moment teehee
                         lastDamager.playSound(lastDamager, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f)
+
+//                        player.givePartyItem()
                     } else Bukkit.broadcast(this.deathMessage()!!)
                 }, 2)
             } else Bukkit.broadcast(this.deathMessage()!!)
@@ -412,6 +414,8 @@ class GGArena : Arena() {
 
         Bukkit.getScheduler().runTask(PLUGIN, Runnable {
             player.isRespawning = true
+
+            player.givePartyItem()
         })
     }
 

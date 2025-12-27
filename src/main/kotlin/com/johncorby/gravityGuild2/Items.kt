@@ -431,7 +431,7 @@ object GGTree {
 }
 
 
-enum class Items(val item: ItemStack) {
+enum class Items(val item: ItemStack, val partyWeight: Int? = null) {
     BOW(ItemStack.of(Material.CROSSBOW).apply {
         addUnsafeEnchantment(Enchantment.INFINITY, 1)
         addUnsafeEnchantment(Enchantment.QUICK_CHARGE, 1)
@@ -480,19 +480,19 @@ enum class Items(val item: ItemStack) {
 
         @Suppress("UnstableApiUsage")
         this.setData(DataComponentTypes.INSTRUMENT, MusicInstrument.CALL_GOAT_HORN)
-    }),
+    }, 1),
     GUN(ItemStack.of(Material.SPYGLASS).apply {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
         addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
 
         lore(listOf(Component.text("Long punch").color(NamedTextColor.BLUE)))
-    }),
+    }, 1),
     TREE(ItemStack.of(Material.OAK_SAPLING).apply {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
         addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
 
         lore(listOf(Component.text("Plant a tree on left click. Longer wait = bigger tree").color(NamedTextColor.BLUE)))
-    }),
+    }, 1),
 
 
     HELMET(ItemStack.of(Material.END_ROD).apply {
@@ -525,6 +525,25 @@ fun Player.initInventory() {
     inventory.chestplate = Items.CHESTPLATE.item
 
     // TODO: teleport to random part on the map? or just use manual spawns like currently
+}
+
+fun Player.givePartyItem() {
+    val partyItems = Items.entries.filter { it.partyWeight != null }
+
+    val totalWeight = partyItems.sumOf { it.partyWeight!! }
+    val randomNumber = Random.nextInt(0, totalWeight)
+
+    var total = 0
+    var partyItem: ItemStack? = null
+    for (item in partyItems) {
+        total += item.partyWeight!!
+        if (randomNumber < total) {
+            partyItem = item.item
+            break
+        }
+    }
+
+    inventory.addItem(partyItem!!)
 }
 
 
@@ -562,7 +581,7 @@ var Player.isRespawning: Boolean
 
             clearActivePotionEffects()
             fireTicks = 0
-            killer = null
+//            combatTracker.resetCombatState()
 
             // BUG: doesnt hide clothes
             addPotionEffect(PotionEffect(PotionEffectType.INVISIBILITY, 20 * 3, 1, false, false))
