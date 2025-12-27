@@ -113,16 +113,18 @@ object GGTnt {
     fun launch(player: Player, small: Boolean) {
         if (player.doItemCooldown(if (small) 20 * 10 else 20 * 5)) return
 
-        val projectile = player.launchProjectile(EnderPearl::class.java, player.eyeLocation.direction.multiply(.7))
-        val tnt = projectile.world.spawn(projectile.location, BlockDisplay::class.java)
-        tnt.block = Material.TNT.createBlockData()
-        tnt.transformation = Transformation(
-            Vector3f(-.5f).mul(if (small) .5f else 1f),
-            Quaternionf(),
-            Vector3f(1f).mul(if (small) .5f else 1f),
-            Quaternionf()
-        )
-        projectile.addPassenger(tnt)
+        val projectile = player.launchProjectile(EnderPearl::class.java, player.eyeLocation.direction.multiply(.7)) { projectile ->
+            val tnt = projectile.world.spawn(projectile.location, BlockDisplay::class.java)
+            tnt.block = Material.TNT.createBlockData()
+            tnt.transformation = Transformation(
+                Vector3f(-.5f).mul(if (small) .5f else 1f),
+                Quaternionf(),
+                Vector3f(1f).mul(if (small) .5f else 1f),
+                Quaternionf()
+            )
+            projectile.addPassenger(tnt)
+            // do this before spawn so hack with teleport pearl check works... bleh
+        }
         trackedTnt.add(projectile)
 
         player.world.playSound(player, Sound.ENTITY_TNT_PRIMED, 1f, if (small) 1f else .5f)
@@ -474,7 +476,7 @@ object GGTeleportPearl {
     fun toss(enderPearl: EnderPearl) {
         if (enderPearl.passengers.any { it is BlockDisplay }) return; // false alarm. this is tnt. bleh
 
-        enderPearl.remove()
+        Bukkit.getScheduler().runTask(PLUGIN, Runnable { enderPearl.remove() })
 
         val player = enderPearl.shooter as Player
         val competition = ArenaPlayer.getArenaPlayer(player)!!.competition
@@ -557,7 +559,7 @@ enum class Items(val item: ItemStack, val partyWeight: Double? = null) {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
 
         lore(listOf(Component.text("Teleport to random player >:)").color(NamedTextColor.BLUE)))
-    }, 0.3),
+    }, 0.5),
     GLOWBERRIES(ItemStack.of(Material.GLOW_BERRIES, 3).apply {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
 
