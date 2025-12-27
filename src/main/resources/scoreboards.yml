@@ -18,9 +18,9 @@ templates:
     lines:
       - simple:
           lines:
+            - "<yellow>Map: <white>%map%"
             - " "
             - "<yellow>Players: <white>%online_players%/%max_players%"
-            - "<yellow>Map: <white>%map%"
       - player-list:
           max-entries: 8
   countdown:
@@ -29,9 +29,9 @@ templates:
     lines:
       - simple:
           lines:
+            - "<yellow>Map: <white>%map%"
             - " "
             - "<yellow>Players: <white>%online_players%/%max_players%"
-            - "<yellow>Map: <white>%map%"
       - player-list:
           max-entries: 8
   ingame-list:

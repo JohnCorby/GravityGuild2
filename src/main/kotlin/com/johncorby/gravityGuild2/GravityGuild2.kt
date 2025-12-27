@@ -1,7 +1,11 @@
 package com.johncorby.gravityGuild2
 
 import org.battleplugins.arena.BattleArena
+import org.bukkit.Bukkit
+import org.bukkit.GameMode
+import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
+import org.bukkit.event.player.PlayerJoinEvent
 import org.bukkit.plugin.java.JavaPlugin
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
@@ -19,9 +23,20 @@ class GravityGuild2 : JavaPlugin(), Listener {
         saveResource("scoreboards.yml", true)
         Files.move(Path(dataFolder.path, "scoreboards.yml"), Path(dataFolder.parent, "BattleArena", "scoreboards.yml"), StandardCopyOption.REPLACE_EXISTING)
         BattleArena.getInstance().registerArena(this, "GravityGuild", GGArena::class.java)
+
+        Bukkit.getPluginManager().registerEvents(this, this)
     }
 
     override fun onDisable() {
         // Plugin shutdown logic
+    }
+
+    @EventHandler
+    fun PlayerJoinEvent.handler() {
+//        if (player.lastLogin != 0L) return
+
+        // silly hack
+        player.performCommand("mvtp gg_arenas")
+        player.gameMode = GameMode.ADVENTURE
     }
 }

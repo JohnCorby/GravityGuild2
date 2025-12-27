@@ -26,6 +26,7 @@ import org.bukkit.event.entity.*
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause
 import org.bukkit.event.player.*
 import org.bukkit.inventory.EquipmentSlot
+import org.bukkit.inventory.ItemStack
 
 class GGArena : Arena() {
     override fun createCommandExecutor() = GGCommandExecutor(this)
@@ -283,7 +284,9 @@ class GGArena : Arena() {
         }
     }
 
-    val playerLastDamager = mutableMapOf<Player, Triple<Player, Entity, Int>>()
+    val playerLastDamager = mutableMapOf<Player, LastDamagerData>()
+    data class LastDamagerData(val lastDamager: Player, val lastDamagerDirect: Entity, val lastDamagerItem: ItemStack, val lastDamageTick: Int)
+
     val playerPendingKills = mutableListOf<Pair<Player, PlayerDeathEvent>>()
 
     @ArenaEventHandler
@@ -298,7 +301,8 @@ class GGArena : Arena() {
             return
         }
 
-        if (damageSource.directEntity is PufferFish) {
+        if (damageSource.directEntity is PufferFish &&
+            damageSource.damageType != DamageType.GENERIC) {
             GGFish.hit(damageSource.directEntity as PufferFish, entity)
         }
 
@@ -341,8 +345,8 @@ class GGArena : Arena() {
         if (damagingPlayer != null && damagingPlayer != entity) {
             // damaged by other player. track this
             // overwrite previous value in case of multiple damages
-            playerLastDamager[entity as Player] = Triple(damagingPlayer, damageSource.directEntity!!, Bukkit.getCurrentTick())
-            PLUGIN.logger.info("tracking ${entity.name} got damaged by ${damagingPlayer.name} at ${Bukkit.getCurrentTick()}")
+            playerLastDamager[entity as Player] = LastDamagerData(damagingPlayer, damageSource.directEntity!!, damagingPlayer.inventory.itemInMainHand, Bukkit.getCurrentTick())
+            PLUGIN.logger.info("tracking ${entity.name} got damaged by ${damagingPlayer.name} with ${damageSource.directEntity!!.name} at ${Bukkit.getCurrentTick()}")
 
             // tf2 moment teehee
             damagingPlayer.playSound(damagingPlayer, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f)
@@ -364,8 +368,8 @@ class GGArena : Arena() {
         }
 
         // okay, now use our custom killer thing to track kills
-        playerLastDamager[player]?.let { (lastDamager, lastDamagerDirect, lastDamageTick) ->
-            PLUGIN.logger.info("${player.name} last damaged by ${lastDamager.name} at $lastDamageTick (now is ${Bukkit.getCurrentTick()})")
+        playerLastDamager[player]?.let { (lastDamager, lastDamagerDirect, lastDamagerItem, lastDamageTick) ->
+            PLUGIN.logger.info("${player.name} last damaged by ${lastDamager.name} with ${lastDamagerDirect.name} at $lastDamageTick (now is ${Bukkit.getCurrentTick()})")
 
             // did it recently enough, give em the kill
             if (Bukkit.getCurrentTick() - lastDamageTick < 20 * 5) {
@@ -376,19 +380,19 @@ class GGArena : Arena() {
                         ArenaPlayer.getArenaPlayer(lastDamager)?.computeStat(ArenaStats.KILLS) { old -> (old ?: 0) + 1 }
                         // TODO fall, reflected, marked for death
                         val killThing = when (val it = lastDamagerDirect) {
-                            is Player -> when (val it = it.inventory.itemInMainHand) {
-                                Items.MACE.item -> "Mace"
+                            is Player -> when (val it = lastDamagerItem) {
+                                Items.MACE.item -> "Smash"
                                 Items.FISH.item -> "Fish"
                                 Items.ARROW.item -> "Backstab"
                                 Items.GUN.item -> "Gun"
-                                else -> "TODO ${it.type}"
+                                else -> "TODO item ${it.type}"
                             }
                             is PufferFish -> "Puffer"
                             is Arrow -> "Arrow"
                             is EnderPearl -> "Grenade"
                             is Snowball -> "Snowball"
                             is WitherSkull -> "Skull"
-                            else -> "TODO ${it?.type}"
+                            else -> "TODO entity ${it.type}"
                         }
                         Bukkit.broadcast(Component.text("KILL: ${lastDamager.name} -$killThing> ${player.name}").color(NamedTextColor.YELLOW))
 

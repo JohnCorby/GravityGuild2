@@ -151,7 +151,7 @@ object GGTnt {
                 val nearbyEntities = tnt.world.getNearbyEntities(
                     tnt.location,
                     3.0, 3.0, 3.0,
-                    { it != tnt && it != tnt.shooter && tnt !in it.passengers },
+                    { it != tnt && it != tnt.shooter },
                 )
                 nearbyEntities.forEach {
                     when {
@@ -173,8 +173,7 @@ object GGTnt {
                                 tnt.shooter = it.shooter // inherit shooter
                                 it.velocity = it.velocity.multiply(0.5)
                                 GGBow.trackedArrows[it] = it.velocity
-//                                trackedTnt.remove(tnt)
-                                // you should be able to steal tnt already riding guy but idk if thatll actually work. TODO: test
+                                trackedTnt.remove(tnt)
                             }
                         }
 
@@ -563,7 +562,7 @@ var Player.dontGlide: Boolean
     get() = this.hasPotionEffect(PotionEffectType.SLOWNESS)
     set(value) {
         if (value) {
-            this.addPotionEffect(PotionEffect(PotionEffectType.SLOWNESS, 10 * 20, 1, false, false))
+            this.addPotionEffect(PotionEffect(PotionEffectType.SLOWNESS, 20, 1, false, false))
             isGliding = false
             world.playSound(this, Sound.ENTITY_PLAYER_BURP, 1f, 1f)
         } else this.removePotionEffect(PotionEffectType.SLOWNESS)
@@ -630,5 +629,5 @@ fun Float.remapClamped(
 
 
 // ik im not supposed to be using this but idc its nice
-inline fun <reified T> Metadatable.getMetadata(key: String) = this.getMetadata(key).firstOrNull { it.owningPlugin == PLUGIN && it is T } as? T
+inline fun <reified T> Metadatable.getMetadata(key: String) = (this.getMetadata(key).firstOrNull { it.owningPlugin == PLUGIN && it.value() is T })?.value() as? T
 fun <T> Metadatable.setMetadata(key: String, value: T) = this.setMetadata(key, FixedMetadataValue(PLUGIN, value))
