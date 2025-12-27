@@ -408,10 +408,10 @@ class GGArena : Arena() {
                         if (lastDamagerDirect.hasMetadata("coined")) killCause += " (coined)"
                         if (lastDamagerDirect.hasMetadata("reflected")) killCause += " (reflected)"
                         if (lastDamagerDirect.hasMetadata("riding arrow")) killCause += " (riding arrow)"
-                        // TODO?: tnt riding arrow
+                        if (isMarkedForDeath) killCause += " (marked for death)"
                         if (damageSource.damageType == DamageType.FALL) killCause += " (fell)"
                         else if (damageSource.causingEntity == player) killCause += " (suicide)"
-                        if (isMarkedForDeath) killCause += " (marked for death)"
+                        // could do other self deaths besides fall but meh
 
                         Bukkit.broadcast(Component.text("KILL: ${lastDamager.name} -> ${player.name} | $killCause").color(NamedTextColor.YELLOW))
 

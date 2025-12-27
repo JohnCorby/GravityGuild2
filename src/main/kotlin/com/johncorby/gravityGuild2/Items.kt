@@ -171,6 +171,7 @@ object GGTnt {
                                 // whoever coins the arrow first gets it
                                 if (it.hasMetadata("coined")) return@forEach
                                 it.setMetadata("coined", null)
+                                it.isGlowing = true
 
                                 iter.remove()
                                 tnt.hitEntity(it)
@@ -618,7 +619,6 @@ fun Player.givePartyItem() {
         total += item.partyWeight!!
         if (total >= random) {
             partyItem = item
-            PLUGIN.logger.info("choosing party item $partyItem")
             break
         }
     }
