@@ -303,7 +303,7 @@ object GGFish {
     fun hit(pufferFish: PufferFish, entity: Entity) {
         val player = pufferFish.getMetadata<Player>("player") ?: return
         if (player == entity) return
-        (entity as Damageable).damagePrecise(0.0, pufferFish, player)
+        (entity as Damageable).damagePrecise(3.0, pufferFish, player)
         (entity as? Player)?.let { it.isMarkedForDeath = true }
     }
 }
@@ -333,7 +333,7 @@ object GGArrow {
     }
 
     fun launch(player: Player) {
-        player.launchProjectile(WitherSkull::class.java, player.eyeLocation.direction)
+        player.launchProjectile(WitherSkull::class.java, player.eyeLocation.direction.multiply(2))
     }
 
     fun hit(entity: Entity, witherSkull: WitherSkull) {
@@ -430,7 +430,7 @@ object GGTree {
 }
 
 
-enum class Items(val item: ItemStack, val partyWeight: Int? = null) {
+enum class Items(val item: ItemStack, val partyWeight: Double? = null) {
     BOW(ItemStack.of(Material.CROSSBOW).apply {
         addUnsafeEnchantment(Enchantment.INFINITY, 1)
         addUnsafeEnchantment(Enchantment.QUICK_CHARGE, 1)
@@ -479,19 +479,19 @@ enum class Items(val item: ItemStack, val partyWeight: Int? = null) {
 
         @Suppress("UnstableApiUsage")
         this.setData(DataComponentTypes.INSTRUMENT, MusicInstrument.CALL_GOAT_HORN)
-    }, 1),
+    }, 1.0),
     GUN(ItemStack.of(Material.SPYGLASS).apply {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
         addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
 
         lore(listOf(Component.text("Long punch").color(NamedTextColor.BLUE)))
-    }, 1),
+    }, 1.0),
     TREE(ItemStack.of(Material.OAK_SAPLING).apply {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
         addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
 
         lore(listOf(Component.text("Plant a tree on left click. Longer wait = bigger tree").color(NamedTextColor.BLUE)))
-    }, 1),
+    }, 1.0),
 
 
     HELMET(ItemStack.of(Material.END_ROD).apply {
@@ -527,16 +527,17 @@ fun Player.initInventory() {
 }
 
 fun Player.givePartyItem() {
+    // https://dev.to/jacktt/understanding-the-weighted-random-algorithm-581p
     val partyItems = Items.entries.filter { it.partyWeight != null }
 
     val totalWeight = partyItems.sumOf { it.partyWeight!! }
-    val randomNumber = Random.nextInt(0, totalWeight)
+    val randomNumber = Random.nextDouble(totalWeight)
 
-    var total = 0
+    var total = 0.0
     var partyItem: ItemStack? = null
     for (item in partyItems) {
         total += item.partyWeight!!
-        if (randomNumber < total) {
+        if (randomNumber >= total) {
             partyItem = item.item
             break
         }

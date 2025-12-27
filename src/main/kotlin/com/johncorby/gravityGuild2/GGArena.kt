@@ -392,6 +392,7 @@ class GGArena : Arena() {
                             is EnderPearl -> "Grenade"
                             is Snowball -> "Snowball"
                             is WitherSkull -> "Skull"
+                            is WindCharge -> "Wind"
                             else -> "TODO entity ${it.type}"
                         }
                         Bukkit.broadcast(Component.text("KILL: ${lastDamager.name} -$killThing> ${player.name}").color(NamedTextColor.YELLOW))
