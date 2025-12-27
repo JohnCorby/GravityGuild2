@@ -63,6 +63,7 @@ class GGArena : Arena() {
         when (val it = entity) {
             is Arrow -> GGBow.launch(it)
             is Snowball -> GGSnowball.launch(it)
+            is EnderPearl -> GGTeleportPearl.toss(it)
         }
     }
 
@@ -128,7 +129,7 @@ class GGArena : Arena() {
     }
 
     fun PlayerItemConsumeEvent.handler() {
-        if (item.isSimilar(Items.GLOWBERRY.item)) GGGlowberry.eat(player)
+        if (item.isSimilar(Items.GLOWBERRIES.item)) GGGlowberry.eat(player)
     }
 
     val playerLastSlot = mutableMapOf<Player, Int>()

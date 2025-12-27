@@ -470,6 +470,26 @@ object GGGlowberry {
     }
 }
 
+object GGTeleportPearl {
+    fun toss(enderPearl: EnderPearl) {
+        if (enderPearl.passengers.any { it is BlockDisplay }) return; // false alarm. this is tnt. bleh
+
+        enderPearl.remove()
+
+        val player = enderPearl.shooter as Player
+        val competition = ArenaPlayer.getArenaPlayer(player)!!.competition
+        val teleportTo = competition.players.filter { it.player != player }.randomOrNull()?.player
+        teleportTo?.let { player.teleport(it) }
+
+        // give respawning effects. i cant be bothered to refactor this from respawning code
+        player.addPotionEffect(PotionEffect(PotionEffectType.INVISIBILITY, 20 * 3, 1, false, false, true))
+        player.addPotionEffect(PotionEffect(PotionEffectType.NIGHT_VISION, 20 * 3, 1, false, false, true))
+
+
+        // TODO: teleport to player ur looking at????
+    }
+}
+
 ////////// item management /////////////
 
 enum class Items(val item: ItemStack, val partyWeight: Double? = null) {
@@ -533,9 +553,12 @@ enum class Items(val item: ItemStack, val partyWeight: Double? = null) {
 
         lore(listOf(Component.text("Plant a tree on left click. Longer wait = bigger tree").color(NamedTextColor.BLUE)))
     }, 0.5),
+    TELEPORT_PEARL(ItemStack.of(Material.ENDER_PEARL).apply {
+        addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
 
-    // TODO teleport enderpearl
-    GLOWBERRY(ItemStack.of(Material.GLOW_BERRIES, 3).apply {
+        lore(listOf(Component.text("Teleport to random player >:)").color(NamedTextColor.BLUE)))
+    }, 0.3),
+    GLOWBERRIES(ItemStack.of(Material.GLOW_BERRIES, 3).apply {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
 
         lore(listOf(Component.text("Eat to make everyone glow so you can KILL THEM").color(NamedTextColor.BLUE)))
@@ -630,7 +653,14 @@ var Player.isRespawning: Boolean
         if (value) {
             // respawn
             val competition = ArenaPlayer.getArenaPlayer(this)!!.competition
-            val spawns = competition.map.spawns!!.teamSpawns!!["Default"]!!.spawns!!
+            var spawns = competition.map.spawns!!.teamSpawns!!["Default"]!!.spawns!!
+            spawns = spawns.filter {spawn ->
+                val spawnLoc = spawn.toLocation(competition.map.world)
+                // too close to other player
+                if (competition.players.any { player -> player.player.location.distance(spawnLoc) < 4.0 }) return@filter false
+                // if ur inside blocks... oh well, i dont wanna bother checking for that
+                return@filter true
+            }
             val spawn = spawns[Random.nextInt(spawns.size)]
             this.teleport(spawn.toLocation(competition.map.world))
 

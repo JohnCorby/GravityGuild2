@@ -10,7 +10,7 @@
 - CONTINUE to add interactions between items, whether thats having one make another vulnerable (countering?) or use them together (chaining)
 - IDEA: party items (items you get when you die that help you and are chaotic)
   - DONE: horn shuffle
-  - enderpearl that teleports someone else. maybe the guy ur looking at
+  - DONE: enderpearl that teleports someone else. maybe the guy ur looking at
   - DONE: make everyone glow so you can find them
   - add cooldown to an item lol
     - DONE: snowball does this now
