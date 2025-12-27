@@ -283,7 +283,7 @@ class GGArena : Arena() {
         }
     }
 
-    val playerLastDamager = mutableMapOf<Player, Pair<Player, Int>>()
+    val playerLastDamager = mutableMapOf<Player, Triple<Player, Entity, Int>>()
     val playerPendingKills = mutableListOf<Pair<Player, PlayerDeathEvent>>()
 
     @ArenaEventHandler
@@ -341,7 +341,7 @@ class GGArena : Arena() {
         if (damagingPlayer != null && damagingPlayer != entity) {
             // damaged by other player. track this
             // overwrite previous value in case of multiple damages
-            playerLastDamager[entity as Player] = damagingPlayer to Bukkit.getCurrentTick()
+            playerLastDamager[entity as Player] = Triple(damagingPlayer, damageSource.directEntity!!, Bukkit.getCurrentTick())
             PLUGIN.logger.info("tracking ${entity.name} got damaged by ${damagingPlayer.name} at ${Bukkit.getCurrentTick()}")
 
             // tf2 moment teehee
@@ -352,8 +352,6 @@ class GGArena : Arena() {
     @ArenaEventHandler
     fun PlayerDeathEvent.handler(competition: LiveCompetition<*>) {
         isCancelled = true // dont kill and dont call ArenaDeathEvent. we do our own thing
-
-        PLUGIN.logger.info("COMBAT:\n" + this.entity.combatTracker.combatEntries.joinToString(separator = "\n"))
 
 //        when (competition.phase) {
 //            CompetitionPhaseType.INGAME -> {
@@ -366,7 +364,7 @@ class GGArena : Arena() {
         }
 
         // okay, now use our custom killer thing to track kills
-        playerLastDamager[player]?.let { (lastDamager, lastDamageTick) ->
+        playerLastDamager[player]?.let { (lastDamager, lastDamagerDirect, lastDamageTick) ->
             PLUGIN.logger.info("${player.name} last damaged by ${lastDamager.name} at $lastDamageTick (now is ${Bukkit.getCurrentTick()})")
 
             // did it recently enough, give em the kill
@@ -376,9 +374,10 @@ class GGArena : Arena() {
                 Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable {
                     if (playerPendingKills.removeAll { (killer, event) -> event == this }) {
                         ArenaPlayer.getArenaPlayer(lastDamager)?.computeStat(ArenaStats.KILLS) { old -> (old ?: 0) + 1 }
-                        val killThing = when (val it = damageSource.directEntity) {
+                        // TODO fall, reflected, marked for death
+                        val killThing = when (val it = lastDamagerDirect) {
                             is Player -> when (val it = it.inventory.itemInMainHand) {
-                                Items.MACE.item -> "Smash"
+                                Items.MACE.item -> "Mace"
                                 Items.FISH.item -> "Fish"
                                 Items.ARROW.item -> "Backstab"
                                 Items.GUN.item -> "Gun"
@@ -397,7 +396,7 @@ class GGArena : Arena() {
                         // tf2 moment teehee
                         lastDamager.playSound(lastDamager, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f)
 
-//                        player.givePartyItem()
+                        player.givePartyItem()
                     } else Bukkit.broadcast(this.deathMessage()!!)
                 }, 2)
             } else Bukkit.broadcast(this.deathMessage()!!)
@@ -415,7 +414,7 @@ class GGArena : Arena() {
         Bukkit.getScheduler().runTask(PLUGIN, Runnable {
             player.isRespawning = true
 
-            player.givePartyItem()
+//            player.givePartyItem()
         })
     }
 

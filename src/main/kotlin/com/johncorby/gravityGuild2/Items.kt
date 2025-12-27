@@ -159,7 +159,7 @@ object GGTnt {
                             if (small) {
                                 // whoever coins the arrow first gets it
                                 if (it.hasMetadata("coined")) return@forEach
-                                it.setMetadata("coined", FixedMetadataValue(PLUGIN, null))
+                                it.setMetadata("coined", null)
 
                                 tnt.hitEntity(it)
                                 // ultrakill coin moment. go towards closest player
@@ -298,11 +298,11 @@ object GGFish {
 
         val puffer = player.world.spawn(player.eyeLocation, PufferFish::class.java)
         puffer.velocity = player.eyeLocation.direction.multiply(2)
-        puffer.setMetadata("player", FixedMetadataValue(PLUGIN, player))
+        puffer.setMetadata("player", player)
     }
 
     fun hit(pufferFish: PufferFish, entity: Entity) {
-        val player = pufferFish.getMetadata("player").firstOrNull()?.value() as? Player ?: return
+        val player = pufferFish.getMetadata<Player>("player") ?: return
         if (player == entity) return
         (entity as Damageable).damagePrecise(0.0, pufferFish, player)
         (entity as? Player)?.let { it.isMarkedForDeath = true }
@@ -581,7 +581,8 @@ var Player.isRespawning: Boolean
 
             clearActivePotionEffects()
             fireTicks = 0
-//            combatTracker.resetCombatState()
+            @Suppress("UnstableApiUsage")
+            combatTracker.resetCombatState() // to reset death message
 
             // BUG: doesnt hide clothes
             addPotionEffect(PotionEffect(PotionEffectType.INVISIBILITY, 20 * 3, 1, false, false))
@@ -628,5 +629,6 @@ fun Float.remapClamped(
 }
 
 
+// ik im not supposed to be using this but idc its nice
 inline fun <reified T> Metadatable.getMetadata(key: String) = this.getMetadata(key).firstOrNull { it.owningPlugin == PLUGIN && it is T } as? T
 fun <T> Metadatable.setMetadata(key: String, value: T) = this.setMetadata(key, FixedMetadataValue(PLUGIN, value))
