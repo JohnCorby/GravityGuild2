@@ -34,6 +34,8 @@ templates:
             - "<yellow>Map: <white>%map%"
             - " "
             - "<yellow>Players: <white>%online_players%/%max_players%"
+      - player-list:
+          max-entries: 8
   ingame-top-kills:
     title: "<gold>%arena%"
     refresh-time: 1s
