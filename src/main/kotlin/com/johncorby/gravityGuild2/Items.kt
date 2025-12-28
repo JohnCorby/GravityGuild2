@@ -412,7 +412,7 @@ object GGGun {
     }
 
     fun attack(entity: Entity?, player: Player) {
-        if (player.doItemCooldown(20 * 2)) return
+        if (player.doItemCooldown(20)) return
 
         (entity as? Damageable)?.damagePrecise(9999.0, player, player)
         if (entity != null) player.consumePartyItem()
@@ -625,7 +625,7 @@ fun Player.givePartyItem() {
     val amount = partyItem.item.amount
     inventory.addItem(partyItem.item)
     partyItem.item.amount = amount
-    sendMessage(Component.text("You got party item ${partyItem}!"))
+    showTitle(Title.title(Component.empty(), Component.text("You got party item ${partyItem}!")))
 }
 
 ///////// utils used by items ///////////////
@@ -719,7 +719,7 @@ fun Float.remapClamped(
 }
 
 fun Player.consumePartyItem(time: Long = 20 * 20) {
-    this.sendActionBar(Component.text("Consuming this party item in ${time / 20} seconds..."))
+    this.showTitle(Title.title(Component.empty(), Component.text("Consuming this party item in ${time / 20} seconds...")))
 
     val item = inventory.itemInMainHand
     Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable { inventory.removeItem(item) }, time)

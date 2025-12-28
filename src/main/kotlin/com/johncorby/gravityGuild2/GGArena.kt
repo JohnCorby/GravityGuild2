@@ -411,6 +411,7 @@ class GGArena : Arena() {
 
                         var deathType = when {
                             damageSource.damageType == DamageType.FALL -> "Fall"
+                            damageSource.damageType == DamageType.FLY_INTO_WALL -> "Kinetic Energy"
                             damageSource.causingEntity == player -> "Suicide"
                             damageSource.directEntity == lastDamagerDirect -> "Direct"
                             else -> "Environment"
