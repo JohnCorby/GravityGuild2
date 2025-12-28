@@ -434,7 +434,7 @@ object GGSnowball {
         (hitEntity as? Damageable)?.damagePrecise(9999.0, snowball, snowball.shooter as Player)
         snowball.world.strikeLightningEffect(snowball.location)
 
-        if (hitEntity is Player) hitEntity.inventory.forEach { hitEntity.setCooldown(it, 20 * 5) }
+        if (hitEntity is Player) hitEntity.inventory.forEach { hitEntity.setCooldown(it, 20 * 10) } // evil
     }
 }
 
