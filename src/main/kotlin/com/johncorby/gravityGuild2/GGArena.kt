@@ -383,6 +383,7 @@ class GGArena : Arena() {
             if (Bukkit.getCurrentTick() - lastDamageTick < 20 * 5) {
                 playerPendingKills.add(lastDamager to this)
                 // may be cancelled below next tick, so wait 2
+                val isBurped = player.dontGlide
                 val isMarkedForDeath = player.isMarkedForDeath
                 Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable {
                     if (playerPendingKills.removeIf { (killer, event) -> event == this }) {
@@ -414,6 +415,7 @@ class GGArena : Arena() {
                             damageSource.directEntity == lastDamagerDirect -> "Direct"
                             else -> "Environment"
                         }
+                        if (isBurped) deathType += " (burped)"
                         if (isMarkedForDeath) deathType += " (marked for death)"
 
                         Bukkit.broadcast(Component.text("KILL: ${lastDamager.name} -> ${player.name} | $killThing -> $deathType").color(NamedTextColor.YELLOW))
