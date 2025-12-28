@@ -387,13 +387,13 @@ class GGArena : Arena() {
                 Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable {
                     if (playerPendingKills.removeIf { (killer, event) -> event == this }) {
                         ArenaPlayer.getArenaPlayer(lastDamager)?.computeStat(ArenaStats.KILLS) { old -> (old ?: 0) + 1 }
-                        var killCause = when (val it = lastDamagerDirect) {
+                        var killThing = when (val it = lastDamagerDirect) {
                             is Player -> when (val it = lastDamagerItem) {
                                 Items.MACE.item -> "Smash"
                                 Items.FISH.item -> "Fish Slap"
                                 Items.ARROW.item -> "Backstab"
                                 Items.GUN.item -> "Gun"
-                                else -> "TODO item ${it.type}"
+                                else -> "Attack"
                             }
 
                             is PufferFish -> "Puffer"
@@ -402,18 +402,21 @@ class GGArena : Arena() {
                             is Snowball -> "Snowball"
                             is WitherSkull -> "Skull"
                             is WindCharge -> "Wind"
-                            else -> "TODO entity ${it.type}"
+                            else -> it.name
                         }
-                        // just a buncha extra details for fun
-                        if (lastDamagerDirect.hasMetadata("coined")) killCause += " (coined)"
-                        if (lastDamagerDirect.hasMetadata("reflected")) killCause += " (reflected)"
-                        if (lastDamagerDirect.hasMetadata("riding arrow")) killCause += " (riding arrow)"
-                        if (isMarkedForDeath) killCause += " (marked for death)"
-                        if (damageSource.damageType == DamageType.FALL) killCause += " (fell)"
-                        else if (damageSource.causingEntity == player) killCause += " (suicide)"
-                        // could do other self deaths besides fall but meh
+                        if (lastDamagerDirect.hasMetadata("coined")) killThing += " (coined)"
+                        if (lastDamagerDirect.hasMetadata("reflected")) killThing += " (reflected)"
+                        if (lastDamagerDirect.hasMetadata("riding arrow")) killThing += " (riding arrow)"
 
-                        Bukkit.broadcast(Component.text("KILL: ${lastDamager.name} -> ${player.name} | $killCause").color(NamedTextColor.YELLOW))
+                        var deathType = when {
+                            damageSource.damageType == DamageType.FALL -> "Fall"
+                            damageSource.causingEntity == player -> "Suicide"
+                            damageSource.directEntity == lastDamagerDirect -> "Direct"
+                            else -> "Environment"
+                        }
+                        if (isMarkedForDeath) deathType += " (marked for death)"
+
+                        Bukkit.broadcast(Component.text("KILL: ${lastDamager.name} -> ${player.name} | $killThing -> $deathType").color(NamedTextColor.YELLOW))
 
 
                         // tf2 moment teehee
