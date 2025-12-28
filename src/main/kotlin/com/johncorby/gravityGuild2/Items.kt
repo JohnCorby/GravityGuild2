@@ -16,6 +16,7 @@ import org.bukkit.damage.DamageSource
 import org.bukkit.damage.DamageType
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.*
+import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.bukkit.metadata.FixedMetadataValue
 import org.bukkit.metadata.Metadatable
@@ -608,7 +609,7 @@ fun Player.initInventory() {
 
 fun Player.givePartyItem() {
     // https://dev.to/jacktt/understanding-the-weighted-random-algorithm-581p
-    val partyItems = Items.entries.filter { it.partyWeight != null && (it.item.isEmpty || it.item !in inventory) }
+    val partyItems = Items.entries.filter { it.partyWeight != null && (it.item.isEmpty || !inventory.any { it2 -> it.item.isSimilar(it2) }) }
 
     val totalWeight = partyItems.sumOf { it.partyWeight!! }
     val random = Random.nextDouble(totalWeight)
@@ -623,8 +624,11 @@ fun Player.givePartyItem() {
         }
     }
 
-    if (partyItem == Items.NO_PARTY_ITEM) return
-    inventory.addItem(partyItem!!.item)
+    if (partyItem!! == Items.NO_PARTY_ITEM) return
+    // add item changes amount??? why??
+    val amount = partyItem.item.amount
+    inventory.addItem(partyItem.item)
+    partyItem.item.amount = amount
     sendMessage(Component.text("You got party item ${partyItem}!"))
 }
 
@@ -659,7 +663,7 @@ var Player.isRespawning: Boolean
             // respawn
             val competition = ArenaPlayer.getArenaPlayer(this)!!.competition
             var spawns = competition.map.spawns!!.teamSpawns!!["Default"]!!.spawns!!
-            spawns = spawns.filter {spawn ->
+            spawns = spawns.filter { spawn ->
                 val spawnLoc = spawn.toLocation(competition.map.world)
                 // too close to other player
                 if (competition.players.any { player -> player.player.location.distance(spawnLoc) < 20.0 }) return@filter false
