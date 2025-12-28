@@ -291,15 +291,12 @@ object GGFish {
             if (it is Player) {
                 if (it.inventory.itemInMainHand == Items.ARROW.item) it.velocity = oldVel // super bad way of writing this but it works
                 it.isMarkedForDeath = true
-
-                // TODO: remove if this sucks
                 it.dontGlide = true
             }
             if (it is Projectile) {
                 if (it.shooter is Player && it.shooter != player) {
                     (it.shooter as Player).isMarkedForDeath = true // for fun
 
-                    // TODO: remove if this sucks
                     it.velocity = (it.shooter as Player).eyeLocation.subtract(it.location).toVector().normalize().multiply(it.velocity.length())
                     if (it is Arrow)
                         GGBow.trackedArrows[it] = it.velocity
@@ -312,9 +309,7 @@ object GGFish {
         if (!hit) { // make sure to indicate whiff with sound
             player.world.playSound(player, Sound.ENTITY_PLAYER_ATTACK_NODAMAGE, 1f, 1f)
         } else {
-            // TODO: remove if this sucks
             player.velocity = player.eyeLocation.direction.multiply(2)
-//            player.isGliding = false
         }
     }
 
@@ -324,6 +319,7 @@ object GGFish {
         val puffer = player.world.spawn(player.eyeLocation, PufferFish::class.java)
         puffer.velocity = player.eyeLocation.direction.multiply(2)
         puffer.setMetadata("player", player)
+        // because its not a projectile, you cannot reflect it. thats okay, let it keep damaging you
     }
 
     fun hit(pufferFish: PufferFish, entity: Entity) {
@@ -513,7 +509,7 @@ enum class Items(val item: ItemStack, val partyWeight: Double? = null) {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
         addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
 
-        lore(listOf(Component.text("Shoots wither skulls on right click. Become silent and backstab on left click.").color(NamedTextColor.BLUE)))
+        lore(listOf(Component.text("Shoots wither skulls on right click. Backstab on left click. Become silent and resist knockback when holding").color(NamedTextColor.BLUE)))
     }),
     TNT(ItemStack.of(Material.TNT).apply {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
