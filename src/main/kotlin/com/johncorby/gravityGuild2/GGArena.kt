@@ -1,5 +1,6 @@
 ﻿package com.johncorby.gravityGuild2
 
+import com.destroystokyo.paper.ParticleBuilder
 import io.papermc.paper.event.player.PlayerFailMoveEvent
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
@@ -119,7 +120,7 @@ class GGArena : Arena() {
 
             Items.GUN.item -> {
                 if (action.isLeftClick)
-                    GGGun.attack(null, player)
+                    GGGun.attack(null, clickedBlock?.location, player)
             }
 
             Items.TREE.item -> {
@@ -155,6 +156,7 @@ class GGArena : Arena() {
 
         when (player.inventory.getItem(newSlot)) {
             Items.GUN.item -> {
+                // BUG?: actual limit is 64 for some reason
                 player.getAttribute(Attribute.ENTITY_INTERACTION_RANGE)!!.apply { baseValue = 9999.0 }
                 player.getAttribute(Attribute.BLOCK_INTERACTION_RANGE)!!.apply { baseValue = 9999.0 }
             }
@@ -317,7 +319,7 @@ class GGArena : Arena() {
             damageSource.damageType != DamageType.GENERIC
         ) {
             isCancelled = true
-            GGGun.attack(entity, damageSource.causingEntity as Player)
+            GGGun.attack(entity, entity.location, damageSource.causingEntity as Player)
             return
         }
 

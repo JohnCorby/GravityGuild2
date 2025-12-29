@@ -16,7 +16,6 @@ import org.bukkit.damage.DamageSource
 import org.bukkit.damage.DamageType
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.*
-import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemStack
 import org.bukkit.metadata.FixedMetadataValue
 import org.bukkit.metadata.Metadatable
@@ -28,6 +27,7 @@ import org.joml.Quaternionf
 import org.joml.Vector3f
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.math.absoluteValue
+import kotlin.math.roundToInt
 import kotlin.random.Random
 
 ///////// regular items /////////////
@@ -411,14 +411,33 @@ object GGGun {
 
     }
 
-    fun attack(entity: Entity?, player: Player) {
+    fun attack(entity: Entity?, hitPoint: Location?, player: Player) {
         if (player.doItemCooldown(20)) return
 
         (entity as? Damageable)?.damagePrecise(9999.0, player, player)
         if (entity != null) player.consumePartyItem()
 
+        drawLine(player.eyeLocation, hitPoint ?: player.eyeLocation.add(player.eyeLocation.direction.multiply(64.0)), Particle.SMOKE)
+
         player.world.playSound(player, Sound.ITEM_WOLF_ARMOR_DAMAGE, 1f, 1f)
     }
+}
+
+fun drawLine(a: Location, b: Location, particle: Particle) {
+    fun lerp(a: Double, b: Double, t: Double) = (1 - t) * a + t * b
+
+    val numPoints = a.distance(b).toInt() * 2
+    for (i in 0..numPoints) {
+        val t = i.toDouble() / numPoints
+        val pos = Location(
+            a.world,
+            lerp(a.x, b.x, t),
+            lerp(a.y, b.y, t),
+            lerp(a.z, b.z, t),
+        )
+        a.world.spawnParticle(particle, pos, 1, 0.0, 0.0, 0.0, 0.0)
+    }
+
 }
 
 
@@ -448,6 +467,7 @@ object GGTree {
             ?.let {
                 val time = Bukkit.getCurrentTick() - (playerLastPlanted[player] ?: Bukkit.getCurrentTick())
                 created = player.world.generateTree(it.hitPosition.toLocation(player.world), ThreadLocalRandom.current(), if (time > 20) TreeType.MEGA_REDWOOD else TreeType.BIG_TREE)
+                drawLine(player.eyeLocation, it.hitPosition.toLocation(player.world), Particle.HAPPY_VILLAGER)
             }
         if (created) {
             playerLastPlanted[player] = Bukkit.getCurrentTick()
