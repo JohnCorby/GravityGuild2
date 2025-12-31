@@ -239,6 +239,8 @@ object GGBow {
         // TODO?: turn this into party item and let u ride anything???
         val arrow = player.checkHitbox(5.0).firstOrNull { it is Arrow } as? Arrow ?: return
         arrow.addPassenger(player)
+        arrow.velocity = arrow.velocity.multiply(0.5)
+        trackedArrows[arrow] = arrow.velocity
         player.inventory.forEach { it?.let { player.setCooldown(it, 20 * 3) } }
     }
 

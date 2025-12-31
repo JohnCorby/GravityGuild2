@@ -400,9 +400,10 @@ class GGArena : Arena() {
             // did it recently enough, give em the kill
             if (Bukkit.getCurrentTick() - lastDamageTick < 20 * 5) {
                 playerPendingKills.add(lastDamager to this)
-                // may be cancelled below next tick, so wait 2
+                val ridingArrow = player.vehicle is Arrow
                 val isBurped = player.dontGlide
                 val isMarkedForDeath = player.isMarkedForDeath
+                // may be cancelled below next tick, so wait 2
                 Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable {
                     if (playerPendingKills.removeIf { (killer, event) -> event == this }) {
                         ArenaPlayer.getArenaPlayer(lastDamager)?.computeStat(ArenaStats.KILLS) { old -> (old ?: 0) + 1 }
@@ -434,6 +435,7 @@ class GGArena : Arena() {
                             damageSource.directEntity == lastDamagerDirect -> "Direct"
                             else -> "Environment"
                         }
+                        if (ridingArrow) deathType += " (riding arrow)"
                         if (isMarkedForDeath) deathType += " (marked for death)"
                         if (isBurped) deathType += " (burped)"
 
