@@ -1,6 +1,5 @@
 ﻿package com.johncorby.gravityGuild2
 
-import com.destroystokyo.paper.ParticleBuilder
 import io.papermc.paper.event.player.PlayerFailMoveEvent
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
@@ -70,6 +69,11 @@ class GGArena : Arena() {
 
     @ArenaEventHandler
     fun ProjectileHitEvent.handler(competition: LiveCompetition<*>) {
+        if (hitEntity == entity.shooter) { // paper is supposed to not let u hit urself but it doesnt work sometimes
+            isCancelled = true
+            return
+        }
+
         when (val it = entity) {
             is Arrow -> GGBow.hit(it)
             is Snowball -> GGSnowball.hit(it, hitEntity)
@@ -85,6 +89,8 @@ class GGArena : Arena() {
 
         // off hand exists, i dont care
         when (player.inventory.itemInMainHand) {
+            Items.BOW.item -> if (action.isLeftClick) GGBow.punch(player)
+
             Items.MACE.item -> {
                 if (action.isLeftClick)
                     GGMace.launch(player)
@@ -342,12 +348,12 @@ class GGArena : Arena() {
         }
 
         // revert non lethal damage only for hit ground and wall. everything else should be normal damage
-/*
-        if (cause == DamageCause.FALL || cause == DamageCause.FLY_INTO_WALL) {
-            // revert non-lethal damage
-            if ((entity as Player).health - damage > 0) damage = 0.0
-        }
-*/
+        /*
+                if (cause == DamageCause.FALL || cause == DamageCause.FLY_INTO_WALL) {
+                    // revert non-lethal damage
+                    if ((entity as Player).health - damage > 0) damage = 0.0
+                }
+        */
 
         if (cause == DamageCause.VOID) damage = 9999.0 // just fuckin kill em
 
@@ -375,6 +381,16 @@ class GGArena : Arena() {
 
         if (damageSource.damageType == DamageType.FLY_INTO_WALL || damageSource.damageType == DamageType.FALL) {
             player.world.createExplosion(player.location, 5f) // for literally no reason
+        }
+
+        fun nonPlayerDeath() {
+            var deathMessage = this.deathMessage()!!
+            // punish suicides
+            if (damageSource.causingEntity == player) {
+                ArenaPlayer.getArenaPlayer(player)?.computeStat(ArenaStats.KILLS) { old -> (old ?: 0) - 1 }
+                deathMessage = deathMessage.append(Component.text(" (Suicide: lose one kill)").color(NamedTextColor.RED))
+            }
+            Bukkit.broadcast(deathMessage)
         }
 
         // okay, now use our custom killer thing to track kills
@@ -407,9 +423,9 @@ class GGArena : Arena() {
                             is WindCharge -> "Wind"
                             else -> it.name
                         }
+                        if (lastDamagerDirect.hasMetadata("riding arrow")) killThing += " (riding arrow)"
                         if (lastDamagerDirect.hasMetadata("coined")) killThing += " (coined)"
                         if (lastDamagerDirect.hasMetadata("reflected")) killThing += " (reflected)"
-                        if (lastDamagerDirect.hasMetadata("riding arrow")) killThing += " (riding arrow)"
 
                         var deathType = when {
                             damageSource.damageType == DamageType.FALL -> "Fall"
@@ -418,8 +434,8 @@ class GGArena : Arena() {
                             damageSource.directEntity == lastDamagerDirect -> "Direct"
                             else -> "Environment"
                         }
-                        if (isBurped) deathType += " (burped)"
                         if (isMarkedForDeath) deathType += " (marked for death)"
+                        if (isBurped) deathType += " (burped)"
 
                         Bukkit.broadcast(Component.text("KILL: ${lastDamager.name} -> ${player.name} | $killThing -> $deathType").color(NamedTextColor.YELLOW))
 
@@ -428,11 +444,11 @@ class GGArena : Arena() {
                         lastDamager.playSound(lastDamager, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f)
 
                         player.givePartyItem()
-                    } else Bukkit.broadcast(this.deathMessage()!!)
+                    } else nonPlayerDeath()
                 }, 2)
-            } else Bukkit.broadcast(this.deathMessage()!!)
+            } else nonPlayerDeath()
 
-        } ?: Bukkit.broadcast(this.deathMessage()!!)
+        } ?: nonPlayerDeath()
         playerLastDamager.remove(player) // stop tracking who last hurt them because they are dead
 //        playerLastDamager.getOrPut(player) { mutableMapOf() }.clear()
 

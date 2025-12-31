@@ -27,7 +27,6 @@ import org.joml.Quaternionf
 import org.joml.Vector3f
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.math.absoluteValue
-import kotlin.math.roundToInt
 import kotlin.random.Random
 
 ///////// regular items /////////////
@@ -160,6 +159,8 @@ object GGTnt {
                 val display = tnt.passengers.firstOrNull() as? BlockDisplay ?: continue // i dont know why this happens sometimes but it does
                 val small = display.transformation.scale == Vector3f(.5f)
 
+                tnt.world.spawnParticle(Particle.SMOKE, tnt.location, 1, 0.0, 0.0, 0.0, 0.0)
+
                 val nearbyEntities = tnt.world.getNearbyEntities(
                     tnt.location,
                     3.0, 3.0, 3.0,
@@ -234,6 +235,13 @@ object GGBow {
         entity.remove() // dont stick
     }
 
+    fun punch(player: Player) {
+        // TODO?: turn this into party item and let u ride anything???
+        val arrow = player.checkHitbox(5.0).firstOrNull { it is Arrow } as? Arrow ?: return
+        arrow.addPassenger(player)
+        player.inventory.forEach { it?.let { player.setCooldown(it, 20 * 3) } }
+    }
+
 
     // broken with multiple competitions? except its not, it works itself out i think...
     val trackedArrows = mutableMapOf<Arrow, Vector>()
@@ -253,22 +261,25 @@ object GGBow {
                 val nearbyEntities = arrow.world.getNearbyEntities(
                     arrow.location,
                     3.0, 3.0, 3.0,
-                    { it != arrow && it != arrow.shooter && it is Player && (it.isGliding || it.isMarkedForDeath) },
+                    { it != arrow && it != arrow.shooter && it is Player },
                 )
                 nearbyEntities.forEach {
                     val nearbyPlayer = it as Player
-
-                    // was way too op for mace, now its way too op for arrows LOL
-//                    arrow.teleport(closestEntity)
-
-                    if (it.isMarkedForDeath) {
+                    if (nearbyPlayer.isMarkedForDeath) {
                         iter.remove()
                         arrow.hitEntity(nearbyPlayer) // bye bye
-                        return@forEach
-                    }
+                    } else if (nearbyPlayer.isGliding) {
+                        // was way too op for mace, now its way too op for arrows LOL
+//                    arrow.teleport(closestEntity)
 
-                    nearbyPlayer.dontGlide = true
-                    nearbyPlayer.damagePrecise(0.0, arrow, arrow.shooter as Player)
+                        nearbyPlayer.dontGlide = true
+                        nearbyPlayer.damagePrecise(0.0, arrow, arrow.shooter as Player)
+                    } else if (nearbyPlayer.vehicle is Arrow) {
+                        nearbyPlayer.leaveVehicle()
+
+                        nearbyPlayer.dontGlide = true
+                        nearbyPlayer.damagePrecise(0.0, arrow, arrow.shooter as Player)
+                    }
                 }
             }
         }, 0, 0)
@@ -309,7 +320,8 @@ object GGFish {
         if (!hit) { // make sure to indicate whiff with sound
             player.world.playSound(player, Sound.ENTITY_PLAYER_ATTACK_NODAMAGE, 1f, 1f)
         } else {
-            player.velocity = player.eyeLocation.direction.multiply(2)
+            if (!player.isSneaking) // so you can counter mace
+                player.velocity = player.eyeLocation.direction.multiply(2)
         }
     }
 
@@ -453,7 +465,7 @@ object GGSnowball {
         (hitEntity as? Damageable)?.damagePrecise(9999.0, snowball, snowball.shooter as Player)
         snowball.world.strikeLightningEffect(snowball.location)
 
-        if (hitEntity is Player) hitEntity.inventory.forEach { hitEntity.setCooldown(it, 20 * 10) } // evil
+        if (hitEntity is Player) hitEntity.inventory.forEach { it?.let { hitEntity.setCooldown(it, 20 * 10) } } // evil
     }
 }
 
