@@ -237,9 +237,9 @@ object GGBow {
 
     fun punch(player: Player) {
         // TODO?: turn this into party item and let u ride anything???
-        val arrow = player.checkHitbox(5.0).firstOrNull { it is Arrow } as? Arrow ?: return
+        val arrow = player.checkHitbox(6.0).firstOrNull { it is Arrow } as? Arrow ?: return
         arrow.addPassenger(player)
-        arrow.velocity = arrow.velocity.multiply(0.5)
+        arrow.velocity = arrow.velocity.multiply(0.3) // go really slow to offset that it lets you fly anywhere
         trackedArrows[arrow] = arrow.velocity
         player.inventory.forEach { it?.let { player.setCooldown(it, 20 * 3) } }
     }
@@ -293,7 +293,7 @@ object GGFish {
         if (player.doItemCooldown(20)) return
 
         var hit = false
-        val nearbyEntities = player.checkHitbox(5.0)
+        val nearbyEntities = player.checkHitbox(6.0)
         for (it in nearbyEntities) {
             if (it is Projectile && it.shooter == player && it !is EnderPearl) continue // cant hit your own things
             val oldVel = it.velocity
@@ -346,7 +346,7 @@ object GGFish {
 
 object GGArrow {
     fun attack(player: Player) {
-        val nearbyEntities = player.checkHitbox(5.0) // its hard to hit back so just make this huge
+        val nearbyEntities = player.checkHitbox(6.0) // its hard to hit back so just make this huge
         for (nearbyEntity in nearbyEntities) {
             if (nearbyEntity !is LivingEntity) return
 

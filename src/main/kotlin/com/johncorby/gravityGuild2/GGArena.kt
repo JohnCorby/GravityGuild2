@@ -386,10 +386,12 @@ class GGArena : Arena() {
         fun nonPlayerDeath() {
             var deathMessage = this.deathMessage()!!
             // punish suicides
+/*
             if (damageSource.causingEntity == player) {
                 ArenaPlayer.getArenaPlayer(player)?.computeStat(ArenaStats.KILLS) { old -> (old ?: 0) - 1 }
                 deathMessage = deathMessage.append(Component.text(" (Suicide: lose one kill)").color(NamedTextColor.RED))
             }
+*/
             Bukkit.broadcast(deathMessage)
         }
 
