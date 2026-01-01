@@ -241,7 +241,7 @@ object GGBow {
         arrow.addPassenger(player)
         arrow.velocity = arrow.velocity.multiply(0.3) // go really slow to offset that it lets you fly anywhere
         trackedArrows[arrow] = arrow.velocity
-        player.inventory.forEach { it?.let { player.setCooldown(it, 20 * 3) } }
+        player.inventory.forEach { it?.let { player.setCooldown(it, 20 * 5) } }
     }
 
 
