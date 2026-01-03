@@ -3,7 +3,6 @@ package com.johncorby.gravityGuild2
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.format.NamedTextColor
-import net.kyori.adventure.text.format.TextDecoration
 import org.battleplugins.arena.BattleArena
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
@@ -37,11 +36,12 @@ class GravityGuild2 : JavaPlugin(), Listener {
 
     @EventHandler
     fun PlayerJoinEvent.handler() {
-//        if (player.lastLogin != 0L) return
+        // first join should put em in spawn
+        if (player.lastLogin == 0L) {
+            player.performCommand("mvtp gg_arenas") // very silly hack, had to set up permission to allow that
+            player.gameMode = GameMode.ADVENTURE
+        }
 
-        // silly hack
-        player.performCommand("mvtp gg_arenas")
-        player.gameMode = GameMode.ADVENTURE
         Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable {
             player.sendMessage(
                 Component.newline()
@@ -52,6 +52,7 @@ class GravityGuild2 : JavaPlugin(), Listener {
                     .append(Component.text("Maps by FunkyBoots111 and WonkyPanda").color(NamedTextColor.YELLOW))
                     .appendNewline()
                     .append(Component.text("Design by JohnCorby, FunkyBoots111, WonkyPanda, and PowerUser64").color(NamedTextColor.YELLOW))
+                    .appendNewline()
                     .appendNewline()
                     .append(Component.text("Type /gg_arenas or CLICK HERE to see maps").clickEvent(ClickEvent.runCommand("/gg_arenas")))
                     .appendNewline()
