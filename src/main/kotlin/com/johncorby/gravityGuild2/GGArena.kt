@@ -386,12 +386,12 @@ class GGArena : Arena() {
         fun nonPlayerDeath() {
             var deathMessage = this.deathMessage()!!
             // punish suicides
-/*
-            if (damageSource.causingEntity == player) {
-                ArenaPlayer.getArenaPlayer(player)?.computeStat(ArenaStats.KILLS) { old -> (old ?: 0) - 1 }
-                deathMessage = deathMessage.append(Component.text(" (Suicide: lose one kill)").color(NamedTextColor.RED))
-            }
-*/
+            /*
+                        if (damageSource.causingEntity == player) {
+                            ArenaPlayer.getArenaPlayer(player)?.computeStat(ArenaStats.KILLS) { old -> (old ?: 0) - 1 }
+                            deathMessage = deathMessage.append(Component.text(" (Suicide: lose one kill)").color(NamedTextColor.RED))
+                        }
+            */
             Bukkit.broadcast(deathMessage)
         }
 
@@ -507,5 +507,12 @@ class GGArena : Arena() {
     fun EntityPotionEffectEvent.handler() {
         // literally only to make Dark (the map) tolerable
         if (newEffect?.type == PotionEffectType.DARKNESS) isCancelled = true
+    }
+
+    @ArenaEventHandler
+    fun PlayerToggleSneakEvent.handler() {
+        if (player.vehicle is Arrow) {
+            GGBow.dismountArrow(player)
+        }
     }
 }
