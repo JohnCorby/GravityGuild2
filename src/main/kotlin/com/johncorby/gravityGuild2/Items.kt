@@ -708,6 +708,7 @@ var Player.isRespawning: Boolean
                 // if ur inside blocks... oh well, i dont wanna bother checking for that
                 return@filter true
             }
+            if (spawns.isEmpty()) spawns = competition.map.spawns!!.teamSpawns!!["Default"]!!.spawns!! // fallback
             val spawn = spawns[Random.nextInt(spawns.size)]
             this.teleport(spawn.toLocation(competition.map.world))
 
