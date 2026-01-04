@@ -58,6 +58,7 @@ object GGMace {
             if (player.doItemCooldown(20)) return
 
             val nearbyEntities = player.checkHitbox(3.0)
+            // TODO: make tnt maceable? how useful would that be???
             if (nearbyEntities.any { it is Damageable }) {
                 PLUGIN.logger.info("mace HIT")
 
@@ -576,6 +577,9 @@ enum class Items(val item: ItemStack, val partyWeight: Double? = null) {
 
     NO_PARTY_ITEM(ItemStack.empty(), 1.0),
     SNOWBALLS(ItemStack.of(Material.SNOWBALL, 32), 1.0),
+    TNTS(ItemStack.of(Material.TNT, 5), 0.5),
+    GOLDEN_APPLE(ItemStack.of(Material.ENCHANTED_GOLDEN_APPLE, 1), 0.2),
+    EVOKERS(ItemStack.of(Material.EVOKER_SPAWN_EGG, 3), 0.2),
     SHUFFLE_HORN(ItemStack.of(Material.GOAT_HORN).apply {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
 
