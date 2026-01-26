@@ -8,7 +8,7 @@
   - especially do this if hitscan
   - NO
 - CONTINUE to add interactions between items, whether thats having one make another vulnerable (countering?) or use them together (chaining)
-- IDEA: party items (items you get when you die that help you and are chaotic)
+- DONE: party items (items you get when you die that help you and are chaotic)
   - DONE: horn shuffle
   - DONE: enderpearl that teleports someone else. maybe the guy ur looking at
   - DONE: make everyone glow so you can find them
@@ -16,6 +16,7 @@
     - DONE: snowball does this now
   - spawn anvil above someone LOL
   - IDEA: remove on death? i dont really wanna do this
+  - IDEA: spawn a buncha tnt minecarts around the player or in random places ig
 - DONE: add custom death messages
 - DONE: show scores on game end
 - IDEA: beds can set spawn until destroyed
@@ -83,6 +84,7 @@
   - nope, just made small tnt better (and longer cooldown to balance it out)
 - PROBLEM?: small tnt might be too overpowered, gotta test if u can win with only it lol
 - make it extinguish fires???? idk why this was wanted but it was
+- IDEA: big guy spawns another big guy on land that pops up in da air
 
 # fish
 
