@@ -298,7 +298,7 @@ object GGFish {
         if (player.doItemCooldown(20)) return
 
         var hit = false
-        val nearbyEntities = player.checkHitbox(6.0)
+        val nearbyEntities = player.checkHitbox(3.0)
         for (it in nearbyEntities) {
             if (it is Projectile && it.shooter == player && it !is EnderPearl) continue // cant hit your own things
             val oldVel = it.velocity

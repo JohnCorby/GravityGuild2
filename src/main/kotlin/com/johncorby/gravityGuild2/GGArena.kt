@@ -380,7 +380,8 @@ class GGArena : Arena() {
 //        }
 
         if (damageSource.damageType == DamageType.FLY_INTO_WALL || damageSource.damageType == DamageType.FALL) {
-            player.world.createExplosion(player.location, 5f) // for literally no reason
+            if (player.inventory.itemInMainHand == Items.MACE.item)
+                player.world.createExplosion(player.location, 5f) // for literally no reason
         }
 
         fun nonPlayerDeath() {
