@@ -77,7 +77,7 @@ class GGArena : Arena() {
         when (val it = entity) {
             is Arrow -> GGBow.hit(it)
             is Snowball -> GGSnowball.hit(it, hitEntity)
-            is WindCharge -> GGMace.hit(it, competition)
+            is BreezeWindCharge -> GGMace.hit(it, competition)
             is EnderPearl -> isCancelled = GGTnt.hit(it)
         }
 
@@ -424,7 +424,7 @@ class GGArena : Arena() {
                             is EnderPearl -> "Grenade"
                             is Snowball -> "Snowball"
                             is WitherSkull -> "Skull"
-                            is WindCharge -> "Wind"
+                            is BreezeWindCharge -> "Wind"
                             else -> it.name
                         }
                         if (lastDamagerDirect.hasMetadata("riding arrow")) killThing += " (riding arrow)"

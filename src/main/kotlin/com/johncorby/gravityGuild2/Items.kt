@@ -84,14 +84,14 @@ object GGMace {
 
     fun launch(player: Player) {
         // shoot wind charge. it has the most fun movement. if its too OP, use fireball
-        player.launchProjectile(WindCharge::class.java, player.eyeLocation.direction)
+        player.launchProjectile(BreezeWindCharge::class.java, player.eyeLocation.direction)
         // cancel so player doesnt break anything
         //        isCancelled = true
 
     }
 
 
-    fun hit(entity: WindCharge, competition: LiveCompetition<*>) {
+    fun hit(entity: BreezeWindCharge, competition: LiveCompetition<*>) {
 //                PLUGIN.logger.info("cancelling wind charge")
 //                isCancelled = true
 
