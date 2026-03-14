@@ -107,6 +107,7 @@
   - you can hit off ANYTHING, including your own wither skulls :P now you cant fly from ur own stuff
   - you also get the same velocity every time, you more than wind charge hit from ground
   - UPDATE: you go forward now. is cool
+- bootleg suggested it go straight up. is kinda funny
 
 # mace
 

@@ -1,5 +1,6 @@
 ﻿package com.johncorby.gravityGuild2
 
+import io.papermc.paper.event.entity.EntityKnockbackEvent
 import io.papermc.paper.event.player.PlayerFailMoveEvent
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
@@ -46,15 +47,14 @@ class GGArena : Arena() {
         }
     }
 
-    /*
-        @ArenaEventHandler
-        fun EntityKnockbackEvent.handler() {
-            if (cause == EntityKnockbackEvent.Cause.EXPLOSION) {
-                // stop wind charge (and everything else)
-                isCancelled = true
-            }
+    @ArenaEventHandler
+    fun EntityKnockbackEvent.handler() {
+        if (cause == EntityKnockbackEvent.Cause.EXPLOSION) {
+            // stop wind charge (and everything else)
+            // we want our own nerfed knockback
+            isCancelled = true
         }
-    */
+    }
 
     @ArenaEventHandler
     fun ProjectileLaunchEvent.handler() {
@@ -380,8 +380,7 @@ class GGArena : Arena() {
 //        }
 
         if (damageSource.damageType == DamageType.FLY_INTO_WALL || damageSource.damageType == DamageType.FALL) {
-            if (player.inventory.itemInMainHand == Items.MACE.item)
-                player.world.createExplosion(player.location, 5f) // for literally no reason
+            player.world.createExplosion(player.location, 5f) // for literally no reason
         }
 
         fun nonPlayerDeath() {

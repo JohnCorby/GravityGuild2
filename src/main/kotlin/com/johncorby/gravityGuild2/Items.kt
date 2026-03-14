@@ -95,10 +95,9 @@ object GGMace {
 //                PLUGIN.logger.info("cancelling wind charge")
 //                isCancelled = true
 
-        // sideways movement on top of existing windcharge behavior
-        return
+        // totally custom knockback that im trying to nerf
         competition.players.forEach {
-            val windToPlayer = it.player.location.subtract(entity.location.add(Vector(0.0, -1.0, 0.0))).toVector()
+            val windToPlayer = it.player.location.subtract(entity.location).toVector()
             val len = windToPlayer.length()
             if (len < 4) {
                 val dir = windToPlayer.normalize()
@@ -300,9 +299,9 @@ object GGFish {
         var hit = false
         val nearbyEntities = player.checkHitbox(3.0)
         for (it in nearbyEntities) {
-            if (it is Projectile && it.shooter == player && it !is EnderPearl) continue // cant hit your own things
+            if ((it is Projectile && it.shooter == player) || it is BlockDisplay) continue // cant hit your own things
             val oldVel = it.velocity
-            it.velocity = player.eyeLocation.direction.multiply(if (it is Projectile) 3 else 5)
+            it.velocity = Vector(0, 1, 0).multiply(if (it is Projectile) 3 else 5)
             hit = true
             if (it is Arrow) GGBow.trackedArrows[it] = it.velocity // set new velocity
             it.fireTicks = 20 * 10
