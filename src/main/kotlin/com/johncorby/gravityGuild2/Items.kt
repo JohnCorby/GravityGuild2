@@ -27,8 +27,6 @@ import org.joml.Quaternionf
 import org.joml.Vector3f
 import java.util.concurrent.ThreadLocalRandom
 import kotlin.math.absoluteValue
-import kotlin.math.cos
-import kotlin.math.sin
 import kotlin.random.Random
 
 ///////// regular items /////////////
@@ -86,11 +84,10 @@ object GGMace {
 
     fun launch(player: Player) {
         // shoot wind charge. it has the most fun movement. if its too OP, use fireball
-        val wind = player.launchProjectile(BreezeWindCharge::class.java, player.eyeLocation.direction)
+        player.launchProjectile(BreezeWindCharge::class.java, player.eyeLocation.direction)
         // cancel so player doesnt break anything
         //        isCancelled = true
 
-        trackedWinds.add(wind)
     }
 
 
@@ -107,50 +104,7 @@ object GGMace {
                 it.player.velocity = it.player.velocity.add(dir.multiply(len.toFloat().remapClamped(4f, 0f, 0f, 2f)))
             }
         }
-
-        trackedWinds.remove(entity)
     }
-
-
-    val trackedWinds = mutableListOf<BreezeWindCharge>()
-
-    init {
-        Bukkit.getScheduler().runTaskTimer(PLUGIN, Runnable {
-            val iter = trackedWinds.iterator() // so we can remove
-            while (iter.hasNext()) {
-                val wind = iter.next()
-                if (!wind.isValid) { // check for deletion
-                    iter.remove()
-                    continue
-                }
-
-                val nearbyEntities = wind.world.getNearbyEntities(
-                    wind.location,
-                    3.0, 3.0, 3.0,
-                    { it != wind && it != wind.shooter && (it is Arrow || it is EnderPearl || it is PufferFish || it is WitherSkull) },
-                )
-                nearbyEntities.forEach { it ->
-//                    it.setMetadata("copy", null)
-                    repeat(20) { i ->
-                        val copy = it.copy(it.location)
-//                        copy.setMetadata("copy", null)
-                        copy.velocity = Vector(cos(i.toDouble()), it.velocity.y, sin(i.toDouble())).multiply(it.velocity.length())
-                        when (copy) {
-                            is Arrow -> GGBow.trackedArrows[copy] = copy.velocity
-                            is EnderPearl -> GGTnt.trackedTnt.add(copy)
-                        }
-                    }
-                }
-
-                if (nearbyEntities.isNotEmpty()) {
-                    wind.remove()
-                    iter.remove()
-                    continue
-                }
-            }
-        }, 0, 0)
-    }
-
 
 }
 
