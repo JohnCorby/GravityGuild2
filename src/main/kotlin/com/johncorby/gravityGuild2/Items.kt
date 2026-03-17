@@ -84,14 +84,14 @@ object GGMace {
 
     fun launch(player: Player) {
         // shoot wind charge. it has the most fun movement. if its too OP, use fireball
-        player.launchProjectile(WindCharge::class.java, player.eyeLocation.direction)
+        player.launchProjectile(BreezeWindCharge::class.java, player.eyeLocation.direction)
         // cancel so player doesnt break anything
         //        isCancelled = true
 
     }
 
 
-    fun hit(entity: WindCharge, competition: LiveCompetition<*>) {
+    fun hit(entity: BreezeWindCharge, competition: LiveCompetition<*>) {
 //                PLUGIN.logger.info("cancelling wind charge")
 //                isCancelled = true
 
@@ -175,8 +175,8 @@ object GGTnt {
                                 it.setMetadata("coined", null)
                                 it.isGlowing = true
 
-                                iter.remove()
-                                tnt.hitEntity(it)
+//                                iter.remove()
+//                                tnt.hitEntity(it)
                                 // ultrakill coin moment. go towards closest player
                                 tnt.shooter = it.shooter // arrow shooter steals tnt
                                 var players = ArenaPlayer.getArenaPlayer(it.shooter as Player)!!.competition.players.map { it.player }
@@ -231,7 +231,7 @@ object GGBow {
 //                (entity as Arrow).damage = 0.0
         // salmon reflect can make it faster, make sure to clamp
         val power = entity.velocity.length().toFloat().remapClamped(.3f, 3f, .1f, 3f)
-        entity.world.createExplosion(entity, power, false)
+        entity.world.createExplosion(entity, 3f, false)
         entity.remove() // dont stick
     }
 
@@ -299,9 +299,9 @@ object GGFish {
         var hit = false
         val nearbyEntities = player.checkHitbox(3.0)
         for (it in nearbyEntities) {
-            if ((it is Projectile && it.shooter == player) || it is BlockDisplay) continue // cant hit your own things
+            if (it is Projectile && it.shooter == player && it !is EnderPearl) continue // cant hit your own things
             val oldVel = it.velocity
-            it.velocity = Vector(0, 1, 0).multiply(if (it is Projectile) 3 else 5)
+            it.velocity = player.eyeLocation.direction.multiply(if (it is Projectile) 3 else 5)
             hit = true
             if (it is Arrow) GGBow.trackedArrows[it] = it.velocity // set new velocity
             it.fireTicks = 20 * 10
