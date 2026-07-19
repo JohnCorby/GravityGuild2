@@ -30,7 +30,7 @@ import java.util.concurrent.ThreadLocalRandom
 import kotlin.math.absoluteValue
 import kotlin.random.Random
 
-///////// regular items /////////////
+//region regular items
 
 object GGMace {
     val trackedPlayers = mutableListOf<Player>()
@@ -383,8 +383,9 @@ object GGArrow {
     }
 }
 
+//endregion
 
-////////////// party items ////////////////
+//region party items
 
 object GGShuffleHorn {
 
@@ -535,7 +536,9 @@ object GGTeleportPearl {
     }
 }
 
-////////// item management /////////////
+//endregion
+
+//region item management
 
 enum class Items(val item: ItemStack, val partyWeight: Double? = null) {
     BOW(ItemStack.of(Material.CROSSBOW).apply {
@@ -673,7 +676,9 @@ fun Player.givePartyItem() {
     showTitle(Title.title(Component.empty(), Component.text("You got party item ${partyItem}!")))
 }
 
-///////// utils used by items ///////////////
+//endregion
+
+//region utils used by items
 
 // use for movement cancel else it thinks ur falling slightly when ur not
 @Suppress("DEPRECATION")
@@ -791,3 +796,5 @@ fun <T> T.untrack(key: String) {
     val value = trackedThings.remove(key)
     if (value is BukkitTask) value.cancel()
 }
+
+//endregion
