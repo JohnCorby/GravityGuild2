@@ -26,6 +26,8 @@
 - IDEA: "10 kills without dying gets a nuke" so reverse party item
   - meh ig
 
+- removed scoreboard so nametag hiding can work. maybe have message for time limit. not being able to see kills is kinda neat 
+
 # flying
 
 - GOAL: pure movement, transition between short/med/long
@@ -148,3 +150,62 @@
 - PROBLEM: mc hitreg is so bad its impossible to hit. making hitboxes bigger might defeat the point of the bow lol
 - 
 - every kill i got with this is player standing still and felt way cheaper than the other weapons. i just made this a long punch for now
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# new unorganized ideas
+multishot everything party item
+horn is meh. make it different? like make it so no one can do any damage for n seconds? for evasion
+nerf wind a bunch? make ride arrow primary air movement
+give mace wind charge abiliy as party item? so you get that movement but only sometimes. kinda makes redundant the horn idea
+
+
+
+
+
+More gravity guild ideas
+
+Party items are dropped nearby players every minute, within 10 blocks with sound effect isntead of pop up message instead of on death
+
+Every player's inventory is cleared every five minutes (besides main weapons) to make people use party items more often as opposed to just holding onto them
+to balnce this out more, item drops form destroyed blocks could be removed so people dont have to search thu the inventory for party items (gamerule does this)
+
+
+a possible command to disable party items before game all together
+
+Instead of party items having a time duration they should have a usage duration, like tree wand would be 10 saplings stack with it using one each time its used
+(this would get rid of the bug of refreshing the duration by putting it in offhand manually)
+
+tnt on arrow movve slower 
+certain game modifiers could change how the game is started
+
+gg join arena -alpha
+
+would give only bow and arrow, as opposed to the main items
+
+gg join arena -party
+
+would give 5 counts of every party item and fish but no main weapons, for instance 
+im realizing half of these ideas remove the need to look at the inventory ever so often
+
+
+
+
+tnt on arrow moves slow, and every secound it drops a tnt that falls and explodes 
+
+
+ender pearl teleports behind instead of at guy (unless it would put u inside wall)

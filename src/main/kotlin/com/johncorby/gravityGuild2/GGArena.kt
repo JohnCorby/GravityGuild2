@@ -25,6 +25,7 @@ import org.bukkit.damage.DamageType
 import org.bukkit.entity.*
 import org.bukkit.event.entity.*
 import org.bukkit.event.entity.EntityDamageEvent.DamageCause
+import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.player.*
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemStack
@@ -514,5 +515,10 @@ class GGArena : Arena() {
         if (player.vehicle is Arrow) {
             GGBow.dismountArrow(player)
         }
+    }
+
+    @ArenaEventHandler
+    fun InventoryClickEvent.handler() {
+        // TODO: if trying to move party item on cooldown (that will be removed soon), dont let them. we need it in the inventory so we can remove it
     }
 }

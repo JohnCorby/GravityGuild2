@@ -38,4 +38,9 @@ class GGCommandExecutor(arena: Arena) : ArenaCommandExecutor(arena) {
                 .append(Component.text("max: ${bb.max} (click to tp)").clickEvent(ClickEvent.callback({ player.teleport(bb.max.toLocation(map.world, player.yaw, player.pitch)) }, options)))
         )
     }
+
+    @ArenaCommand(commands = ["back", "b"], description = "debug: teleport to previous location", permissionNode = "debug")
+    fun back(player: Player) {
+        PLUGIN.oldPlayerLocations[player]?.let { player.teleport(it) }
+    }
 }

@@ -6,9 +6,13 @@ import net.kyori.adventure.text.format.NamedTextColor
 import org.battleplugins.arena.BattleArena
 import org.bukkit.Bukkit
 import org.bukkit.GameMode
+import org.bukkit.Location
+import org.bukkit.entity.Player
 import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.player.PlayerJoinEvent
+import org.bukkit.event.player.PlayerQuitEvent
+import org.bukkit.event.player.PlayerTeleportEvent
 import org.bukkit.plugin.java.JavaPlugin
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
@@ -59,5 +63,17 @@ class GravityGuild2 : JavaPlugin(), Listener {
                     .append(Component.text("Type /gg to see list of all the other commands"))
             )
         }, 10)
+    }
+
+    val oldPlayerLocations = mutableMapOf<Player, Location>()
+
+    @EventHandler
+    fun PlayerTeleportEvent.handler() {
+        oldPlayerLocations[player] = from
+    }
+
+    @EventHandler
+    fun PlayerQuitEvent.handler() {
+        oldPlayerLocations.remove(player)
     }
 }

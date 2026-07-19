@@ -21,6 +21,7 @@ import org.bukkit.metadata.FixedMetadataValue
 import org.bukkit.metadata.Metadatable
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
+import org.bukkit.scheduler.BukkitTask
 import org.bukkit.util.Transformation
 import org.bukkit.util.Vector
 import org.joml.Quaternionf
@@ -519,15 +520,18 @@ object GGTeleportPearl {
 
         val player = enderPearl.shooter as Player
         val competition = ArenaPlayer.getArenaPlayer(player)!!.competition
+        // TODO: teleport to player ur looking at????
         val teleportTo = competition.players.filter { it.player != player }.randomOrNull()?.player
-        teleportTo?.let { player.teleport(it) }
+        teleportTo?.let {
+            player.teleport(it)
+            // TODO: teleport 1 block behind the player if there isnt a block in the way
+        }
 
         // give respawning effects. i cant be bothered to refactor this from respawning code
         player.addPotionEffect(PotionEffect(PotionEffectType.INVISIBILITY, 20 * 3, 1, false, false, true))
         player.addPotionEffect(PotionEffect(PotionEffectType.NIGHT_VISION, 20 * 3, 1, false, false, true))
 
 
-        // TODO: teleport to player ur looking at????
     }
 }
 
@@ -764,6 +768,7 @@ fun Player.consumePartyItem(time: Long = 20 * 20) {
     this.showTitle(Title.title(Component.empty(), Component.text("Consuming this party item in ${time / 20} seconds...")))
 
     val item = inventory.itemInMainHand
+//    item.track("party item cooldown", Runnable { inventory.removeItem(item) })
     Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable { inventory.removeItem(item) }, time)
 }
 
@@ -771,3 +776,18 @@ fun Player.consumePartyItem(time: Long = 20 * 20) {
 // ik im not supposed to be using this but idc its nice
 inline fun <reified T> Metadatable.getMetadata(key: String) = (this.getMetadata(key).firstOrNull { it.owningPlugin == PLUGIN && it.value() is T })?.value() as? T
 fun <T> Metadatable.setMetadata(key: String, value: T) = this.setMetadata(key, FixedMetadataValue(PLUGIN, value))
+
+
+private val trackedThings = mutableMapOf<String, Any>()
+
+fun <T> T.track(key: String, value: Any) {
+    if (key in trackedThings) return
+
+    if (value is Runnable) trackedThings[key] = Bukkit.getScheduler().runTask(PLUGIN, value)
+    else trackedThings[key] = value
+}
+
+fun <T> T.untrack(key: String) {
+    val value = trackedThings.remove(key)
+    if (value is BukkitTask) value.cancel()
+}
