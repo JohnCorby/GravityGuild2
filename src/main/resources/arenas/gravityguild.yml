@@ -12,6 +12,7 @@ modules:
   - arena-restoration
   - scoreboards
 #  - boundary-enforcer
+  - team-colors
 #lives:
 #  enabled: true
 #  amount: 5
@@ -47,6 +48,7 @@ options:
   - hunger-deplete{enabled=false}
 #  - keep-inventory{enabled=true}
 #  - keep-experience{enabled=true}
+  - name-tag-visibility{option=never}
 initial-phase: waiting
 phases:
   waiting:
@@ -87,11 +89,11 @@ phases:
         - restore-arena
 #        - teleport{location=team_spawn;random=true}
         - play-sound{sound=block.note_block.pling;pitch=2;volume=1}
-#        - apply-scoreboard{scoreboard=ingame-top-kills}
-        - remove-scoreboard
+        - apply-scoreboard{scoreboard=ingame-top-kills}
+#        - remove-scoreboard
       on-spectate:
-#        - apply-scoreboard{scoreboard=ingame-top-kills}
-        - remove-scoreboard
+        - apply-scoreboard{scoreboard=ingame-top-kills}
+#        - remove-scoreboard
   victory:
     allow-join: false
     allow-spectate: false
