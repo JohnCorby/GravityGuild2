@@ -591,7 +591,6 @@ enum class Items(val item: ItemStack, val partyWeight: Double? = null) {
 
         lore(listOf(Component.text("Shuffle!").color(NamedTextColor.BLUE)))
 
-        @Suppress("UnstableApiUsage")
         this.setData(DataComponentTypes.INSTRUMENT, MusicInstrument.CALL_GOAT_HORN)
     }, 0.3),
     GUN(ItemStack.of(Material.SPYGLASS).apply {
@@ -614,7 +613,6 @@ enum class Items(val item: ItemStack, val partyWeight: Double? = null) {
 
         lore(listOf(Component.text("Eat to make everyone glow so you can KILL THEM").color(NamedTextColor.BLUE)))
 
-        @Suppress("UnstableApiUsage")
         this.setData(DataComponentTypes.FOOD, FoodProperties.food().canAlwaysEat(true).build())
     }, 1.0),
 
@@ -645,8 +643,8 @@ fun Player.initInventory() {
 //    inventory.addItem(Items.HORN.item)
 //    inventory.addItem(Items.GUN.item)
 //    inventory.addItem(Items.TREE.item)
-    inventory.helmet = Items.HELMET.item
-    inventory.chestplate = Items.CHESTPLATE.item
+    inventory.setHelmet(Items.HELMET.item)
+    inventory.setChestplate(Items.CHESTPLATE.item)
 
     // TODO: teleport to random part on the map? or just use manual spawns like currently
 }
@@ -681,7 +679,6 @@ fun Player.givePartyItem() {
 //region utils used by items
 
 // use for movement cancel else it thinks ur falling slightly when ur not
-@Suppress("DEPRECATION")
 val Player.velocityZeroGround get() = if (isOnGround) Vector(0, 0, 0) else velocity
 
 
@@ -722,7 +719,6 @@ var Player.isRespawning: Boolean
 
             clearActivePotionEffects()
             fireTicks = 0
-            @Suppress("UnstableApiUsage")
             combatTracker.resetCombatState() // to reset death message
 
             // BUG: doesnt hide clothes
