@@ -1,5 +1,6 @@
 name: GravityGuild2
-version: '1.0'
+version: '${version}'
+
 main: com.johncorby.gravityGuild2.GravityGuild2
-api-version: '1.21'
+api-version: '26.2'
 depend: [BattleArena, WorldEdit]
