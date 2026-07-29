@@ -8,8 +8,10 @@ import net.kyori.adventure.text.format.NamedTextColor
 import org.battleplugins.arena.Arena
 import org.battleplugins.arena.ArenaPlayer
 import org.battleplugins.arena.competition.LiveCompetition
+import org.battleplugins.arena.competition.PlayerRole
 import org.battleplugins.arena.competition.map.LiveCompetitionMap
 import org.battleplugins.arena.competition.phase.CompetitionPhaseType
+import org.battleplugins.arena.competition.phase.phases.VictoryPhase
 import org.battleplugins.arena.event.ArenaEventHandler
 import org.battleplugins.arena.event.arena.ArenaPhaseCompleteEvent
 import org.battleplugins.arena.event.arena.ArenaPhaseStartEvent
@@ -285,6 +287,14 @@ class GGArena : Arena() {
         playerLastSlot.remove(player)
         playerLastDamager.remove(player)
         playerPendingKills.removeIf { (killer, event) -> killer == player || event.player == player }
+
+        // because our victory condition is only time limit, it doesnt close early. we gotta do this ourselves
+        if (this.arenaPlayer.role == PlayerRole.PLAYING && this.competition.players.size <= 1) {
+            this.competition.phaseManager.setPhase(CompetitionPhaseType.VICTORY, true)
+            // actually trigger the victory for that player :P
+            (this.competition.phaseManager.currentPhase as VictoryPhase).onVictory(this.competition.players.toSet())
+            this.competition.victoryManager.end(false)
+        }
     }
 
     val playerLastDamager = mutableMapOf<Player, LastDamagerData>()
