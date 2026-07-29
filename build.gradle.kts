@@ -32,4 +32,11 @@ tasks {
             expand(props)
         }
     }
+
+    shadowJar {
+        minimize()
+
+        // just hardcode output dir
+        destinationDirectory.set(file("D:\\Other Games\\Joe Server\\plugins"))
+    }
 }
