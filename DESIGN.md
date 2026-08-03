@@ -214,3 +214,7 @@ ender pearl teleports behind instead of at guy (unless it would put u inside wal
 
 
 put windcharges on 3 sec cooldown and tnt can ride it
+
+
+
+every time die u, u get upgrade to an item (no this seems annoying to design)

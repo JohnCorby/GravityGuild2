@@ -5,6 +5,7 @@ import net.kyori.adventure.title.Title
 import org.battleplugins.arena.ArenaPlayer
 import org.bukkit.Bukkit
 import org.bukkit.Sound
+import org.bukkit.block.BlockFace
 import org.bukkit.damage.DamageSource
 import org.bukkit.damage.DamageType
 import org.bukkit.entity.Damageable
@@ -51,8 +52,8 @@ var Player.isRespawning: Boolean
                 val spawnLoc = spawn.toLocation(competition.map.world)
                 // too close to other player
                 if (competition.players.any { player -> player.player.location.distance(spawnLoc) < 20.0 }) return@filter false
-                // if ur inside blocks... oh well, i dont wanna bother checking for that
-                return@filter true
+                // head or feet inside block
+                return@filter spawnLoc.block.isEmpty && spawnLoc.block.getRelative(BlockFace.UP).isEmpty
             }
             if (spawns.isEmpty()) spawns = competition.map.spawns!!.teamSpawns!!["Default"]!!.spawns!! // fallback
             val spawn = spawns[Random.nextInt(spawns.size)]
