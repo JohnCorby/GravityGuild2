@@ -4,7 +4,6 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickCallback
 import net.kyori.adventure.text.event.ClickEvent
 import org.battleplugins.arena.Arena
-import org.battleplugins.arena.ArenaPlayer
 import org.battleplugins.arena.command.ArenaCommand
 import org.battleplugins.arena.command.ArenaCommandExecutor
 import org.battleplugins.arena.competition.map.CompetitionMap
@@ -43,13 +42,5 @@ class GGCommandExecutor(arena: Arena) : ArenaCommandExecutor(arena) {
     @ArenaCommand(commands = ["back", "b"], description = "debug: teleport to previous location", permissionNode = "debug")
     fun back(player: Player) {
         PLUGIN.oldPlayerLocations[player]?.let { player.teleport(it) }
-    }
-
-
-    @ArenaCommand(commands = ["class", "c"], description = "select a class")
-    fun clazz(player: Player, clazz: Class) {
-        val arena = ArenaPlayer.getArenaPlayer(player)?.arena as? GGArena ?: return
-        arena.playerClass[player] = clazz
-        player.initInventory()
     }
 }

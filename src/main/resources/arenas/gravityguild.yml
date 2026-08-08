@@ -18,7 +18,7 @@ modules:
 #  amount: 5
 victory-conditions:
   teams-alive:
-    amount: 2
+    amount: 0
   highest-stat:
     stat-name: kills
   time-limit:
