@@ -375,10 +375,6 @@ object GGArrow {
         if (entity == witherSkull.shooter) return
         (entity as? Damageable)?.damagePrecise(3.0, witherSkull, witherSkull.shooter as Player)
         (entity as? Player)?.isMarkedForDeath = true
-
-        // bootleg want puffer here bleh
-        val puffer = witherSkull.world.spawn(witherSkull.location, PufferFish::class.java)
-        puffer.setMetadata("player", witherSkull.shooter as Player) // this might cast exception oh well
     }
 }
 
