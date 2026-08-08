@@ -623,6 +623,8 @@ enum class Items(val item: ItemStack, val partyWeight: Double? = null) {
     });
 }
 
+enum class Class {RANGED, MOBILITY, EXPLOSIVE}
+
 fun Player.initInventory() {
 //        addPotionEffect(PotionEffect(PotionEffectType.NIGHT_VISION, Int.MAX_VALUE, 1, false, false))
 
@@ -630,11 +632,30 @@ fun Player.initInventory() {
     inventory.clear() // sometimes its not cleared when it should be. lets just ensure it is
 //        inventory.setItem(0, Items.item0)
 //        inventory.setItem(1, Items.item1)
+    val arena = ArenaPlayer.getArenaPlayer(player)?.arena as GGArena
+    val clazz = arena.playerClass[player]
+    when (clazz) {
+        Class.RANGED -> {
+            inventory.addItem(Items.BOW.item)
+            inventory.addItem(Items.ARROW.item)
+        }
+        Class.MOBILITY -> {
+            inventory.addItem(Items.MACE.item)
+        }
+        Class.EXPLOSIVE -> {
+            inventory.addItem(Items.TNT.item)
+            inventory.addItem(Items.FISH.item)
+        }
+
+        else -> {}
+    }
+/*
     inventory.addItem(Items.BOW.item)
     inventory.addItem(Items.MACE.item)
     inventory.addItem(Items.FISH.item)
     inventory.addItem(Items.TNT.item)
     inventory.addItem(Items.ARROW.item)
+*/
 //    inventory.addItem(Items.HORN.item)
 //    inventory.addItem(Items.GUN.item)
 //    inventory.addItem(Items.TREE.item)

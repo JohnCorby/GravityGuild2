@@ -27,6 +27,17 @@
   - meh ig
 
 - removed scoreboard so nametag hiding can work. maybe have message for time limit. not being able to see kills is kinda neat 
+  - okay turned off nametags but kept scoreboard. battlearena just added this feature
+
+- with no classes:
+  - goal is balancing around having different items work in different scenarios
+  - strategy is choosing the right one for the right scenario
+  - the skill is the time it takes to decide and switch
+- with classes:
+  - instead of each item have strengths and weakness, the whole class has strength and weekness
+  - strategy is know what youre good at and avoid what youre bad at, cuz you cant switch mid fight
+  - balancing is making guys have strength and weakness and counterplay
+  - very similar to the individual items but on a whole class level and cant change mind mid fight
 
 # flying
 
@@ -87,6 +98,9 @@
 - PROBLEM?: small tnt might be too overpowered, gotta test if u can win with only it lol
 - make it extinguish fires???? idk why this was wanted but it was
 - IDEA: big guy spawns another big guy on land that pops up in da air
+
+
+- IDEA: make tnt cooldown short, make fishing tnt cooldown longer. goal: use tnt for intended purpose more, use it for mach 10 missile less
 
 # fish
 

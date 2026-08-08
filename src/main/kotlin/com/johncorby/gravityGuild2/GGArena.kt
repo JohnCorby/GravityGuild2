@@ -48,6 +48,8 @@ class GGArena : Arena() {
         }
     }
 
+    val playerClass = mutableMapOf<Player, Class>()
+
     @ArenaEventHandler
     fun EntityKnockbackEvent.handler() {
         if (cause == EntityKnockbackEvent.Cause.EXPLOSION) {
@@ -287,6 +289,8 @@ class GGArena : Arena() {
         playerLastSlot.remove(player)
         playerLastDamager.remove(player)
         playerPendingKills.removeIf { (killer, event) -> killer == player || event.player == player }
+
+        playerClass.remove(player)
     }
 
     val playerLastDamager = mutableMapOf<Player, LastDamagerData>()
