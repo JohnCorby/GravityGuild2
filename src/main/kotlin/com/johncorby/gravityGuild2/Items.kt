@@ -61,7 +61,7 @@ object GGMace {
                 // mimic mace effect but bigger radius
 //                player.isGliding = false
 //                player.velocity = player.velocity.multiply(-1.5)
-                player.velocity = Vector(player.velocity.x * 1.5, player.velocity.y.absoluteValue * 1.5, player.velocity.z * 1.5)
+//                player.velocity = Vector(player.velocity.x * 1.5, player.velocity.y.absoluteValue * 1.5, player.velocity.z * 1.5)
                 nearbyEntities.forEach { (it as? Damageable)?.run { damagePrecise(20.0, player, player) } }
 //                nearbyEntities.forEach {
 //                    (it as? Damageable)?.damage(10.0, player, DamageType.MACE_SMASH)
