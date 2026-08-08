@@ -287,6 +287,14 @@ class GGArena : Arena() {
         playerLastSlot.remove(player)
         playerLastDamager.remove(player)
         playerPendingKills.removeIf { (killer, event) -> killer == player || event.player == player }
+
+        // because our victory condition is only time limit, it doesnt close early. we gotta do this ourselves
+        if (this.arenaPlayer.role == PlayerRole.PLAYING && this.competition.players.size <= 1) {
+            this.competition.phaseManager.setPhase(CompetitionPhaseType.VICTORY, true)
+            // actually trigger the victory for that player :P
+            (this.competition.phaseManager.currentPhase as VictoryPhase).onVictory(this.competition.players.toSet())
+            this.competition.victoryManager.end(false)
+        }
     }
 
     val playerLastDamager = mutableMapOf<Player, LastDamagerData>()
