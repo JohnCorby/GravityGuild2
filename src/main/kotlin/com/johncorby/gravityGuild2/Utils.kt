@@ -111,8 +111,7 @@ fun Player.consumePartyItem(time: Long = 20 * 20) {
     this.showTitle(Title.title(Component.empty(), Component.text("Consuming this party item in ${time / 20} seconds...")))
 
     val item = inventory.itemInMainHand
-//    item.track("party item cooldown", Runnable { inventory.removeItem(item) })
-    Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable { inventory.removeItem(item) }, time)
+    item.mapTimer(MapKey.PARTY_ITEM_COOLDOWN, { inventory.removeItem(item) }, time, false)
 }
 
 
@@ -121,16 +120,32 @@ inline fun <reified T> Metadatable.getMetadata(key: String) = (this.getMetadata(
 fun <T> Metadatable.setMetadata(key: String, value: T) = this.setMetadata(key, FixedMetadataValue(PLUGIN, value))
 
 
-private val trackedThings = mutableMapOf<String, Any>()
+enum class MapKey { PARTY_ITEM_COOLDOWN }
 
-fun <T> T.track(key: String, value: Any) {
-    if (key in trackedThings) return
+private val mappedThings = mutableMapOf<Pair<Any, MapKey>, Any>()
 
-    if (value is Runnable) trackedThings[key] = Bukkit.getScheduler().runTask(PLUGIN, value)
-    else trackedThings[key] = value
+fun Any.map(key: MapKey, value: Any, replace: Boolean) {
+    val pair = Pair(this, key)
+    if (!replace && pair in mappedThings) return;
+    mappedThings[pair] = value
 }
 
-fun <T> T.untrack(key: String) {
-    val value = trackedThings.remove(key)
+fun Any.mapTimer(key: MapKey, task: () -> Unit, time: Long, replace: Boolean) {
+    val pair = Pair(this, key)
+    val existingTask = mappedThings[pair]
+    if (!replace && existingTask != null) return
+    if (existingTask is BukkitTask) existingTask.cancel()
+    mappedThings[pair] = Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable {
+        mappedThings.remove(pair)
+        task()
+    }, time)
+}
+
+fun Any.unmap(key: MapKey) {
+    val pair = Pair(this, key)
+    val value = mappedThings.remove(pair)
     if (value is BukkitTask) value.cancel()
 }
+
+fun Any.isMapped(key: MapKey) = Pair(this, key) in mappedThings
+fun Any.getMappedThing(key: MapKey) = mappedThings[Pair(this, key)]
