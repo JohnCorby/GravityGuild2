@@ -4,6 +4,8 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.title.Title
 import org.battleplugins.arena.ArenaPlayer
 import org.bukkit.Bukkit
+import org.bukkit.Location
+import org.bukkit.Particle
 import org.bukkit.Sound
 import org.bukkit.block.BlockFace
 import org.bukkit.damage.DamageSource
@@ -105,6 +107,23 @@ fun Float.remapClamped(
 
     // Map the normalized value to the output range
     return Math.clamp(outputMin + normalizedValue * (outputMax - outputMin), outputMin, outputMax)
+}
+
+fun drawLine(a: Location, b: Location, particle: Particle) {
+    fun lerp(a: Double, b: Double, t: Double) = (1 - t) * a + t * b
+
+    val numPoints = a.distance(b).toInt() * 2
+    for (i in 0..numPoints) {
+        val t = i.toDouble() / numPoints
+        val pos = Location(
+            a.world,
+            lerp(a.x, b.x, t),
+            lerp(a.y, b.y, t),
+            lerp(a.z, b.z, t),
+        )
+        a.world.spawnParticle(particle, pos, 1, 0.0, 0.0, 0.0, 0.0)
+    }
+
 }
 
 fun Player.consumePartyItem(time: Long = 20 * 20) {

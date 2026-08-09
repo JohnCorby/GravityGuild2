@@ -12,6 +12,7 @@ import net.kyori.adventure.util.TriState
 import org.battleplugins.arena.ArenaPlayer
 import org.battleplugins.arena.competition.LiveCompetition
 import org.bukkit.*
+import org.bukkit.block.BlockFace
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.*
 import org.bukkit.inventory.ItemStack
@@ -22,7 +23,6 @@ import org.bukkit.util.Vector
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import java.util.concurrent.ThreadLocalRandom
-import kotlin.math.absoluteValue
 import kotlin.random.Random
 
 //region regular items
@@ -33,8 +33,8 @@ object GGMace {
     init {
         Bukkit.getScheduler().runTaskTimer(PLUGIN, Runnable {
             trackedPlayers.forEach {
-                it.exp = it.velocity.length().toFloat().remapClamped(0f, 1f, 0f, 1f)
-                it.level = it.velocity.length().toInt()
+                it.exp = it.velocityZeroGround.length().toFloat().remapClamped(0f, 1f, 0f, 1f)
+                it.level = it.velocityZeroGround.length().toInt()
 
                 if (it.velocity.length() > 1 && it.inventory.itemInMainHand != Items.ARROW.item)
                     for (otherPlayer in ArenaPlayer.getArenaPlayer(it)!!.competition.players)
@@ -396,6 +396,7 @@ object GGShuffleHorn {
         competition.players.forEach {
             it.player.setCooldown(player.inventory.itemInMainHand, 20 * 30)
         }
+        player.inventory.removeItem(Items.SHUFFLE_HORN.item)
 
         // wait and then get players again in case they leave
         Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable {
@@ -404,8 +405,6 @@ object GGShuffleHorn {
                 it.player.showTitle(Title.title(Component.text("Shuffle!"), Component.empty()))
                 it.player.world.strikeLightningEffect(it.player.location)
             }
-
-            player.inventory.removeItem(Items.SHUFFLE_HORN.item)
         }, 20 * 3)
 
     }
@@ -436,23 +435,6 @@ object GGGun {
 
         player.world.playSound(player, Sound.ITEM_WOLF_ARMOR_DAMAGE, 1f, 1f)
     }
-}
-
-fun drawLine(a: Location, b: Location, particle: Particle) {
-    fun lerp(a: Double, b: Double, t: Double) = (1 - t) * a + t * b
-
-    val numPoints = a.distance(b).toInt() * 2
-    for (i in 0..numPoints) {
-        val t = i.toDouble() / numPoints
-        val pos = Location(
-            a.world,
-            lerp(a.x, b.x, t),
-            lerp(a.y, b.y, t),
-            lerp(a.z, b.z, t),
-        )
-        a.world.spawnParticle(particle, pos, 1, 0.0, 0.0, 0.0, 0.0)
-    }
-
 }
 
 
@@ -516,11 +498,24 @@ object GGTeleportPearl {
 
         val player = enderPearl.shooter as Player
         val competition = ArenaPlayer.getArenaPlayer(player)!!.competition
-        // TODO: teleport to player ur looking at????
-        val teleportTo = competition.players.filter { it.player != player }.randomOrNull()?.player
+        // teleport to player your most closely looking at
+        val teleportTo = competition.players.filter { it.player != player }.maxByOrNull {
+            val looking = player.eyeLocation.direction
+            val toIt = it.player.location.subtract(player.location).toVector().normalize()
+            return@maxByOrNull looking.dot(toIt) // bigger dot = looking angle matches where player is more
+        }?.player
         teleportTo?.let {
             player.teleport(it)
-            // TODO: teleport 1 block behind the player if there isnt a block in the way
+            val looking = it.eyeLocation.direction
+            looking.y = 0.0
+            looking.normalize()
+            // teleport either at or behind them
+            val targetAt = it.location
+            val targetBehind = targetAt.subtract(looking)
+            if (targetBehind.block.isEmpty && targetBehind.block.getRelative(BlockFace.UP).isEmpty)
+                player.teleport(targetBehind)
+            else
+                player.teleport(targetAt)
         }
 
         // give respawning effects. i cant be bothered to refactor this from respawning code
@@ -641,7 +636,7 @@ fun Player.initInventory() {
     inventory.setHelmet(Items.HELMET.item)
     inventory.setChestplate(Items.CHESTPLATE.item)
 
-    // TODO: teleport to random part on the map? or just use manual spawns like currently
+    // was gonna teleport to random part of map. but fixed spawns are nicer
 }
 
 fun Player.givePartyItem() {
