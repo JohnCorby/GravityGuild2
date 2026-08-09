@@ -46,6 +46,9 @@ class GGArena : Arena() {
             val player = event.entity as? Player ?: event.damageSource.directEntity as? Player ?: event.damageSource.causingEntity as? Player
             ArenaPlayer.getArenaPlayer(player)?.competition
         }
+        eventManager.registerArenaResolver(InventoryClickEvent::class.java) { event ->
+            ArenaPlayer.getArenaPlayer(event.inventory.holder as? Player)?.competition
+        }
     }
 
     @ArenaEventHandler
@@ -520,6 +523,6 @@ class GGArena : Arena() {
     @ArenaEventHandler
     fun InventoryClickEvent.handler() {
         // if you can pick up party items in cooldown, then you cant remove them
-        if (this.cursor.isMapped(MapKey.PARTY_ITEM_COOLDOWN)) isCancelled = true
+        if (this.currentItem?.isMapped(MapKey.PARTY_ITEM_COOLDOWN) ?: false) isCancelled = true
     }
 }
