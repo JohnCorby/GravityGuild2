@@ -533,7 +533,7 @@ object GGTeleportPearl {
 enum class Items(val item: ItemStack, val partyWeight: Double? = null) {
     BOW(ItemStack.of(Material.CROSSBOW).apply {
         addUnsafeEnchantment(Enchantment.INFINITY, 1)
-        addUnsafeEnchantment(Enchantment.QUICK_CHARGE, 1)
+//        addUnsafeEnchantment(Enchantment.QUICK_CHARGE, 1)
 //        addUnsafeEnchantment(Enchantment.MULTISHOT, 1)
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
         addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
