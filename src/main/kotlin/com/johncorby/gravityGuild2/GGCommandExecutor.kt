@@ -8,15 +8,15 @@ import org.battleplugins.arena.command.ArenaCommand
 import org.battleplugins.arena.command.ArenaCommandExecutor
 import org.battleplugins.arena.competition.map.CompetitionMap
 import org.battleplugins.arena.competition.map.LiveCompetitionMap
-import org.bukkit.Location
+import org.bukkit.Bukkit
+import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
-import org.bukkit.util.Vector
 
 class GGCommandExecutor(arena: Arena) : ArenaCommandExecutor(arena) {
     @ArenaCommand(commands = ["reload", "r"], description = "debug: reload plugin", permissionNode = "debug")
-    fun reload(player: Player) {
-        player.performCommand("plm reload GravityGuild2")
-        player.performCommand("ba reload")
+    fun reload(sender: CommandSender) {
+        Bukkit.getServer().dispatchCommand(sender, "plm reload GravityGuild2")
+        Bukkit.getServer().dispatchCommand(sender, "ba reload")
     }
 
     @ArenaCommand(commands = ["givePartyItem"], description = "debug: run give party item function", permissionNode = "debug")
