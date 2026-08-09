@@ -88,6 +88,8 @@
 - make it extinguish fires???? idk why this was wanted but it was
 - IDEA: big guy spawns another big guy on land that pops up in da air
 
+- IDEA: let fish shot still happen, but increase cooldown on tnt to make it less spammable. but you can throw tnt regularly still often if you dont fish it. trying to encourage original use case of tnt
+
 # fish
 
 - GOAL: get em out of short range

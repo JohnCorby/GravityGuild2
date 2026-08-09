@@ -520,6 +520,6 @@ class GGArena : Arena() {
     @ArenaEventHandler
     fun InventoryClickEvent.handler() {
         // if you can pick up party items in cooldown, then you cant remove them
-        if (this.currentItem!!.isMapped(MapKey.PARTY_ITEM_COOLDOWN)) isCancelled = true
+        if (this.cursor.isMapped(MapKey.PARTY_ITEM_COOLDOWN)) isCancelled = true
     }
 }

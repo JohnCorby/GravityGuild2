@@ -127,10 +127,10 @@ fun drawLine(a: Location, b: Location, particle: Particle) {
 }
 
 fun Player.consumePartyItem(time: Long = 20 * 20) {
-    this.showTitle(Title.title(Component.empty(), Component.text("Consuming this party item in ${time / 20} seconds...")))
-
     val item = inventory.itemInMainHand
-    item.mapTimer(MapKey.PARTY_ITEM_COOLDOWN, { inventory.removeItem(item) }, time, false)
+
+    if (!item.mapTimer(MapKey.PARTY_ITEM_COOLDOWN, { inventory.removeItem(item) }, time, false)) return
+    this.showTitle(Title.title(Component.empty(), Component.text("Consuming this party item in ${time / 20} seconds...")))
 }
 
 
@@ -143,21 +143,24 @@ enum class MapKey { PARTY_ITEM_COOLDOWN }
 
 private val mappedThings = mutableMapOf<Pair<Any, MapKey>, Any>()
 
-fun Any.map(key: MapKey, value: Any, replace: Boolean) {
+fun Any.map(key: MapKey, value: Any, replace: Boolean): Boolean {
     val pair = Pair(this, key)
-    if (!replace && pair in mappedThings) return;
+    val exists = pair in mappedThings
+    if (!replace && exists) return false
     mappedThings[pair] = value
+    return !exists
 }
 
-fun Any.mapTimer(key: MapKey, task: () -> Unit, time: Long, replace: Boolean) {
+fun Any.mapTimer(key: MapKey, task: () -> Unit, time: Long, replace: Boolean): Boolean {
     val pair = Pair(this, key)
     val existingTask = mappedThings[pair]
-    if (!replace && existingTask != null) return
+    if (!replace && existingTask != null) return false
     if (existingTask is BukkitTask) existingTask.cancel()
     mappedThings[pair] = Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable {
         mappedThings.remove(pair)
         task()
     }, time)
+    return existingTask == null
 }
 
 fun Any.unmap(key: MapKey) {

@@ -12,7 +12,6 @@ import net.kyori.adventure.util.TriState
 import org.battleplugins.arena.ArenaPlayer
 import org.battleplugins.arena.competition.LiveCompetition
 import org.bukkit.*
-import org.bukkit.block.BlockFace
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.*
 import org.bukkit.inventory.ItemStack
@@ -33,7 +32,7 @@ object GGMace {
     init {
         Bukkit.getScheduler().runTaskTimer(PLUGIN, Runnable {
             trackedPlayers.forEach {
-                it.exp = it.velocityZeroGround.length().toFloat().remapClamped(0f, 1f, 0f, 1f)
+                it.exp = it.velocityZeroGround.length().toFloat().remapClamped(0f, .9f, 0f, 1f)
                 it.level = it.velocityZeroGround.length().toInt()
 
                 if (it.velocity.length() > 1 && it.inventory.itemInMainHand != Items.ARROW.item)
@@ -49,7 +48,7 @@ object GGMace {
         PLUGIN.logger.info("mace vel speed = ${player.velocity.length()}")
         if (
 //                        player.fallDistance > 5
-            player.velocity.length() > 1
+            player.velocity.length() > .9
         ) {
             if (player.doItemCooldown(20)) return
 
@@ -107,7 +106,7 @@ object GGMace {
 
 object GGTnt {
     fun launch(player: Player, small: Boolean) {
-        if (player.doItemCooldown(if (small) 20 * 10 else 20 * 5)) return
+        if (player.doItemCooldown(if (small) 20 * 15 else 20 * 2)) return
 
         val projectile = player.launchProjectile(EnderPearl::class.java, player.eyeLocation.direction.multiply(.7)) { projectile ->
             val tnt = projectile.world.spawn(projectile.location, BlockDisplay::class.java)
@@ -131,9 +130,25 @@ object GGTnt {
         val small = display.transformation.scale == Vector3f(.5f)
         entity.world.createExplosion(
             entity,
-            if (small) 2f else 7f,
+            if (small) 2f else 6f,
             true
         )
+
+        // big tnt will send all projectiles back to the shooter
+        if (!small) {
+            val nearbyEntities = entity.world.getNearbyEntities(
+                entity.location,
+                3.0, 3.0, 3.0,
+                { it != entity && it != entity.shooter && it is Projectile },
+            )
+            nearbyEntities.forEach {
+                it as Projectile
+                it.velocity = (it.shooter as Player).eyeLocation.subtract(it.location).toVector().normalize().multiply(3)
+                if (it is Arrow)
+                    GGBow.trackedArrows[it] = it.velocity
+            }
+        }
+
         display.remove()
         entity.remove()
         trackedTnt.remove(entity)
@@ -167,14 +182,18 @@ object GGTnt {
                         it is Arrow -> {
                             if (small) {
                                 // whoever coins the arrow first gets it
-                                if (it.hasMetadata("coined")) return@forEach
+//                                if (it.hasMetadata("coined")) return@forEach
                                 it.setMetadata("coined", null)
                                 it.isGlowing = true
 
-//                                iter.remove()
-//                                tnt.hitEntity(it)
+                                // make it blow up only if ur not riding it (or really anything is already riding it)
+                                if (it.passengers.isEmpty()) {
+                                    iter.remove()
+                                    tnt.hitEntity(it)
+                                }
+
                                 // ultrakill coin moment. go towards closest player
-                                tnt.shooter = it.shooter // arrow shooter steals tnt
+                                it.shooter = tnt.shooter // tnt shooter steals arrow
                                 var players = ArenaPlayer.getArenaPlayer(it.shooter as Player)!!.competition.players.map { it.player }
                                 val closestPlayer = players.filter { player -> player != it.shooter }.minByOrNull { player -> it.location.distance(player.eyeLocation) } ?: return@forEach
                                 it.velocity = closestPlayer.eyeLocation.subtract(it.location).toVector().normalize().multiply(5)
@@ -237,11 +256,21 @@ object GGBow {
         arrow.addPassenger(player)
         arrow.velocity = arrow.velocity.multiply(0.3) // go really slow to offset that it lets you fly anywhere
         trackedArrows[arrow] = arrow.velocity
-        player.inventory.forEach { it?.let { player.setCooldown(it, 20 * 3) } }
+        player.inventory.forEach {
+            it?.let {
+                if (player.getCooldown(it) > 20 * 3) return@let
+                player.setCooldown(it, 20 * 3)
+            }
+        }
     }
 
     fun dismountArrow(player: Player) {
-        player.inventory.forEach { it?.let { player.setCooldown(it, 20 * 3) } }
+        player.inventory.forEach {
+            it?.let {
+                if (player.getCooldown(it) > 20 * 3) return@let
+                player.setCooldown(it, 20 * 3)
+            }
+        }
     }
 
 
@@ -318,6 +347,12 @@ object GGFish {
                 it.setMetadata("reflected", null)
             }
             (it as? Damageable)?.damagePrecise(0.0, player, player)
+
+            // if you fish tnt, give it a big cooldown so u cant throw it again for a while
+            if (it is EnderPearl) {
+                player.setCooldown(Items.FISH.item, 20 * 10)
+                player.setCooldown(Items.TNT.item, 20 * 10)
+            }
         }
         if (!hit) { // make sure to indicate whiff with sound
             player.world.playSound(player, Sound.ENTITY_PLAYER_ATTACK_NODAMAGE, 1f, 1f)
@@ -494,34 +529,30 @@ object GGTeleportPearl {
     fun toss(enderPearl: EnderPearl) {
         if (enderPearl.passengers.any { it is BlockDisplay }) return; // false alarm. this is tnt. bleh
 
-        Bukkit.getScheduler().runTask(PLUGIN, Runnable { enderPearl.remove() })
+        Bukkit.getScheduler().runTask(PLUGIN, Runnable {
+            enderPearl.remove()
 
-        val player = enderPearl.shooter as Player
-        val competition = ArenaPlayer.getArenaPlayer(player)!!.competition
-        // teleport to player your most closely looking at
-        val teleportTo = competition.players.filter { it.player != player }.maxByOrNull {
-            val looking = player.eyeLocation.direction
-            val toIt = it.player.location.subtract(player.location).toVector().normalize()
-            return@maxByOrNull looking.dot(toIt) // bigger dot = looking angle matches where player is more
-        }?.player
-        teleportTo?.let {
-            player.teleport(it)
-            val looking = it.eyeLocation.direction
-            looking.y = 0.0
-            looking.normalize()
-            // teleport either at or behind them
-            val targetAt = it.location
-            val targetBehind = targetAt.subtract(looking)
-            if (targetBehind.block.isEmpty && targetBehind.block.getRelative(BlockFace.UP).isEmpty)
-                player.teleport(targetBehind)
-            else
-                player.teleport(targetAt)
-        }
+            val player = enderPearl.shooter as Player
+            val competition = ArenaPlayer.getArenaPlayer(player)!!.competition
+            // teleport to player your most closely looking at
+            val teleportTo = competition.players.filter { it.player != player }.maxByOrNull {
+                val looking = player.eyeLocation.direction
+                val toIt = it.player.location.subtract(player.location).toVector().normalize()
+                return@maxByOrNull looking.dot(toIt) // bigger dot = looking angle matches where player is more
+            }?.player
+            teleportTo?.let {
+                val looking = it.eyeLocation.direction
+                looking.y = 0.0
+                looking.normalize()
+                val behind = it.location.subtract(looking)
+                player.teleport(behind)
+            }
 
-        // give respawning effects. i cant be bothered to refactor this from respawning code
-        player.addPotionEffect(PotionEffect(PotionEffectType.INVISIBILITY, 20 * 3, 1, false, false, true))
-        player.addPotionEffect(PotionEffect(PotionEffectType.NIGHT_VISION, 20 * 3, 1, false, false, true))
+            // give respawning effects. i cant be bothered to refactor this from respawning code
+            player.addPotionEffect(PotionEffect(PotionEffectType.INVISIBILITY, 20 * 3, 1, false, false, true))
+            player.addPotionEffect(PotionEffect(PotionEffectType.NIGHT_VISION, 20 * 3, 1, false, false, true))
 
+        })
 
     }
 }
@@ -596,7 +627,7 @@ enum class Items(val item: ItemStack, val partyWeight: Double? = null) {
     TELEPORT_PEARL(ItemStack.of(Material.ENDER_PEARL).apply {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
 
-        lore(listOf(Component.text("Teleport to random player >:)").color(NamedTextColor.BLUE)))
+        lore(listOf(Component.text("Teleport to player you're looking at >:)").color(NamedTextColor.BLUE)))
     }, 0.5),
     GLOWBERRIES(ItemStack.of(Material.GLOW_BERRIES, 3).apply {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
