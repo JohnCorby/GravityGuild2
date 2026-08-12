@@ -15,6 +15,7 @@ import org.bukkit.*
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.*
 import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.meta.CrossbowMeta
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.util.Transformation
@@ -22,6 +23,7 @@ import org.bukkit.util.Vector
 import org.joml.Quaternionf
 import org.joml.Vector3f
 import java.util.concurrent.ThreadLocalRandom
+import kotlin.math.absoluteValue
 import kotlin.random.Random
 
 //region regular items
@@ -54,13 +56,13 @@ object GGMace {
 
             val nearbyEntities = player.checkHitbox(3.0)
             // TODO: make tnt maceable? how useful would that be???
-            if (nearbyEntities.any { it is Damageable }) {
+            if (nearbyEntities.any { it is Damageable || it is EnderPearl }) {
                 PLUGIN.logger.info("mace HIT")
 
                 // mimic mace effect but bigger radius
 //                player.isGliding = false
 //                player.velocity = player.velocity.multiply(-1.5)
-//                player.velocity = Vector(player.velocity.x * 1.5, player.velocity.y.absoluteValue * 1.5, player.velocity.z * 1.5)
+                player.velocity = Vector(player.velocity.x * 1.5, player.velocity.y.absoluteValue * 1.5, player.velocity.z * 1.5)
                 nearbyEntities.forEach { (it as? Damageable)?.run { damagePrecise(20.0, player, player) } }
 //                nearbyEntities.forEach {
 //                    (it as? Damageable)?.damage(10.0, player, DamageType.MACE_SMASH)
@@ -96,7 +98,7 @@ object GGMace {
             val len = windToPlayer.length()
             if (len < 4) {
                 val dir = windToPlayer.normalize()
-                it.player.velocity = it.player.velocity.add(dir.multiply(len.toFloat().remapClamped(4f, 0f, 0f, 1f)))
+                it.player.velocity = it.player.velocity.add(dir.multiply(len.toFloat().remapClamped(4f, 0f, 0f, 1.4f)))
             }
         }
     }
@@ -314,6 +316,19 @@ object GGBow {
                 }
             }
         }, 0, 0)
+
+
+        // if crossbow is holding arrow, stop it
+        Bukkit.getScheduler().runTaskTimer(PLUGIN, Runnable {
+//            PLUGIN.logger.info("yes")
+            return@Runnable
+            GGMace.trackedPlayers.forEach {
+                val bow = it.inventory.first { it.type == Items.BOW.item.type }
+                val meta = bow.itemMeta as CrossbowMeta
+                PLUGIN.logger.info("bow is $bow. has guy = ${meta.hasChargedProjectiles()}")
+                if (meta.hasChargedProjectiles()) meta.setChargedProjectiles(null)
+            }
+        }, 0, 20)
     }
 }
 
