@@ -98,7 +98,7 @@ object GGMace {
             val len = windToPlayer.length()
             if (len < 4) {
                 val dir = windToPlayer.normalize()
-                it.player.velocity = it.player.velocity.add(dir.multiply(len.toFloat().remapClamped(4f, 0f, 0f, 1.4f)))
+                it.player.velocity = it.player.velocity.add(dir.multiply(len.toFloat().remapClamped(4f, 0f, 0f, 2f)))
             }
         }
     }
@@ -365,8 +365,8 @@ object GGFish {
 
             // if you fish tnt, give it a big cooldown so u cant throw it again for a while
             if (it is EnderPearl) {
-                player.setCooldown(Items.FISH.item, 20 * 7)
-                player.setCooldown(Items.TNT.item, 20 * 7)
+                player.setCooldown(Items.FISH.item, 20 * 5)
+                player.setCooldown(Items.TNT.item, 20 * 5)
             }
         }
         if (!hit) { // make sure to indicate whiff with sound
@@ -661,6 +661,11 @@ enum class Items(val item: ItemStack, val partyWeight: Double? = null) {
     CHESTPLATE(ItemStack.of(Material.ELYTRA).apply {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
         addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
+    }),
+    PANTS(ItemStack.of(Material.GOLDEN_LEGGINGS).apply {
+        addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
+        addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
+        addUnsafeEnchantment(Enchantment.SWIFT_SNEAK, 9999)
     });
 }
 
@@ -681,6 +686,7 @@ fun Player.initInventory() {
 //    inventory.addItem(Items.TREE.item)
     inventory.setHelmet(Items.HELMET.item)
     inventory.setChestplate(Items.CHESTPLATE.item)
+    inventory.setLeggings(Items.PANTS.item)
 
     // was gonna teleport to random part of map. but fixed spawns are nicer
 }
