@@ -8,6 +8,7 @@ repositories {
     maven("https://repo.papermc.io/repository/maven-public/")
 
     maven("https://repo.battleplugins.org/releases")
+    maven("https://maven.enginehub.org/repo/")
 }
 
 dependencies {
@@ -15,6 +16,7 @@ dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 
     compileOnly("org.battleplugins:arena:4.0.2")
+    compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.2.9")
 }
 
 kotlin {

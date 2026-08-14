@@ -4,10 +4,13 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickCallback
 import net.kyori.adventure.text.event.ClickEvent
 import org.battleplugins.arena.Arena
+import org.battleplugins.arena.BattleArena
 import org.battleplugins.arena.command.ArenaCommand
 import org.battleplugins.arena.command.ArenaCommandExecutor
+import org.battleplugins.arena.competition.LiveCompetition
 import org.battleplugins.arena.competition.map.CompetitionMap
 import org.battleplugins.arena.competition.map.LiveCompetitionMap
+import org.battleplugins.arena.module.ArenaModuleContainer
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
@@ -21,6 +24,7 @@ class GGCommandExecutor(arena: Arena) : ArenaCommandExecutor(arena) {
 
     @ArenaCommand(commands = ["givePartyItem"], description = "debug: run give party item function", permissionNode = "debug")
     fun givePartyItem(player: Player) = player.givePartyItem()
+
     @ArenaCommand(commands = ["compactItems"], description = "debug", permissionNode = "debug")
     fun compactItems(player: Player) = player.compactItems()
 
@@ -39,6 +43,20 @@ class GGCommandExecutor(arena: Arena) : ArenaCommandExecutor(arena) {
                 .appendNewline()
                 .append(Component.text("max: ${bb.max} (click to tp)").clickEvent(ClickEvent.callback({ player.teleport(bb.max.toLocation(map.world, player.yaw, player.pitch)) }, options)))
         )
+    }
+
+    @ArenaCommand(commands = ["teleport", "tp"], description = "debug: teleport to arena center", permissionNode = "debug")
+    fun tp(player: Player, map: CompetitionMap) {
+        val bb = (map as LiveCompetitionMap).bounds!!.toBoundingBox()
+        player.teleport(bb.center.toLocation(map.world, player.yaw, player.pitch))
+    }
+
+    @ArenaCommand(commands = ["restore"], description = "debug: restore arena from schematic", permissionNode = "debug")
+    fun restore(player: Player, map: CompetitionMap) {
+        // super jank, but such is modules
+        val arena = (map as LiveCompetitionMap).arena
+        val competition = BattleArena.getInstance().getCompetitions(arena).first() as LiveCompetition
+        ArenaRestorationUtil.restoreArena(arena, competition, map.bounds)
     }
 
     @ArenaCommand(commands = ["back", "b"], description = "debug: teleport to previous location", permissionNode = "debug")
