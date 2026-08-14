@@ -4,13 +4,10 @@ import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickCallback
 import net.kyori.adventure.text.event.ClickEvent
 import org.battleplugins.arena.Arena
-import org.battleplugins.arena.BattleArena
 import org.battleplugins.arena.command.ArenaCommand
 import org.battleplugins.arena.command.ArenaCommandExecutor
-import org.battleplugins.arena.competition.LiveCompetition
 import org.battleplugins.arena.competition.map.CompetitionMap
 import org.battleplugins.arena.competition.map.LiveCompetitionMap
-import org.battleplugins.arena.module.ArenaModuleContainer
 import org.bukkit.Bukkit
 import org.bukkit.command.CommandSender
 import org.bukkit.entity.Player
@@ -53,10 +50,17 @@ class GGCommandExecutor(arena: Arena) : ArenaCommandExecutor(arena) {
 
     @ArenaCommand(commands = ["restore"], description = "debug: restore arena from schematic", permissionNode = "debug")
     fun restore(player: Player, map: CompetitionMap) {
+        // arena restore puts back entities, so lets remove current ones
+        map as LiveCompetitionMap
+        val bounds = map.bounds!!
+        for (entity in map.world.entities) {
+            if (bounds.isInside(entity.boundingBox) && entity !is Player) {
+                entity.remove()
+            }
+        }
+
         // super jank, but such is modules
-        val arena = (map as LiveCompetitionMap).arena
-        val competition = BattleArena.getInstance().getCompetitions(arena).first() as LiveCompetition
-        ArenaRestorationUtil.restoreArena(arena, competition, map.bounds)
+        ArenaRestorationUtil.restoreArena(map)
     }
 
     @ArenaCommand(commands = ["back", "b"], description = "debug: teleport to previous location", permissionNode = "debug")
