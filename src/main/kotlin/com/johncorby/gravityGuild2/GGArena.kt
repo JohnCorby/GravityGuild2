@@ -13,8 +13,10 @@ import org.battleplugins.arena.competition.map.LiveCompetitionMap
 import org.battleplugins.arena.competition.phase.CompetitionPhaseType
 import org.battleplugins.arena.competition.phase.phases.VictoryPhase
 import org.battleplugins.arena.event.ArenaEventHandler
+import org.battleplugins.arena.event.arena.ArenaCreateCompetitionEvent
 import org.battleplugins.arena.event.arena.ArenaPhaseCompleteEvent
 import org.battleplugins.arena.event.arena.ArenaPhaseStartEvent
+import org.battleplugins.arena.event.arena.ArenaRemoveCompetitionEvent
 import org.battleplugins.arena.event.player.ArenaJoinEvent
 import org.battleplugins.arena.event.player.ArenaLeaveEvent
 import org.battleplugins.arena.stat.ArenaStats
@@ -530,4 +532,15 @@ class GGArena : Arena() {
         // if you can pick up party items in cooldown, then you cant remove them
         if (this.currentItem?.isMapped(MapKey.PARTY_ITEM_COOLDOWN) ?: false) isCancelled = true
     }
+
+/*
+    @ArenaEventHandler
+    fun ArenaCreateCompetitionEvent.handler() {
+        PLUGIN.logger.info("competition created $competition for $arena\n${Thread.currentThread().stackTrace.joinToString("", transform = { "\t$it\n" })}")
+    }
+    @ArenaEventHandler
+    fun ArenaRemoveCompetitionEvent.handler() {
+        PLUGIN.logger.info("competition removed $competition for $arena\n${Thread.currentThread().stackTrace.joinToString("", transform = { "\t$it\n" })}")
+    }
+*/
 }

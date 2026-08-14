@@ -159,7 +159,12 @@
 - every kill i got with this is player standing still and felt way cheaper than the other weapons. i just made this a long punch for now
 
 
-
+# trident
+- idea 1: like spear, can lunge toward player, kill them on hit
+  - seems too similar to mace, still worth trying
+- idea 2: loyalty. you throw it, it hits, it comes back. vanilla trident stuff
+- idea 3: reverse-loyalty. you throw, it hits (or you click) and it flings or riptides you towards it
+  - chain into mace? cool???
 
 
 
@@ -232,3 +237,9 @@ put windcharges on 3 sec cooldown and tnt can ride it
 every time die u, u get upgrade to an item (no this seems annoying to design)
 
 instead of classes, different balances of the same weapons. this also seems annoying to design
+
+
+getting kill with tnt resets tnt item timer
+
+
+combos give you more points - track how many types of things you hit them with, more things = more points

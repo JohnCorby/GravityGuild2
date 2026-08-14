@@ -98,7 +98,7 @@ object GGMace {
             val len = windToPlayer.length()
             if (len < 4) {
                 val dir = windToPlayer.normalize()
-                it.player.velocity = it.player.velocity.add(dir.multiply(len.toFloat().remapClamped(4f, 0f, 0f, 1.5f)))
+                it.player.velocity = it.player.velocity.add(dir.multiply(len.toFloat().remapClamped(4f, 0f, 0f, 1.4f)))
             }
         }
     }
@@ -108,7 +108,7 @@ object GGMace {
 
 object GGTnt {
     fun launch(player: Player, small: Boolean) {
-        if (player.doItemCooldown(if (small) 20 * 15 else 20 * 2)) return
+        if (player.doItemCooldown(if (small) 20 * 10 else 20 * 2)) return
 
         val projectile = player.launchProjectile(EnderPearl::class.java, player.eyeLocation.direction.multiply(.7)) { projectile ->
             val tnt = projectile.world.spawn(projectile.location, BlockDisplay::class.java)
@@ -365,8 +365,8 @@ object GGFish {
 
             // if you fish tnt, give it a big cooldown so u cant throw it again for a while
             if (it is EnderPearl) {
-                player.setCooldown(Items.FISH.item, 20 * 10)
-                player.setCooldown(Items.TNT.item, 20 * 10)
+                player.setCooldown(Items.FISH.item, 20 * 7)
+                player.setCooldown(Items.TNT.item, 20 * 7)
             }
         }
         if (!hit) { // make sure to indicate whiff with sound
