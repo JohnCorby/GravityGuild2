@@ -15,7 +15,6 @@ import org.bukkit.*
 import org.bukkit.enchantments.Enchantment
 import org.bukkit.entity.*
 import org.bukkit.inventory.ItemStack
-import org.bukkit.inventory.meta.CrossbowMeta
 import org.bukkit.potion.PotionEffect
 import org.bukkit.potion.PotionEffectType
 import org.bukkit.util.Transformation
@@ -316,19 +315,6 @@ object GGBow {
                 }
             }
         }, 0, 0)
-
-
-        // if crossbow is holding arrow, stop it
-        Bukkit.getScheduler().runTaskTimer(PLUGIN, Runnable {
-//            PLUGIN.logger.info("yes")
-            return@Runnable
-            GGMace.trackedPlayers.forEach {
-                val bow = it.inventory.first { it.type == Items.BOW.item.type }
-                val meta = bow.itemMeta as CrossbowMeta
-                PLUGIN.logger.info("bow is $bow. has guy = ${meta.hasChargedProjectiles()}")
-                if (meta.hasChargedProjectiles()) meta.setChargedProjectiles(null)
-            }
-        }, 0, 20)
     }
 }
 

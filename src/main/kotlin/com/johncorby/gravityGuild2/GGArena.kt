@@ -1,6 +1,7 @@
 ﻿package com.johncorby.gravityGuild2
 
 import io.papermc.paper.event.entity.EntityKnockbackEvent
+import io.papermc.paper.event.entity.EntityLoadCrossbowEvent
 import io.papermc.paper.event.player.PlayerFailMoveEvent
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
@@ -13,10 +14,8 @@ import org.battleplugins.arena.competition.map.LiveCompetitionMap
 import org.battleplugins.arena.competition.phase.CompetitionPhaseType
 import org.battleplugins.arena.competition.phase.phases.VictoryPhase
 import org.battleplugins.arena.event.ArenaEventHandler
-import org.battleplugins.arena.event.arena.ArenaCreateCompetitionEvent
 import org.battleplugins.arena.event.arena.ArenaPhaseCompleteEvent
 import org.battleplugins.arena.event.arena.ArenaPhaseStartEvent
-import org.battleplugins.arena.event.arena.ArenaRemoveCompetitionEvent
 import org.battleplugins.arena.event.player.ArenaJoinEvent
 import org.battleplugins.arena.event.player.ArenaLeaveEvent
 import org.battleplugins.arena.stat.ArenaStats
@@ -31,6 +30,7 @@ import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.player.*
 import org.bukkit.inventory.EquipmentSlot
 import org.bukkit.inventory.ItemStack
+import org.bukkit.inventory.meta.CrossbowMeta
 import org.bukkit.potion.PotionEffectType
 
 class GGArena : Arena() {
@@ -218,13 +218,14 @@ class GGArena : Arena() {
                     heldItemChanged(player.player, player.player.inventory.heldItemSlot, player.player.inventory.heldItemSlot)
 
                     player.player.isRespawning = true
-
-                    // scoreboard module adds us to its own non global scoreboard. I THINK we need to add the team to THAT one to get the nametag thing working
-                    // this gets removed on remove-scoerboard so hopefully thatll remove the team effects
-//                    val team = player.player.scoreboard.getTeam("GravityGuild") ?: player.player.scoreboard.registerNewTeam("GravityGuild")
-//                    team.setOption(Team.Option.NAME_TAG_VISIBILITY, Team.OptionStatus.NEVER)
-//                    team.addPlayer(player.player)
                 }
+
+                // every minute, clear out non gg items
+                competition.map(MapKey.COMPACT_ITEMS, Bukkit.getScheduler().runTaskTimer(PLUGIN, Runnable {
+                    (competition as LiveCompetition).players.forEach {
+                        it.player.compactItems()
+                    }
+                }, 20 * 60, 20 * 60), false)
             }
 
             CompetitionPhaseType.VICTORY -> {
@@ -243,11 +244,7 @@ class GGArena : Arena() {
     fun ArenaPhaseCompleteEvent.handler() {
         when (phase.type) {
             CompetitionPhaseType.INGAME -> {
-
-                (competition as LiveCompetition).players.forEach { player ->
-//                    val team = player.player.scoreboard.getTeam("GravityGuild")!!
-//                    team.removePlayer(player.player)
-                }
+                competition.unmap(MapKey.COMPACT_ITEMS)
             }
 
             CompetitionPhaseType.VICTORY -> {
@@ -533,14 +530,26 @@ class GGArena : Arena() {
         if (this.currentItem?.isMapped(MapKey.PARTY_ITEM_COOLDOWN) ?: false) isCancelled = true
     }
 
-/*
     @ArenaEventHandler
-    fun ArenaCreateCompetitionEvent.handler() {
-        PLUGIN.logger.info("competition created $competition for $arena\n${Thread.currentThread().stackTrace.joinToString("", transform = { "\t$it\n" })}")
+    fun EntityLoadCrossbowEvent.handler() {
+        // if crossbow is holding arrow, stop it
+        Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable {
+            PLUGIN.logger.info("yes")
+            val meta = crossbow.itemMeta as CrossbowMeta
+            meta.setChargedProjectiles(null)
+            crossbow.itemMeta = meta
+        }, 20 * 5)
+
     }
-    @ArenaEventHandler
-    fun ArenaRemoveCompetitionEvent.handler() {
-        PLUGIN.logger.info("competition removed $competition for $arena\n${Thread.currentThread().stackTrace.joinToString("", transform = { "\t$it\n" })}")
-    }
-*/
+
+    /*
+        @ArenaEventHandler
+        fun ArenaCreateCompetitionEvent.handler() {
+            PLUGIN.logger.info("competition created $competition for $arena\n${Thread.currentThread().stackTrace.joinToString("", transform = { "\t$it\n" })}")
+        }
+        @ArenaEventHandler
+        fun ArenaRemoveCompetitionEvent.handler() {
+            PLUGIN.logger.info("competition removed $competition for $arena\n${Thread.currentThread().stackTrace.joinToString("", transform = { "\t$it\n" })}")
+        }
+    */
 }
