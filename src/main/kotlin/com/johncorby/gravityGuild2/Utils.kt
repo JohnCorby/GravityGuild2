@@ -37,7 +37,7 @@ var Player.dontGlide: Boolean
     get() = this.hasPotionEffect(PotionEffectType.SLOWNESS)
     set(value) {
         if (value) {
-            this.addPotionEffect(PotionEffect(PotionEffectType.SLOWNESS, 20, 1, false, false, true))
+            this.addPotionEffect(PotionEffect(PotionEffectType.SLOWNESS, 2 * 20, 1, false, false, true))
             isGliding = false
             world.playSound(this, Sound.ENTITY_PLAYER_BURP, 1f, 1f)
         } else this.removePotionEffect(PotionEffectType.SLOWNESS)

@@ -98,7 +98,7 @@ object GGMace {
             val len = windToPlayer.length()
             if (len < 4) {
                 val dir = windToPlayer.normalize()
-                it.player.velocity = it.player.velocity.add(dir.multiply(len.toFloat().remapClamped(4f, 0f, 0f, 1.4f)))
+                it.player.velocity = it.player.velocity.add(dir.multiply(len.toFloat().remapClamped(4f, 0f, 0f, 1.5f)))
             }
         }
     }
@@ -708,6 +708,17 @@ fun Player.givePartyItem() {
     inventory.addItem(partyItem.item)
     partyItem.item.amount = amount
     showTitle(Title.title(Component.empty(), Component.text("You got party item ${partyItem}!")))
+}
+
+fun Player.compactItems() {
+    var items = inventory.take(9 * 4).toList()
+    items.forEachIndexed { index, stack -> inventory.setItem(index, null) }
+    items = items.filter { item ->
+        if (item == null) return@filter false
+        if (item.type == Items.BOW.item.type) return@filter true
+        return@filter Items.entries.any { it.item.isSimilar(item) }
+    }
+    items.forEachIndexed { index, stack -> inventory.setItem(index, stack) }
 }
 
 //endregion

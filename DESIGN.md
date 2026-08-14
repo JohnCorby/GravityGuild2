@@ -125,6 +125,11 @@
 - IDEA: less damage but mark for death, to chain with arrow
   - meh, you continue in direction so for now nah
 
+
+- mace is super fun, and i keep trying to remove the most fun part of flying around. but the actual problem i need to address is that flying around so much makes you unhittable. maybe
+  - what i actually want is that you should be able to have fun and have that playstyle while still being able to die
+  - what if i instead encourage that chaos? but balance the other things around it?
+
 # arrow
 - wither skull
   - tunneling?
@@ -173,7 +178,9 @@
 multishot everything party item
 horn is meh. make it different? like make it so no one can do any damage for n seconds? for evasion
 nerf wind a bunch? make ride arrow primary air movement
+  no
 give mace wind charge abiliy as party item? so you get that movement but only sometimes. kinda makes redundant the horn idea
+  no
 
 
 
@@ -185,14 +192,15 @@ Party items are dropped nearby players every minute, within 10 blocks with sound
 
 Every player's inventory is cleared every five minutes (besides main weapons) to make people use party items more often as opposed to just holding onto them
 to balnce this out more, item drops form destroyed blocks could be removed so people dont have to search thu the inventory for party items (gamerule does this)
-
+  good idea, the clutter is real
 
 a possible command to disable party items before game all together
 
 Instead of party items having a time duration they should have a usage duration, like tree wand would be 10 saplings stack with it using one each time its used
 (this would get rid of the bug of refreshing the duration by putting it in offhand manually)
 
-tnt on arrow movve slower 
+tnt on arrow move slower
+  it already slow
 certain game modifiers could change how the game is started
 
 gg join arena -alpha
@@ -208,15 +216,19 @@ im realizing half of these ideas remove the need to look at the inventory ever s
 
 
 tnt on arrow moves slow, and every secound it drops a tnt that falls and explodes 
+  worth a shot
 
 
-ender pearl teleports behind instead of at guy (unless it would put u inside wall)
+DONE ender pearl teleports behind instead of at guy (unless it would put u inside wall)
 
 
 
 
 put windcharges on 3 sec cooldown and tnt can ride it
+  nah, wonkypanda will be mad. thats his playstyle
 
 
 
 every time die u, u get upgrade to an item (no this seems annoying to design)
+
+instead of classes, different balances of the same weapons. this also seems annoying to design

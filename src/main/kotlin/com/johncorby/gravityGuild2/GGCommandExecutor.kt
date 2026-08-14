@@ -21,6 +21,8 @@ class GGCommandExecutor(arena: Arena) : ArenaCommandExecutor(arena) {
 
     @ArenaCommand(commands = ["givePartyItem"], description = "debug: run give party item function", permissionNode = "debug")
     fun givePartyItem(player: Player) = player.givePartyItem()
+    @ArenaCommand(commands = ["compactItems"], description = "debug", permissionNode = "debug")
+    fun compactItems(player: Player) = player.compactItems()
 
     @ArenaCommand(commands = ["verifyBounds"], description = "debug: print out bounds info and let you tp to them", permissionNode = "debug")
     fun verifyBounds(player: Player, map: CompetitionMap) {

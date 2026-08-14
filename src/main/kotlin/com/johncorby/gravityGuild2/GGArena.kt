@@ -478,11 +478,16 @@ class GGArena : Arena() {
         // dont let players drop our items
         if (Items.entries.any { it.item.isSimilar(itemDrop.itemStack) })
             isCancelled = true
+        if (itemDrop.itemStack.type == Items.BOW.item.type)
+            isCancelled = true
+
     }
 
     @ArenaEventHandler
     fun PlayerItemDamageEvent.handler() {
         if (Items.entries.any { it.item == this.item })
+            isCancelled = true
+        if (item.type == Items.BOW.item.type)
             isCancelled = true
     }
 
