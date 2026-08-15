@@ -450,6 +450,9 @@ class GGArena : Arena() {
                         // tf2 moment teehee
                         lastDamager.playSound(lastDamager, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f)
 
+                        // reset cooldowns on killing player yayay
+                        lastDamager.inventory.forEach { it?.let { lastDamager.setCooldown(it, 0) } }
+
                         player.givePartyItem()
                     } else nonPlayerDeath()
                 }, 2)
