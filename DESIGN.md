@@ -196,7 +196,7 @@ give mace wind charge abiliy as party item? so you get that movement but only so
 More gravity guild ideas
 
 Party items are dropped nearby players every minute, within 10 blocks with sound effect isntead of pop up message instead of on death
-  hmmmm.... maybe???
+  hmmmm.... maybe??? trying now
 
 Every player's inventory is cleared every five minutes (besides main weapons) to make people use party items more often as opposed to just holding onto them
 to balnce this out more, item drops form destroyed blocks could be removed so people dont have to search thu the inventory for party items (gamerule does this)
@@ -206,6 +206,7 @@ a possible command to disable party items before game all together
 
 Instead of party items having a time duration they should have a usage duration, like tree wand would be 10 saplings stack with it using one each time its used
 (this would get rid of the bug of refreshing the duration by putting it in offhand manually)
+  bug got fixed, still might try this? impl is track counter instead of timer
 
 tnt on arrow move slower
   it already slow

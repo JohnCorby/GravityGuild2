@@ -223,6 +223,9 @@ class GGArena : Arena() {
                 // every minute, clear out non gg items
                 competition.map(MapKey.COMPACT_ITEMS, Bukkit.getScheduler().runTaskTimer(PLUGIN, Runnable {
                     (competition as LiveCompetition).players.forEach {
+                        // try: give party item to player every minute
+                        it.player.givePartyItem()
+
                         it.player.compactItems()
                     }
                 }, 20 * 60, 20 * 60), false)
