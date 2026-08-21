@@ -15,7 +15,7 @@ dependencies {
     compileOnly("io.papermc.paper:paper-api:26.2.build.+")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
 
-    compileOnly("org.battleplugins:arena:4.0.2")
+    compileOnly("org.battleplugins:arena:4.0.4")
     compileOnly("com.sk89q.worldedit:worldedit-bukkit:7.2.9")
 }
 
