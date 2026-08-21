@@ -61,6 +61,8 @@ class GGCommandExecutor(arena: Arena) : ArenaCommandExecutor(arena) {
 
         // super jank, but such is modules
         ArenaRestorationUtil.restoreArena(map)
+
+        player.sendMessage("ok")
     }
 
     @ArenaCommand(commands = ["back", "b"], description = "debug: teleport to previous location", permissionNode = "debug")
