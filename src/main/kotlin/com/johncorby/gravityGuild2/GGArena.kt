@@ -539,12 +539,12 @@ class GGArena : Arena() {
     @ArenaEventHandler
     fun EntityLoadCrossbowEvent.handler() {
         // if crossbow is holding arrow, stop it
-        Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable {
+        crossbow.mapTimer(MapKey.ARROW_REMOVE, {
             PLUGIN.logger.info("yes")
             val meta = crossbow.itemMeta as CrossbowMeta
             meta.setChargedProjectiles(null)
             crossbow.itemMeta = meta
-        }, 20 * 5)
+        }, 20 * 5, true)
 
     }
 

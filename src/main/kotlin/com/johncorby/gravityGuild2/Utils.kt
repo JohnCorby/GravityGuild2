@@ -139,7 +139,7 @@ inline fun <reified T> Metadatable.getMetadata(key: String) = (this.getMetadata(
 fun <T> Metadatable.setMetadata(key: String, value: T) = this.setMetadata(key, FixedMetadataValue(PLUGIN, value))
 
 
-enum class MapKey { PARTY_ITEM_COOLDOWN, COMPACT_ITEMS }
+enum class MapKey { PARTY_ITEM_COOLDOWN, COMPACT_ITEMS, ARROW_REMOVE }
 
 private val mappedThings = mutableMapOf<Pair<Any, MapKey>, Any>()
 
