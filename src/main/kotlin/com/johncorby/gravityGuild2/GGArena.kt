@@ -224,7 +224,7 @@ class GGArena : Arena() {
                 competition.map(MapKey.COMPACT_ITEMS, Bukkit.getScheduler().runTaskTimer(PLUGIN, Runnable {
                     (competition as LiveCompetition).players.forEach {
                         // try: give party item to player every minute
-                        it.player.givePartyItem()
+//                        it.player.givePartyItem()
 
                         it.player.compactItems()
                     }
@@ -454,7 +454,7 @@ class GGArena : Arena() {
                         lastDamager.playSound(lastDamager, Sound.ENTITY_PLAYER_LEVELUP, 1f, 1f)
 
                         // reset cooldowns on killing player yayay
-                        lastDamager.inventory.forEach { it?.let { lastDamager.setCooldown(it, 0) } }
+//                        lastDamager.inventory.forEach { it?.let { lastDamager.setCooldown(it, 0) } }
 
                         player.givePartyItem()
                     } else nonPlayerDeath()
@@ -532,8 +532,9 @@ class GGArena : Arena() {
 
     @ArenaEventHandler
     fun InventoryClickEvent.handler() {
+        if (this.currentItem == null) return
         // if you can pick up party items in cooldown, then you cant remove them
-        if (this.currentItem?.isMapped(MapKey.PARTY_ITEM_COOLDOWN) ?: false) isCancelled = true
+        if (this.currentItem!!.isMapped(MapKey.PARTY_ITEM_COOLDOWN) || currentItem!!.isMapped(MapKey.ARROW_REMOVE)) isCancelled = true
     }
 
     @ArenaEventHandler
