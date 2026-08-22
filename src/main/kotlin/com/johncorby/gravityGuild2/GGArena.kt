@@ -369,9 +369,13 @@ class GGArena : Arena() {
             // overwrite previous value in case of multiple damages
             playerLastDamager[entity as Player] = LastDamagerData(damagingPlayer, damageSource.directEntity!!, damagingPlayer.inventory.itemInMainHand, Bukkit.getCurrentTick())
             PLUGIN.logger.info("tracking ${entity.name} got damaged by ${damagingPlayer.name} with ${damageSource.directEntity!!.name} at ${Bukkit.getCurrentTick()}")
+        }
 
-            // tf2 moment teehee
-            damagingPlayer.playSound(damagingPlayer, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f)
+        playerLastDamager[entity as Player]?.let { (lastDamager, lastDamagerDirect, lastDamagerItem, lastDamageTick) ->
+            if (Bukkit.getCurrentTick() - lastDamageTick < 20 * 5) {
+                // tf2 moment teehee
+                lastDamager.playSound(lastDamager, Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1f, 1f)
+            }
         }
     }
 
@@ -539,6 +543,7 @@ class GGArena : Arena() {
 
     @ArenaEventHandler
     fun EntityLoadCrossbowEvent.handler() {
+        return
         // if crossbow is holding arrow, stop it
         crossbow.mapTimer(MapKey.ARROW_REMOVE, {
             PLUGIN.logger.info("yes")
