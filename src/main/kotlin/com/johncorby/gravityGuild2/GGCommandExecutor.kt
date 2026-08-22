@@ -69,4 +69,11 @@ class GGCommandExecutor(arena: Arena) : ArenaCommandExecutor(arena) {
     fun back(player: Player) {
         PLUGIN.oldPlayerLocations[player]?.let { player.teleport(it) }
     }
+
+    @ArenaCommand(commands = ["addSpawn", "as"], description = "add a spawn")
+    fun addSpawn(player: Player, bedrock: Boolean) {
+        if (bedrock) player.performCommand("/cyl bedrock 1 -1")
+        player.chat("spawn")
+        Bukkit.getScheduler().runTask(PLUGIN, Runnable { player.chat("Default") })
+    }
 }
