@@ -404,12 +404,12 @@ object GGArrow {
     }
 
     fun launch(player: Player) {
-        player.launchProjectile(WitherSkull::class.java, player.eyeLocation.direction.multiply(5))
+        player.launchProjectile(WitherSkull::class.java, player.eyeLocation.direction.multiply(10))
     }
 
     fun hit(entity: Entity, witherSkull: WitherSkull) {
         if (entity == witherSkull.shooter) return
-        (entity as? Damageable)?.damagePrecise(3.0, witherSkull, witherSkull.shooter as Player)
+        (entity as? Damageable)?.damagePrecise(6.0, witherSkull, witherSkull.shooter as Player)
         (entity as? Player)?.isMarkedForDeath = true
     }
 }
