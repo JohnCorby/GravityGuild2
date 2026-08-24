@@ -26,20 +26,34 @@ class GGCommandExecutor(arena: Arena) : ArenaCommandExecutor(arena) {
     fun compactItems(player: Player) = player.compactItems()
 
     @ArenaCommand(commands = ["verifyBounds"], description = "debug: print out bounds info and let you tp to them", permissionNode = "debug")
-    fun verifyBounds(player: Player, map: CompetitionMap) {
+    fun verifyBounds(sender: CommandSender, map: CompetitionMap) {
         val bb = (map as LiveCompetitionMap).bounds!!.toBoundingBox()
-        val options = ClickCallback.Options.builder().uses(ClickCallback.UNLIMITED_USES).build()
-        player.sendMessage(
-            Component.text("${map.name} bounds:")
-                .appendNewline()
-                .append(Component.text("dimensions: ${bb.max.subtract(bb.min)}"))
-                .appendNewline()
-                .append(Component.text("center: ${bb.center} (click to tp)").clickEvent(ClickEvent.callback({ player.teleport(bb.center.toLocation(map.world, player.yaw, player.pitch)) }, options)))
-                .appendNewline()
-                .append(Component.text("min: ${bb.min} (click to tp)").clickEvent(ClickEvent.callback({ player.teleport(bb.min.toLocation(map.world, player.yaw, player.pitch)) }, options)))
-                .appendNewline()
-                .append(Component.text("max: ${bb.max} (click to tp)").clickEvent(ClickEvent.callback({ player.teleport(bb.max.toLocation(map.world, player.yaw, player.pitch)) }, options)))
-        )
+        if (sender is Player) {
+            val options = ClickCallback.Options.builder().uses(ClickCallback.UNLIMITED_USES).build()
+            sender.sendMessage(
+                Component.text("${map.name} bounds:")
+                    .appendNewline()
+                    .append(Component.text("dimensions: ${bb.max.subtract(bb.min)}"))
+                    .appendNewline()
+                    .append(Component.text("center: ${bb.center} (click to tp)").clickEvent(ClickEvent.callback({ sender.teleport(bb.center.toLocation(map.world, sender.yaw, sender.pitch)) }, options)))
+                    .appendNewline()
+                    .append(Component.text("min: ${bb.min} (click to tp)").clickEvent(ClickEvent.callback({ sender.teleport(bb.min.toLocation(map.world, sender.yaw, sender.pitch)) }, options)))
+                    .appendNewline()
+                    .append(Component.text("max: ${bb.max} (click to tp)").clickEvent(ClickEvent.callback({ sender.teleport(bb.max.toLocation(map.world, sender.yaw, sender.pitch)) }, options)))
+            )
+        } else {
+            sender.sendMessage(
+                Component.text("${map.name} bounds:")
+                    .appendNewline()
+                    .append(Component.text("dimensions: ${bb.max.subtract(bb.min)}"))
+                    .appendNewline()
+                    .append(Component.text("center: ${bb.center}"))
+                    .appendNewline()
+                    .append(Component.text("min: ${bb.min}"))
+                    .appendNewline()
+                    .append(Component.text("max: ${bb.max}"))
+            )
+        }
     }
 
     @ArenaCommand(commands = ["teleport", "tp"], description = "debug: teleport to arena center", permissionNode = "debug")
@@ -49,7 +63,7 @@ class GGCommandExecutor(arena: Arena) : ArenaCommandExecutor(arena) {
     }
 
     @ArenaCommand(commands = ["restore"], description = "debug: restore arena from schematic", permissionNode = "debug")
-    fun restore(player: Player, map: CompetitionMap) {
+    fun restore(sender: CommandSender, map: CompetitionMap) {
         // arena restore puts back entities, so lets remove current ones
         map as LiveCompetitionMap
         val bounds = map.bounds!!
@@ -62,7 +76,7 @@ class GGCommandExecutor(arena: Arena) : ArenaCommandExecutor(arena) {
         // super jank, but such is modules
         ArenaRestorationUtil.restoreArena(map)
 
-        player.sendMessage("ok")
+        sender.sendMessage("ok")
     }
 
     @ArenaCommand(commands = ["back", "b"], description = "debug: teleport to previous location", permissionNode = "debug")
