@@ -414,6 +414,29 @@ object GGArrow {
     }
 }
 
+object GGTrident {
+    fun toss(trident: Trident) {
+        val player = trident.shooter as Player
+
+        player.setMetadata("trident", trident)
+    }
+
+    fun yoink(player: Player): Boolean {
+        val trident = player.getMetadata<Trident>("trident")
+        player.removeMetadata("trident", PLUGIN)
+        if (trident == null || !trident.isValid) {
+            player.world.playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, .5f)
+            return false
+        }
+
+        // zoom
+        player.velocity = trident.location.subtract(player.eyeLocation).toVector().normalize().multiply(5)
+        player.world.playSound(player, Sound.ITEM_TRIDENT_RIPTIDE_1, 1f, 1f)
+
+        return true
+    }
+}
+
 //endregion
 
 //region party items
@@ -601,6 +624,12 @@ enum class Items(val item: ItemStack, val partyWeight: Double? = null) {
             )
         )
     }),
+    TRIDENT(ItemStack.of(Material.TRIDENT).apply {
+        addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
+        addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
+
+        lore(listOf(Component.text("Throw the trident and right click to yank yourself towards it").color(NamedTextColor.BLUE)))
+    }),
 
 
     NO_PARTY_ITEM(ItemStack.empty(), 1.0),
@@ -667,6 +696,7 @@ fun Player.initInventory() {
     inventory.addItem(Items.FISH.item)
     inventory.addItem(Items.TNT.item)
     inventory.addItem(Items.ARROW.item)
+    inventory.addItem(Items.TRIDENT.item)
 //    inventory.addItem(Items.HORN.item)
 //    inventory.addItem(Items.GUN.item)
 //    inventory.addItem(Items.TREE.item)

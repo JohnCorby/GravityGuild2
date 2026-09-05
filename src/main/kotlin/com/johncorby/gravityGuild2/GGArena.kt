@@ -70,6 +70,7 @@ class GGArena : Arena() {
             is Arrow -> GGBow.launch(it)
             is Snowball -> GGSnowball.launch(it)
             is EnderPearl -> GGTeleportPearl.toss(it)
+            is Trident -> GGTrident.toss(it)
         }
     }
 
@@ -122,6 +123,10 @@ class GGArena : Arena() {
                 else if (action.isRightClick)
                     GGArrow.launch(player)
 
+            }
+
+            Items.TRIDENT.item -> {
+                if (action.isLeftClick) GGTrident.yoink(player)
             }
 
 
