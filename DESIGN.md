@@ -165,6 +165,8 @@
 - idea 2: loyalty. you throw it, it hits, it comes back. vanilla trident stuff
 - idea 3: reverse-loyalty. you throw, it hits (or you click) and it flings or riptides you towards it
   - chain into mace? cool???
+  - yoink is more based on distance?
+  - loyalty so it returns? what if control when it returns? then you can chain yoinks?
 
 
 

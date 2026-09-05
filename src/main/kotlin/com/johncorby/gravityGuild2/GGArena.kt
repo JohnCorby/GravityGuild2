@@ -86,6 +86,7 @@ class GGArena : Arena() {
             is Snowball -> GGSnowball.hit(it, hitEntity)
             is BreezeWindCharge -> GGMace.hit(it, competition)
             is EnderPearl -> isCancelled = GGTnt.hit(it)
+            is Trident -> GGTrident.hit(it)
         }
 
     }
@@ -125,9 +126,9 @@ class GGArena : Arena() {
 
             }
 
-            Items.TRIDENT.item -> {
-                if (action.isLeftClick) GGTrident.yoink(player)
-            }
+//            Items.TRIDENT.item -> {
+//                if (action.isLeftClick) GGTrident.yoink(player)
+//            }
 
 
             Items.SHUFFLE_HORN.item -> {
@@ -142,6 +143,11 @@ class GGArena : Arena() {
 
             Items.TREE.item -> {
                 if (action.isLeftClick) GGTree.plant(player)
+            }
+
+            else -> {
+                if (action.isLeftClick) GGTrident.yoink(player)
+                else if (action.isRightClick) GGTrident.recall(player)
             }
         }
     }

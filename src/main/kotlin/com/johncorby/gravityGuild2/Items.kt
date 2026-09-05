@@ -421,20 +421,39 @@ object GGTrident {
         player.setMetadata("trident", trident)
     }
 
+    fun hit(trident: Trident) {
+
+    }
+
+
     fun yoink(player: Player): Boolean {
         val trident = player.getMetadata<Trident>("trident")
-        player.removeMetadata("trident", PLUGIN)
-        if (trident == null || !trident.isValid) {
+//        player.removeMetadata("trident", PLUGIN)
+        if (trident == null || !trident.isValid || player.dontGlide) {
             player.world.playSound(player, Sound.BLOCK_NOTE_BLOCK_BASS, 1f, .5f)
             return false
         }
 
         // zoom
-        player.velocity = trident.location.subtract(player.eyeLocation).toVector().normalize().multiply(5)
+        player.velocity = trident.location.subtract(player.eyeLocation).toVector().multiply(.1f)
         player.world.playSound(player, Sound.ITEM_TRIDENT_RIPTIDE_1, 1f, 1f)
+        player.dontGlide = true // to try and balance it
+
+        // try using riptide effect?   you fly by someone = it does something
+        // trident flies by someone = it does something?
 
         return true
     }
+
+    fun recall(player: Player): Boolean {
+        val trident = player.getMetadata<Trident>("trident")
+        if (trident == null || !trident.isValid) return false
+
+        trident.remove()
+        player.inventory.addItem(Items.TRIDENT.item)
+        return true
+    }
+
 }
 
 //endregion
@@ -627,6 +646,7 @@ enum class Items(val item: ItemStack, val partyWeight: Double? = null) {
     TRIDENT(ItemStack.of(Material.TRIDENT).apply {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
         addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
+//        addUnsafeEnchantment(Enchantment.LOYALTY, 10)
 
         lore(listOf(Component.text("Throw the trident and right click to yank yourself towards it").color(NamedTextColor.BLUE)))
     }),
