@@ -49,7 +49,7 @@ class GravityGuild2 : JavaPlugin(), Listener {
         Bukkit.getScheduler().runTaskLater(PLUGIN, Runnable {
             player.sendMessage(
                 Component.newline()
-                    .append(Component.text("Welcome to GravityGuild").color(NamedTextColor.GOLD))
+                    .append(Component.text("Welcome to JarJar").color(NamedTextColor.GOLD))
                     .appendNewline()
                     .append(Component.text("Created by JohnCorby and FunkyBoots111").color(NamedTextColor.YELLOW))
                     .appendNewline()

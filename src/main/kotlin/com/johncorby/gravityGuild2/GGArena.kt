@@ -451,7 +451,17 @@ class GGArena : Arena() {
                         if (isMarkedForDeath) deathType += " (marked for death)"
                         if (isBurped) deathType += " (burped)"
 
-                        Bukkit.broadcast(Component.text("KILL: ${lastDamager.name} -> ${player.name} | $killThing -> $deathType").color(NamedTextColor.YELLOW))
+                        Bukkit.getOnlinePlayers().forEach {
+                            it.sendMessage(
+                                Component.text("KILL: ${lastDamager.name} -> ${player.name} | $killThing -> $deathType").color(
+                                    when (it) {
+                                        lastDamager -> NamedTextColor.GREEN
+                                        player -> NamedTextColor.RED
+                                        else -> NamedTextColor.YELLOW
+                                    }
+                                )
+                            )
+                        }
 
 
                         // tf2 moment teehee
