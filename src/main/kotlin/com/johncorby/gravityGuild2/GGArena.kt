@@ -100,8 +100,10 @@ class GGArena : Arena() {
             Items.BOW.item -> if (action.isLeftClick) GGBow.punch(player)
 
             Items.MACE.item -> {
-                if (action.isLeftClick)
+                if (action.isLeftClick) {
                     GGMace.launch(player)
+                    GGTrident.yoink(player)
+                    }
                 else if (action.isRightClick)
                     GGMace.smash(player)
             }
@@ -147,7 +149,7 @@ class GGArena : Arena() {
 
             else -> {
                 if (action.isLeftClick) GGTrident.yoink(player)
-                else if (action.isRightClick) GGTrident.recall(player)
+//                else if (action.isRightClick) GGTrident.recall(player)
             }
         }
     }

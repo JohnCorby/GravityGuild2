@@ -437,9 +437,9 @@ object GGTrident {
         // zoom
         player.velocity = trident.location.subtract(player.eyeLocation).toVector().multiply(.1f)
         player.world.playSound(player, Sound.ITEM_TRIDENT_RIPTIDE_1, 1f, 1f)
-        player.dontGlide = true // to try and balance it
+//        player.dontGlide = true // to try and balance it
 
-        // try using riptide effect?   you fly by someone = it does something
+        // try using riptide effect? that shit do not work      you fly by someone = it does something
         // trident flies by someone = it does something?
 
         return true
@@ -646,7 +646,7 @@ enum class Items(val item: ItemStack, val partyWeight: Double? = null) {
     TRIDENT(ItemStack.of(Material.TRIDENT).apply {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
         addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
-//        addUnsafeEnchantment(Enchantment.LOYALTY, 10)
+        addUnsafeEnchantment(Enchantment.LOYALTY, 1)
 
         lore(listOf(Component.text("Throw the trident and right click to yank yourself towards it").color(NamedTextColor.BLUE)))
     }),
