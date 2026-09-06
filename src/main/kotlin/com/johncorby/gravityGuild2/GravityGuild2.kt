@@ -41,7 +41,7 @@ class GravityGuild2 : JavaPlugin(), Listener {
     @EventHandler
     fun PlayerJoinEvent.handler() {
         // first join should put em in spawn
-        if (player.lastLogin == 0L) {
+        if (true/*player.lastLogin == 0L*/) {
             player.performCommand("mvtp gg_arenas") // very silly hack, had to set up permission to allow that
             player.gameMode = GameMode.ADVENTURE
         }
