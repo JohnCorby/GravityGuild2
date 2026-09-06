@@ -92,12 +92,26 @@ object GGMace {
 //                isCancelled = true
 
         // totally custom knockback that im trying to nerf
-        competition.players.forEach {
-            val windToPlayer = it.player.location.subtract(entity.location).toVector()
-            val len = windToPlayer.length()
-            if (len < 4) {
-                val dir = windToPlayer.normalize()
-                it.player.velocity = it.player.velocity.add(dir.multiply(len.toFloat().remapClamped(4f, 0f, 0f, 2f)))
+        val nearbyEntities = entity.world.getNearbyEntities(
+            entity.location,
+            20.0, 20.0, 20.0,
+            { it != entity },
+        )
+        nearbyEntities.forEach {
+            val windToIt = it.location.subtract(entity.location.add(0.0, -1.0, 0.0)).toVector()
+            val len = windToIt.length()
+            if (it is Player && entity.shooter == it) {
+                if (len < 4) {
+                    val dir = windToIt.normalize()
+                    it.velocity = it.velocity.add(dir.multiply(len.toFloat().remapClamped(4f, 0f, 0f, 2f)))
+                }
+            } else {
+                if (len < 20) {
+                    val dir = windToIt.normalize()
+                    it.velocity = it.velocity.add(dir.multiply(len.toFloat().remapClamped(20f, 0f, 0f, 4f)))
+                    if (it is Arrow)
+                        GGBow.trackedArrows[it] = it.velocity
+                }
             }
         }
     }
@@ -325,7 +339,8 @@ object GGFish {
         var hit = false
         val nearbyEntities = player.checkHitbox(3.0)
         for (it in nearbyEntities) {
-            if (it is Projectile && it.shooter == player && it !is EnderPearl) continue // cant hit your own things
+            if (it is BlockDisplay) continue
+            if (it is Projectile && it.shooter == player/* && it !is EnderPearl*/) continue // cant hit your own things
             val oldVel = it.velocity
             it.velocity = player.eyeLocation.direction.multiply(if (it is Projectile) 3 else 5)
             hit = true
@@ -646,7 +661,7 @@ enum class Items(val item: ItemStack, val partyWeight: Double? = null) {
     TRIDENT(ItemStack.of(Material.TRIDENT).apply {
         addUnsafeEnchantment(Enchantment.UNBREAKING, 9999)
         addUnsafeEnchantment(Enchantment.BINDING_CURSE, 1)
-        addUnsafeEnchantment(Enchantment.LOYALTY, 1)
+        addUnsafeEnchantment(Enchantment.LOYALTY, 10)
 
         lore(listOf(Component.text("Throw the trident and right click to yank yourself towards it").color(NamedTextColor.BLUE)))
     }),
