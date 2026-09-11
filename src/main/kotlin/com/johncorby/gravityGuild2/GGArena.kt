@@ -6,6 +6,7 @@ import io.papermc.paper.event.player.PlayerFailMoveEvent
 import net.kyori.adventure.text.Component
 import net.kyori.adventure.text.event.ClickEvent
 import net.kyori.adventure.text.format.NamedTextColor
+import net.kyori.adventure.title.Title
 import org.battleplugins.arena.Arena
 import org.battleplugins.arena.ArenaPlayer
 import org.battleplugins.arena.competition.LiveCompetition
@@ -103,8 +104,7 @@ class GGArena : Arena() {
                 if (action.isLeftClick) {
                     GGMace.launch(player)
                     GGTrident.yoink(player)
-                    }
-                else if (action.isRightClick)
+                } else if (action.isRightClick)
                     GGMace.smash(player)
             }
 
@@ -277,6 +277,14 @@ class GGArena : Arena() {
                     .color(NamedTextColor.GOLD)
                     .clickEvent(ClickEvent.runCommand("/gg join ${this.competition.map.name}"))
             )
+            Bukkit.getOnlinePlayers().forEach {
+                it.showTitle(
+                    Title.title(
+                        Component.text("Arena ${this.competition.map.name}").color(NamedTextColor.GOLD),
+                        Component.text("has players!").color(NamedTextColor.GOLD)
+                    )
+                )
+            }
         }
 
         player.saturation = 9999f
