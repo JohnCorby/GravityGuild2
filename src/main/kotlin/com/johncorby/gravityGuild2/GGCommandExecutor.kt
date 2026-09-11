@@ -90,4 +90,14 @@ class GGCommandExecutor(arena: Arena) : ArenaCommandExecutor(arena) {
         player.chat("spawn")
         Bukkit.getScheduler().runTask(PLUGIN, Runnable { player.chat("Default") })
     }
+
+    @ArenaCommand(commands = ["mode"], description = "change the game mode")
+    fun mode(sender: CommandSender, _mode: GameMode) {
+        mode = _mode
+        sender.sendMessage("game mode changed to $mode")
+    }
 }
+
+enum class GameMode { NORMAL, CHAOS }
+// TODO: store this per game so it can be changed without ruining things
+var mode = GameMode.NORMAL

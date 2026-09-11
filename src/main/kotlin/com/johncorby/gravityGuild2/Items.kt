@@ -91,26 +91,37 @@ object GGMace {
 //                PLUGIN.logger.info("cancelling wind charge")
 //                isCancelled = true
 
-        // totally custom knockback that im trying to nerf
-        val nearbyEntities = entity.world.getNearbyEntities(
-            entity.location,
-            20.0, 20.0, 20.0,
-            { it != entity },
-        )
-        nearbyEntities.forEach {
-            val windToIt = it.location.subtract(entity.location.add(0.0, -1.0, 0.0)).toVector()
-            val len = windToIt.length()
-            if (it is Player && entity.shooter == it) {
+        if (mode == GameMode.NORMAL) {
+            competition.players.forEach {
+                val windToPlayer = it.player.location.subtract(entity.location).toVector()
+                val len = windToPlayer.length()
                 if (len < 4) {
-                    val dir = windToIt.normalize()
-                    it.velocity = it.velocity.add(dir.multiply(len.toFloat().remapClamped(4f, 0f, 0f, 2f)))
+                    val dir = windToPlayer.normalize()
+                    it.player.velocity = it.player.velocity.add(dir.multiply(len.toFloat().remapClamped(4f, 0f, 0f, 2f)))
                 }
-            } else {
-                if (len < 20) {
-                    val dir = windToIt.normalize()
-                    it.velocity = it.velocity.add(dir.multiply(len.toFloat().remapClamped(20f, 0f, 0f, 4f)))
-                    if (it is Arrow)
-                        GGBow.trackedArrows[it] = it.velocity
+            }
+        } else {
+            // totally custom knockback that im trying to nerf
+            val nearbyEntities = entity.world.getNearbyEntities(
+                entity.location,
+                20.0, 20.0, 20.0,
+                { it != entity },
+            )
+            nearbyEntities.forEach {
+                val windToIt = it.location.subtract(entity.location.add(0.0, -1.0, 0.0)).toVector()
+                val len = windToIt.length()
+                if (it is Player && entity.shooter == it) {
+                    if (len < 4) {
+                        val dir = windToIt.normalize()
+                        it.velocity = it.velocity.add(dir.multiply(len.toFloat().remapClamped(4f, 0f, 0f, 2f)))
+                    }
+                } else {
+                    if (len < 20) {
+                        val dir = windToIt.normalize()
+                        it.velocity = it.velocity.add(dir.multiply(len.toFloat().remapClamped(20f, 0f, 0f, 4f)))
+                        if (it is Arrow)
+                            GGBow.trackedArrows[it] = it.velocity
+                    }
                 }
             }
         }
@@ -731,7 +742,8 @@ fun Player.initInventory() {
     inventory.addItem(Items.FISH.item)
     inventory.addItem(Items.TNT.item)
     inventory.addItem(Items.ARROW.item)
-    inventory.addItem(Items.TRIDENT.item)
+    if (mode == GameMode.CHAOS)
+        inventory.addItem(Items.TRIDENT.item)
 //    inventory.addItem(Items.HORN.item)
 //    inventory.addItem(Items.GUN.item)
 //    inventory.addItem(Items.TREE.item)
@@ -768,6 +780,7 @@ fun Player.givePartyItem() {
 }
 
 fun Player.compactItems() {
+    // TODO: put base items back in the regular slow. trident keeps going in stupid place
     var items = inventory.take(9 * 4).toList()
     items.forEachIndexed { index, stack -> inventory.setItem(index, null) }
     items = items.filter { item ->
