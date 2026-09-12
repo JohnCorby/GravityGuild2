@@ -753,7 +753,7 @@ fun Player.initInventory() {
 //    inventory.addItem(Items.TREE.item)
     inventory.setHelmet(Items.HELMET.item)
     inventory.setChestplate(Items.CHESTPLATE.item)
-    inventory.setLeggings(Items.PANTS.item)
+//    inventory.setLeggings(Items.PANTS.item)
 
     // was gonna teleport to random part of map. but fixed spawns are nicer
 }
