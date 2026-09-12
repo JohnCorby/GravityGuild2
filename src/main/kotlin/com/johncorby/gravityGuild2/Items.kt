@@ -91,7 +91,7 @@ object GGMace {
 //                PLUGIN.logger.info("cancelling wind charge")
 //                isCancelled = true
 
-        if (mode == GameMode.NORMAL) {
+        if (GAME_MODE == GameMode.NORMAL) {
             competition.players.forEach {
                 val windToPlayer = it.player.location.subtract(entity.location).toVector()
                 val len = windToPlayer.length()
@@ -351,10 +351,11 @@ object GGFish {
         val nearbyEntities = player.checkHitbox(3.0)
         for (it in nearbyEntities) {
             if (it is BlockDisplay) continue
-            if (mode == GameMode.NORMAL)
+            if (GAME_MODE == GameMode.NORMAL) {
                 if (it is Projectile && it.shooter == player && it !is EnderPearl) continue // cant hit your own things
-            else
+            } else {
                 if (it is Projectile && it.shooter == player) continue // cant hit your own things
+            }
             val oldVel = it.velocity
             it.velocity = player.eyeLocation.direction.multiply(if (it is Projectile) 3 else 5)
             hit = true
@@ -745,7 +746,7 @@ fun Player.initInventory() {
     inventory.addItem(Items.FISH.item)
     inventory.addItem(Items.TNT.item)
     inventory.addItem(Items.ARROW.item)
-    if (mode == GameMode.CHAOS)
+    if (GAME_MODE == GameMode.CHAOS)
         inventory.addItem(Items.TRIDENT.item)
 //    inventory.addItem(Items.HORN.item)
 //    inventory.addItem(Items.GUN.item)

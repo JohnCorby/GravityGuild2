@@ -92,12 +92,18 @@ class GGCommandExecutor(arena: Arena) : ArenaCommandExecutor(arena) {
     }
 
     @ArenaCommand(commands = ["mode"], description = "change the game mode")
-    fun mode(sender: CommandSender, _mode: GameMode) {
-        mode = _mode
-        sender.sendMessage("game mode changed to $mode")
+    fun mode(sender: CommandSender, mode: GameMode) {
+        GAME_MODE = mode
+        sender.sendMessage("game mode changed to $GAME_MODE")
+    }
+
+    @ArenaCommand(commands = ["mode"], description = "change the game mode")
+    fun mode(sender: CommandSender) {
+        sender.sendMessage("game mode is $GAME_MODE")
     }
 }
 
 enum class GameMode { NORMAL, CHAOS }
+
 // TODO: store this per game so it can be changed without ruining things
-var mode = GameMode.NORMAL
+var GAME_MODE = GameMode.NORMAL
