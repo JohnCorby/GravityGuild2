@@ -351,7 +351,10 @@ object GGFish {
         val nearbyEntities = player.checkHitbox(3.0)
         for (it in nearbyEntities) {
             if (it is BlockDisplay) continue
-            if (it is Projectile && it.shooter == player/* && it !is EnderPearl*/) continue // cant hit your own things
+            if (mode == GameMode.NORMAL)
+                if (it is Projectile && it.shooter == player && it !is EnderPearl) continue // cant hit your own things
+            else
+                if (it is Projectile && it.shooter == player) continue // cant hit your own things
             val oldVel = it.velocity
             it.velocity = player.eyeLocation.direction.multiply(if (it is Projectile) 3 else 5)
             hit = true
